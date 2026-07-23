@@ -1,5 +1,4 @@
 
-
 const User = require('../models/User');
 const OTP = require('../models/OTP');
 const jwt = require('jsonwebtoken');
@@ -8,21 +7,12 @@ const { sendOTPEmail } = require('../services/emailService');
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-
 // Helper: generate a 6-digit OTP code
 const generateOTPCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // @desc    Register a new user (customer)
 // @route   POST /auth/signup
-
-// @desc    Verify email using OTP
-// @route   POST /auth/verify-otp
-exports.verifyOTP = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-
-    if (!email || !otp) {
-      return res.status(400).json({ message: 'Eexports.registerUser = async (req, res) => {
+exports.registerUser = async (req, res) => {
   try {
     const { fullName, email, password, confirmPassword } = req.body;
 
@@ -45,9 +35,8 @@ exports.verifyOTP = async (req, res) => {
       password_hash: password,
     });
 
-    // Generate and save an OTP for this new user
     const otpCode = generateOTPCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // valid for 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await OTP.create({
       recipient_type: 'user',
@@ -58,8 +47,7 @@ exports.verifyOTP = async (req, res) => {
       expires_at: expiresAt,
     });
 
-   
-   await sendOTPEmail(newUser.email, otpCode, 'registration');
+    await sendOTPEmail(newUser.email, otpCode, 'registration');
 
     res.status(201).json({
       message: 'User registered successfully. Please verify your email.',
@@ -74,10 +62,17 @@ exports.verifyOTP = async (req, res) => {
     res.status(500).json({ message: 'Server error during registration' });
   }
 };
-mail and OTP are required' });
+
+// @desc    Verify email using OTP
+// @route   POST /auth/verify-otp
+exports.verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP are required' });
     }
 
-    // Find the most recent matching OTP record
     const otpRecord = await OTP.findOne({
       email,
       otp_code: otp,
@@ -93,11 +88,9 @@ mail and OTP are required' });
       return res.status(400).json({ message: 'OTP has expired' });
     }
 
-    // Mark OTP as used
     otpRecord.is_used = true;
     await otpRecord.save();
 
-    // Mark user as verified
     await User.findOneAndUpdate({ email }, { is_verified: true });
 
     res.status(200).json({ message: 'Email verified successfully' });
@@ -126,13 +119,11 @@ exports.resendOTP = async (req, res) => {
       return res.status(400).json({ message: 'This email is already verified' });
     }
 
-    // Invalidate any previous unused OTPs for this email (optional but cleaner)
     await OTP.updateMany(
       { email, purpose: 'registration', is_used: false },
       { is_used: true }
     );
 
-    // Generate a new OTP
     const otpCode = generateOTPCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -153,7 +144,6 @@ exports.resendOTP = async (req, res) => {
     res.status(500).json({ message: 'Server error during OTP resend' });
   }
 };
-
 
 // @desc    Login user
 // @route   POST /auth/login
@@ -183,7 +173,6 @@ exports.loginUser = async (req, res) => {
       return res.status(403).json({ message: 'This account has been deactivated' });
     }
 
-    // Generate JWT
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
@@ -191,9 +180,9 @@ exports.loginUser = async (req, res) => {
     );
 
     res.cookie('token', token, {
-  httpOnly: true,
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({
       message: 'Login successful',
@@ -223,11 +212,9 @@ exports.forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      // Don't reveal whether the email exists — just respond generically
       return res.status(200).json({ message: 'If this email is registered, a reset code has been sent' });
     }
 
-    // Invalidate old unused password_reset OTPs for this email
     await OTP.updateMany(
       { email, purpose: 'password_reset', is_used: false },
       { is_used: true }
@@ -320,12 +307,10 @@ exports.resetPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Set new password — pre('save') hook will hash it automatically
     user.password_hash = newPassword;
     user.password_changed_at = new Date();
     await user.save();
 
-    // Mark OTP as used so it can't be reused
     otpRecord.is_used = true;
     await otpRecord.save();
 
@@ -335,7 +320,6 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Server error during password reset' });
   }
 };
-
 
 // @desc    Signup/Login with Google
 // @route   POST /auth/google
@@ -379,9 +363,9 @@ exports.googleAuth = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-     res.cookie('token', token, {
-     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    res.cookie('token', token, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
@@ -400,17 +384,11 @@ exports.googleAuth = async (req, res) => {
   }
 };
 
-
-
-
-
 // @desc    Logout user
 // @route   POST /auth/logout
 exports.logoutUser = async (req, res) => {
   try {
-   res.clearCookie('token', {
-  httpOnly: true,
-});
+    res.clearCookie('token', { httpOnly: true });
     res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error('Logout error:', error.message);
