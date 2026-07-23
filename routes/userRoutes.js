@@ -17,11 +17,28 @@ router.get('/signup', (req, res) => {
   res.render('user/auth/userSignup');
 });
 router.get('/verify-otp-page', (req, res) => {
-  res.render('user/auth/otp-verification', { email: req.query.email });
+  res.render('user/auth/otp-verification', {
+    email: req.query.email,
+    purpose: req.query.purpose || 'registration',
+  });
 });
-
 router.get('/login', (req, res) => {
   res.render('user/auth/user-login');
+});
+
+router.get('/forgot-password', (req, res) => {
+  res.render('user/auth/reset-password');
+});
+
+router.get('/new-password', (req, res) => {
+  res.render('user/auth/new-password', {
+    email: req.query.email,
+    otp: req.query.otp,
+  });
+});
+
+router.get('/reset-success', (req, res) => {
+  res.render('user/auth/reset-success');
 });
 // API routes — handle form submissions
 router.post('/signup', registerUser);

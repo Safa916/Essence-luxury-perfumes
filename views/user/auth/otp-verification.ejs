@@ -73,7 +73,7 @@
     </div>
 
     <script>
-        // Get the email either from the server-rendered value, or fallback to the URL query param
+        const purpose = "<%= typeof purpose !== 'undefined' ? purpose : 'registration' %>";
         const urlParams = new URLSearchParams(window.location.search);
         const userEmail = "<%= typeof email !== 'undefined' ? email : '' %>" || urlParams.get('email') || '';
         document.getElementById('userEmail').textContent = userEmail;
@@ -133,8 +133,10 @@
                 return;
             }
 
+            const endpoint = purpose === 'password_reset' ? '/auth/verify-reset-code' : '/auth/verify-otp';
+
             try {
-                const res = await fetch('/auth/verify-otp', {
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: userEmail, otp })
@@ -143,8 +145,11 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    alert('Email verified successfully! Please log in.');
-                    window.location.href = '/auth/login';
+                    if (purpose === 'password_reset') {
+                        window.location.href = '/auth/new-password?email=' + encodeURIComponent(userEmail) + '&otp=' + otp;
+                    } else {
+                        window.location.href = '/';
+                    }
                 } else {
                     alert(data.message || 'Verification failed');
                 }
@@ -158,8 +163,10 @@
         resendBtn.addEventListener('click', async function () {
             if (resendBtn.disabled) return;
 
+            const resendEndpoint = purpose === 'password_reset' ? '/auth/forgot-password' : '/auth/resend-otp';
+
             try {
-                const res = await fetch('/auth/resend-otp', {
+                const res = await fetch(resendEndpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: userEmail })
@@ -168,20 +175,18 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    alert('A new code has been sent to your email');
                     digits.forEach(d => d.value = '');
                     digits[0].focus();
                     startCountdown();
                 } else {
-                    alert(data.message || 'Could not resend OTP');
+                    alert(data.message || 'Could not resend code');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Something went wrong resending the OTP');
+                alert('Something went wrong resending the code');
             }
         });
     </script>
 
 </body>
 </html>
-
