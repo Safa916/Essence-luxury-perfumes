@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Delete Address — Essence' %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/address/delete-address.css">
+</head>
+<body>
+
+  <% var address = typeof address !== 'undefined' && address ? address : {
+    id: 'addr_1',
+    label: 'Default Address',
+    name: 'safa N',
+    lines: ['221B Stadium Road', 'Kochi, Kerala 682001', 'India']
+  }; %>
+
+  <!-- ===== Dimmed page backdrop (My Addresses page this modal sits over) ===== -->
+  <div class="page-backdrop" aria-hidden="true">
+    <header class="backdrop-header">
+      <span class="backdrop-logo">ESSENCE</span>
+      <nav class="backdrop-nav">
+        <span></span><span></span><span></span>
+      </nav>
+      <span class="backdrop-icon"></span>
+    </header>
+
+    <div class="backdrop-body">
+      <aside class="backdrop-sidebar">
+        <div class="backdrop-avatar"></div>
+        <div class="backdrop-nav-item"></div>
+        <div class="backdrop-nav-item"></div>
+        <div class="backdrop-nav-item active"></div>
+        <div class="backdrop-nav-item"></div>
+        <div class="backdrop-nav-item"></div>
+      </aside>
+
+      <div class="backdrop-content">
+        <div class="backdrop-title"></div>
+        <div class="backdrop-subtitle"></div>
+        <div class="backdrop-card"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Delete Address modal ===== -->
+  <div class="modal-overlay">
+    <div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="delete-address-title" aria-describedby="delete-address-desc">
+
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>
+      </div>
+
+      <h1 class="modal-title" id="delete-address-title">Delete Address?</h1>
+
+      <p class="modal-body" id="delete-address-desc">
+        Are you sure you want to remove this address from your account? This action cannot be undone.
+      </p>
+
+      <form action="/address/<%= address.id %>/delete" method="POST" class="delete-form">
+        <button type="submit" class="btn-delete">Delete</button>
+      </form>
+
+      <a href="/address" class="btn-cancel">Cancel</a>
+
+    </div>
+  </div>
+
+</body>
+</html>

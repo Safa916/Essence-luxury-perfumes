@@ -1,0 +1,356 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    background-color: #ffffff;
+    color: #000000;
+    overflow-x: hidden;
+    height: 100vh;
+}
+
+.login-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100vw;
+}
+
+/* Left Panel Style (Black Side) */
+.left-panel {
+    flex: 0 0 35%;
+    background-color: #000000;
+    color: #ffffff;
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    position: relative;
+}
+
+.brand-info {
+    max-width: 320px;
+}
+
+.brand-title {
+    font-size: 3.5rem;
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+}
+
+.brand-subtitle {
+    font-size: 3.5rem;
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+}
+
+.brand-desc {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #8E8E93;
+    letter-spacing: 0.1em;
+    line-height: 1.6;
+}
+
+/* Right Panel Style (White Side) */
+.right-panel {
+    flex: 1;
+    background-color: #ffffff;
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* Top Right Logo */
+.top-logo {
+    position: absolute;
+    top: 40px;
+    right: 60px;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    color: #000000;
+}
+
+/* Login Form Wrapper */
+.login-form-wrapper {
+    max-width: 440px;
+    width: 100%;
+    margin: auto;
+    padding: 20px 0;
+}
+
+.form-title {
+    font-size: 2.2rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+    color: #000000;
+}
+
+.form-subtitle {
+    font-size: 0.9rem;
+    color: #636366;
+    margin-bottom: 40px;
+    font-weight: 400;
+}
+
+/* Form Groups and Inputs */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: #8E8E93;
+}
+
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.form-input {
+    background-color: #F2F2F7;
+    border: none;
+    border-radius: 0px;
+    padding: 18px 16px;
+    font-size: 0.95rem;
+    color: #000000;
+    width: 100%;
+    outline: none;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input::placeholder {
+    color: #AEAEB2;
+    opacity: 1;
+}
+
+.form-input:focus {
+    background-color: #E5E5EA;
+    box-shadow: inset 0 -2px 0 #000000;
+}
+
+/* Toggle Password Visibility Button */
+.toggle-password {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    color: #8E8E93;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: #000000;
+}
+
+.eye-icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* Form Options */
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.remember-me-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    gap: 10px;
+}
+
+.remember-me-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.custom-checkbox {
+    height: 16px;
+    width: 16px;
+    background-color: #E5E5EA;
+    border-radius: 0px;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.remember-me-container:hover input ~ .custom-checkbox {
+    background-color: #D1D1D6;
+}
+
+.remember-me-container input:checked ~ .custom-checkbox {
+    background-color: #000000;
+}
+
+.custom-checkbox:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.remember-me-container input:checked ~ .custom-checkbox:after {
+    display: block;
+}
+
+.remember-me-container .custom-checkbox:after {
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkbox-label {
+    color: #8E8E93;
+    letter-spacing: 0.05em;
+}
+
+.forgot-password-link {
+    color: #000000;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: opacity 0.2s;
+}
+
+.forgot-password-link:hover {
+    opacity: 0.7;
+}
+
+/* Submit Button */
+.submit-btn {
+    background-color: #000000;
+    color: #ffffff;
+    border: none;
+    padding: 18px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.submit-btn:hover {
+    background-color: #1C1C1E;
+}
+
+.submit-btn:active {
+    transform: scale(0.99);
+}
+
+/* Footer Style */
+.right-footer {
+    position: absolute;
+    bottom: 40px;
+    left: 60px;
+    right: 60px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: #8E8E93;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+}
+
+.footer-links {
+    display: flex;
+    gap: 24px;
+}
+
+.right-footer a {
+    color: #8E8E93;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.right-footer a:hover {
+    color: #000000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .left-panel {
+        flex: 0 0 40%;
+    }
+}
+
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+    }
+    
+    .left-panel {
+        flex: none;
+        height: 250px;
+        padding: 40px;
+    }
+    
+    .brand-title, .brand-subtitle {
+        font-size: 2.5rem;
+    }
+    
+    .right-panel {
+        padding: 40px 20px;
+        flex: 1;
+        justify-content: flex-start;
+    }
+    
+    .top-logo {
+        display: none; /* Hide top logo on mobile to save space */
+    }
+    
+    .login-form-wrapper {
+        margin: 40px auto;
+    }
+    
+    .right-footer {
+        position: static;
+        width: 100%;
+        margin-top: auto;
+        padding-top: 20px;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+}

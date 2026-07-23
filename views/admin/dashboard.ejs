@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Essence Admin Dashboard</title>
+    <!-- CSS stylesheet link -->
+    <link rel="stylesheet" href="/admin/dashboard.css">
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="brand-section">
+            <h1 class="brand-name">ESSENCE</h1>
+            <div class="brand-role">System Admin</div>
+        </div>
+
+        <div class="sidebar-search">
+            <div class="search-input-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" class="sidebar-search-input" placeholder="Search Analytics...">
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/admin/dashboard" class="menu-item active">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="9"></rect>
+                    <rect x="14" y="3" width="7" height="5"></rect>
+                    <rect x="14" y="12" width="7" height="9"></rect>
+                    <rect x="3" y="16" width="7" height="5"></rect>
+                </svg>
+                Dashboard
+            </a>
+
+            <div class="menu-subheader">Products</div>
+            <a href="/admin/categories" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="6" cy="6" r="3"></circle>
+                    <circle cx="18" cy="6" r="3"></circle>
+                    <circle cx="12" cy="18" r="3"></circle>
+                </svg>
+                Categories
+            </a>
+            <a href="/admin/orders" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                    <path d="M3 6h18"></path>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+                Orders
+            </a>
+            <a href="/admin/offers" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24L4 3v5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.83 0l3.59-3.59a2 2 0 0 0 0-2.83Z"></path>
+                    <circle cx="7.5" cy="7.5" r="1.5"></circle>
+                </svg>
+                Offers
+            </a>
+            <a href="/admin/coupons" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                    <path d="M2 10h20"></path>
+                </svg>
+                Coupons
+            </a>
+            <a href="/admin/users" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Users
+            </a>
+            <a href="/admin/returns" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                </svg>
+                Returns
+            </a>
+            <a href="/admin/review" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                Review
+            </a>
+            <a href="/admin/brand" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"></path>
+                    <circle cx="7.5" cy="7.5" r="1.5"></circle>
+                </svg>
+                Brand
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Top Header Bar -->
+        <header class="top-header">
+            <div class="top-search-wrapper">
+                <input type="text" class="top-search-input" placeholder="Search Analytics...">
+            </div>
+            <div class="header-actions">
+                <button class="sales-report-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20V10"></path>
+                        <path d="M18 20V4"></path>
+                        <path d="M6 20v-4"></path>
+                    </svg>
+                    Sales Report
+                </button>
+                <div class="admin-profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="8" r="4"></circle>
+                        <path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path>
+                    </svg>
+                    Admin_root
+                </div>
+            </div>
+        </header>
+
+        <!-- Portfolio Title Section -->
+        <section class="report-title-section">
+            <h2 class="report-title">May 2025 — Portfolio Report</h2>
+            <div class="report-filters">
+                <button class="filter-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    Filter
+                </button>
+                <button class="filter-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    Date Range
+                </button>
+            </div>
+        </section>
+
+        <!-- KPI Cards -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M14.5 9.5a2.5 2.5 0 0 0-2.5-1H11a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-1a2.5 2.5 0 0 1-2.5-1"></path>
+                            <line x1="12" y1="6" x2="12" y2="18"></line>
+                        </svg>
+                    </div>
+                    <div class="kpi-trend">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                        +12.5%
+                    </div>
+                </div>
+                <div class="kpi-middle">
+                    <div class="kpi-label">Total Revenue</div>
+                    <div class="kpi-value">₹ 45,231.89</div>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                            <path d="M3 6h18"></path>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                    </div>
+                    <div class="kpi-trend">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                        +8.2%
+                    </div>
+                </div>
+                <div class="kpi-middle">
+                    <div class="kpi-label">Total Orders</div>
+                    <div class="kpi-value">2,350</div>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div class="kpi-trend">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                        +4.1%
+                    </div>
+                </div>
+                <div class="kpi-middle">
+                    <div class="kpi-label">Active Users</div>
+                    <div class="kpi-value">12,842</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Section: Chart + Market Share -->
+        <section class="analytics-section">
+
+            <!-- Revenue Chart -->
+            <div class="analytics-card chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Revenue Growth Trends</h3>
+                    <div class="chart-legend">
+                        <span class="legend-dot"></span>
+                        Current Period
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="bar-wrapper">
+                        <div class="bar-fill" style="height: 45%;"></div>
+                        <div class="bar-label">AUG</div>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar-fill" style="height: 58%;"></div>
+                        <div class="bar-label">OCT</div>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar-fill" style="height: 40%;"></div>
+                        <div class="bar-label">DEC</div>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar-fill" style="height: 70%;"></div>
+                        <div class="bar-label">FEB</div>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar-fill" style="height: 88%;"></div>
+                        <div class="bar-label">APR</div>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar-fill active" style="height: 100%;"></div>
+                        <div class="bar-label">MAY</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Share -->
+            <div class="analytics-card market-share-card">
+                <div>
+                    <h3 class="market-share-title">Market Share</h3>
+                    <div class="share-list">
+                        <div class="share-item">
+                            <div class="share-info">
+                                <span class="share-brand">Dior Sauvage</span>
+                                <span class="share-percentage">40%</span>
+                            </div>
+                            <div class="share-progress-bg">
+                                <div class="share-progress-fill" style="width: 40%;"></div>
+                            </div>
+                        </div>
+                        <div class="share-item">
+                            <div class="share-info">
+                                <span class="share-brand">Chanel No. 5</span>
+                                <span class="share-percentage">25%</span>
+                            </div>
+                            <div class="share-progress-bg">
+                                <div class="share-progress-fill" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                        <div class="share-item">
+                            <div class="share-info">
+                                <span class="share-brand">Bleu de Chanel</span>
+                                <span class="share-percentage">20%</span>
+                            </div>
+                            <div class="share-progress-bg">
+                                <div class="share-progress-fill" style="width: 20%;"></div>
+                            </div>
+                        </div>
+                        <div class="share-item">
+                            <div class="share-info">
+                                <span class="share-brand">Creed Aventus</span>
+                                <span class="share-percentage">15%</span>
+                            </div>
+                            <div class="share-progress-bg">
+                                <div class="share-progress-fill" style="width: 15%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="quote-block">
+                    <p class="quote-text">"Dior continues to dominate the premium fresh-spicy segment."</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Elite Perfumery Sales -->
+        <section>
+            <div class="sales-section-header">
+                <h3 class="sales-title">Elite Perfumery Sales</h3>
+                <a href="/admin/products" class="view-catalog-link">View Full Catalog</a>
+            </div>
+
+            <div class="products-grid">
+
+                <div class="product-card">
+                    <div class="product-img-wrapper">
+                        <span class="product-badge best-seller">Best Seller</span>
+                        <svg class="product-img perfume-illustration" viewBox="0 0 140 180" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="50" y="20" width="40" height="18" rx="3" fill="#1c1c1e"></rect>
+                            <rect x="58" y="8" width="24" height="14" rx="2" fill="#48484a"></rect>
+                            <path d="M45 38h50a4 4 0 0 1 4 4v110a8 8 0 0 1-8 8H49a8 8 0 0 1-8-8V42a4 4 0 0 1 4-4Z" fill="#111318"></path>
+                            <rect x="47" y="90" width="46" height="30" fill="#2c2f36"></rect>
+                        </svg>
+                    </div>
+                    <div class="product-details">
+                        <h4 class="product-name">Dior Sauvage Elite</h4>
+                        <div class="sales-vol-group">
+                            <span class="sales-vol-label">Sales Volume</span>
+                            <div class="sales-vol-row">
+                                <span class="sales-units">1,402 units</span>
+                                <span class="sales-value">₹1.2M</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-img-wrapper">
+                        <svg class="product-img perfume-illustration" viewBox="0 0 140 180" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="55" y="18" width="30" height="16" rx="3" fill="#1c1c1e"></rect>
+                            <rect x="60" y="6" width="20" height="12" rx="2" fill="#333"></rect>
+                            <rect x="42" y="34" width="56" height="118" rx="4" fill="#15181d"></rect>
+                            <rect x="52" y="70" width="36" height="40" fill="#22252b"></rect>
+                        </svg>
+                    </div>
+                    <div class="product-details">
+                        <h4 class="product-name">Bleu de Chanel</h4>
+                        <div class="sales-vol-group">
+                            <span class="sales-vol-label">Sales Volume</span>
+                            <div class="sales-vol-row">
+                                <span class="sales-units">985 units</span>
+                                <span class="sales-value">₹842K</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-img-wrapper">
+                        <svg class="product-img perfume-illustration" viewBox="0 0 140 180" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="58" y="14" width="24" height="16" rx="3" fill="#8e8e93"></rect>
+                            <path d="M48 30h44a4 4 0 0 1 4 4v104a10 10 0 0 1-10 10H54a10 10 0 0 1-10-10V34a4 4 0 0 1 4-4Z" fill="#3a3a3c"></path>
+                            <rect x="50" y="60" width="40" height="50" fill="#232326"></rect>
+                        </svg>
+                    </div>
+                    <div class="product-details">
+                        <h4 class="product-name">Aventus</h4>
+                        <div class="sales-vol-group">
+                            <span class="sales-vol-label">Sales Volume</span>
+                            <div class="sales-vol-row">
+                                <span class="sales-units">520 units</span>
+                                <span class="sales-value">₹2.1M</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-img-wrapper">
+                        <span class="product-badge premium">Premium</span>
+                        <svg class="product-img perfume-illustration" viewBox="0 0 140 180" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="56" y="12" width="28" height="16" rx="3" fill="#bfa15f"></rect>
+                            <path d="M46 28h48a6 6 0 0 1 6 6v96a14 14 0 0 1-14 14H54a14 14 0 0 1-14-14V34a6 6 0 0 1 6-6Z" fill="#a8321f"></path>
+                            <rect x="48" y="64" width="44" height="40" fill="#8f2a19"></rect>
+                        </svg>
+                    </div>
+                    <div class="product-details">
+                        <h4 class="product-name">Baccarat Rouge 540</h4>
+                        <div class="sales-vol-group">
+                            <span class="sales-vol-label">Sales Volume</span>
+                            <div class="sales-vol-row">
+                                <span class="sales-units">312 units</span>
+                                <span class="sales-value">₹4.2M</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>

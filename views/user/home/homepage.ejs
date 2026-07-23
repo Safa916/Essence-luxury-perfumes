@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Essence — Fine Fragrance' %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/home/homepage.css">
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="logo">ESSENCE</a>
+      <nav class="main-nav">
+        <a href="/" class="nav-link is-active">Home</a>
+        <a href="/collections" class="nav-link">Collections</a>
+        <a href="/houses" class="nav-link">Houses</a>
+        <a href="/about" class="nav-link">About</a>
+      </nav>
+      <div class="header-icons">
+        <button class="icon-btn" aria-label="Search">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <a href="/cart" class="icon-btn" aria-label="Bag">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        </a>
+<% if (typeof user !== 'undefined' && user) { %>
+  <!-- Signed-in state -->
+  <div class="user-menu">
+    <a href="/profile" class="icon-btn profile-btn" aria-label="My Profile">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+      <span class="profile-label"><%= user.full_name || 'Profile' %></span>
+    </a>
+    <button type="button" id="logoutBtn" class="btn-logout">Logout</button>
+  </div>
+<% } else { %>
+
+
+    
+          <!-- Signed-out state -->
+          <a href="/auth/login" class="icon-btn" aria-label="Account">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          </a>
+          <a href="/auth/login" class="btn btn-login">Sign In</a>
+        <% } %>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===== Hero ===== -->
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">The Fragrance Journal</p>
+        <blockquote class="hero-quote">
+          &ldquo;A fragrance is a silent poem, an invisible layer of luxury that lingers long after a presence has faded.&rdquo;
+        </blockquote>
+        <a href="/collections" class="btn btn-dark">Explore the Fragrances</a>
+      </div>
+      <div class="hero-image">
+        <img src="/images/hero-chanel.jpg" alt="Chanel N°5 Eau de Parfum on a marble pedestal">
+      </div>
+    </section>
+
+    <!-- ===== For Her / For Him ===== -->
+    <section class="split-banner">
+      <a href="/collections/for-her" class="banner-card">
+        <img src="/images/for-her.jpg" alt="Gucci Flora fragrance surrounded by white blossoms">
+        <span class="banner-label">For Her</span>
+      </a>
+      <a href="/collections/for-him" class="banner-card">
+        <img src="/images/for-him.jpg" alt="Dior Sauvage fragrance on dark stone">
+        <span class="banner-label">For Him</span>
+      </a>
+    </section>
+
+    <!-- ===== New Arrivals ===== -->
+    <section class="new-arrivals">
+      <div class="section-heading">
+        <h2>New Arrivals</h2>
+        <a href="/collections/new" class="view-all">View All</a>
+      </div>
+
+      <div class="product-grid">
+        <% var products = typeof products !== 'undefined' ? products : [
+          { name: 'Santal 33', house: 'Le Labo', price: '245.00', image: '/images/product-1.jpg' },
+          { name: 'Nightfall',  house: 'Byredo', price: '210.00', image: '/images/product-2.jpg' },
+          { name: 'Malabah',    house: 'Prada',  price: '198.00', image: '/images/product-3.jpg' },
+          { name: 'Sauvage',    house: 'Dior',   price: '175.00', image: '/images/product-4.jpg' }
+        ]; %>
+        <% products.forEach(function(product) { %>
+          <a href="/product/<%= product.name.toLowerCase().replace(/\s+/g, '-') %>" class="product-card">
+            <div class="product-image">
+              <img src="<%= product.image %>" alt="<%= product.name %> by <%= product.house %>">
+            </div>
+            <p class="product-house"><%= product.house %></p>
+            <p class="product-name"><%= product.name %></p>
+            <p class="product-price">$<%= product.price %></p>
+          </a>
+        <% }); %>
+      </div>
+    </section>
+
+    <!-- ===== The Houses ===== -->
+    <section class="houses">
+      <h2 class="houses-title">The Houses</h2>
+      <ul class="houses-list">
+        <% var houses = typeof houses !== 'undefined' ? houses : [
+          'Chanel', 'Dior', 'Byredo', 'Gucci', 'Prada',
+          'Le Labo', 'Creed', 'Tom Ford', 'Loewe', 'Aesop'
+        ]; %>
+        <% houses.forEach(function(house) { %>
+          <li><a href="/houses/<%= house.toLowerCase().replace(/\s+/g, '-') %>"><%= house %></a></li>
+        <% }); %>
+      </ul>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer">
+    <div class="newsletter">
+      <h2>Join the Inner Circle</h2>
+      <p>Be first to hear of new arrivals, limited releases, and private events.</p>
+      <form class="newsletter-form" action="/newsletter" method="POST">
+        <input type="email" name="email" placeholder="Enter your email" aria-label="Email address" required>
+        <button type="submit">Subscribe</button>
+      </form>
+    </div>
+
+    <div class="footer-columns">
+      <div class="footer-brand">
+        <p class="logo footer-logo">ESSENCE</p>
+        <p class="footer-tagline">Fine fragrance, thoughtfully curated.</p>
+      </div>
+
+      <div class="footer-col">
+        <h3>Shop</h3>
+        <a href="/collections/for-her">For Her</a>
+        <a href="/collections/for-him">For Him</a>
+        <a href="/collections/new">New Arrivals</a>
+        <a href="/houses">The Houses</a>
+      </div>
+
+      <div class="footer-col">
+        <h3>Company</h3>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/stores">Boutiques</a>
+        <a href="/careers">Careers</a>
+      </div>
+
+      <div class="footer-col footer-social">
+        <h3>Follow</h3>
+        <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://pinterest.com" target="_blank" rel="noopener">Pinterest</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; <%= new Date().getFullYear() %> Essence. All rights reserved.</p>
+      <div class="footer-legal">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+  <script>
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  });
+</script>
+<script>
+  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+    await fetch('/auth/logout', {
+      method: 'POST',
+      credentials: 'include' // sends the cookie
+    });
+    localStorage.removeItem('token');
+    window.location.href = '/auth/login';
+  });
+</script>
+</body>
+</html>

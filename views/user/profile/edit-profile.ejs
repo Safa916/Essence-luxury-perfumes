@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Edit Profile — Essence' %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/profile/edit-profile.css">
+</head>
+<body>
+
+  <% var user = typeof user !== 'undefined' && user ? user : {
+    fullName: 'Safa N',
+    email: 'safa@gmail.com',
+    phone: '+91 8330857937',
+    avatar: null
+  }; %>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="logo">ESSENCE</a>
+      <nav class="main-nav">
+        <a href="/" class="nav-link is-active">Home</a>
+        <a href="/categories" class="nav-link">Categories</a>
+        <a href="/brands" class="nav-link">Brands</a>
+        <a href="/new-arrivals" class="nav-link">New Arrivals</a>
+        <a href="/limited-edition" class="nav-link">Limited Edition</a>
+      </nav>
+      <div class="header-icons">
+        <button class="icon-btn" aria-label="Search">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <a href="/wishlist" class="icon-btn" aria-label="Wishlist">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20.5s-7.5-4.6-10-9.3C.5 7.8 2.4 4.5 5.8 4c2-.3 3.9.6 5.2 2.4C12.3 4.6 14.2 3.7 16.2 4c3.4.5 5.3 3.8 3.8 7.2-2.5 4.7-10 9.3-10 9.3z"/></svg>
+        </a>
+        <a href="/profile" class="icon-btn" aria-label="Account">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        </a>
+        <a href="/cart" class="icon-btn" aria-label="Bag">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="account-layout">
+
+    <!-- ===== Sidebar ===== -->
+    <aside class="account-sidebar">
+      <p class="sidebar-label">Account</p>
+      <nav class="sidebar-nav">
+        <a href="/profile" class="sidebar-link is-active">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          Profile
+        </a>
+        <a href="/address" class="sidebar-link">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
+          Address
+        </a>
+        <a href="/orders" class="sidebar-link">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="7" width="16" height="13" rx="1"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>
+          My Orders
+        </a>
+        <a href="/wishlist" class="sidebar-link">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20.5s-7.5-4.6-10-9.3C.5 7.8 2.4 4.5 5.8 4c2-.3 3.9.6 5.2 2.4C12.3 4.6 14.2 3.7 16.2 4c3.4.5 5.3 3.8 3.8 7.2-2.5 4.7-10 9.3-10 9.3z"/></svg>
+          Wishlist
+        </a>
+        <a href="/wallet" class="sidebar-link">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M16 12.5h2.5"/><path d="M3 9.5h18"/></svg>
+          Wallet
+        </a>
+      </nav>
+    </aside>
+
+    <!-- ===== Main ===== -->
+    <main class="account-main">
+
+      <p class="eyebrow">Account Overview</p>
+      <h1 class="page-title">Edit Profile</h1>
+
+      <form action="/profile/edit" method="POST" enctype="multipart/form-data" class="edit-profile-form">
+
+        <!-- Profile portrait -->
+        <div class="portrait-section">
+          <div class="portrait-preview">
+            <% if (user.avatar) { %>
+              <img src="<%= user.avatar %>" alt="<%= user.fullName %>" id="avatar-preview-img">
+            <% } else { %>
+              <svg id="avatar-preview-placeholder" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+              <img src="" alt="<%= user.fullName %>" id="avatar-preview-img" hidden>
+            <% } %>
+          </div>
+          <div class="portrait-text">
+            <p class="portrait-label">Profile Portrait</p>
+            <div class="portrait-actions">
+              <label for="avatar-upload" class="link-upload">Upload New</label>
+              <input type="file" id="avatar-upload" name="avatar" accept="image/png, image/jpeg" hidden>
+              <button type="button" class="link-remove" id="avatar-remove">Remove</button>
+            </div>
+            <p class="portrait-note">
+              Recommended format: Square JPG or PNG. Minimum 800&times;800px for high-definition displays.
+            </p>
+          </div>
+        </div>
+
+        <!-- Fields -->
+        <div class="field-grid">
+          <div class="form-field">
+            <label for="fullName">Full Name</label>
+            <input type="text" id="fullName" name="fullName" value="<%= user.fullName %>">
+          </div>
+          <div class="form-field">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" value="<%= user.email %>">
+          </div>
+          <div class="form-field">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" value="<%= user.phone %>">
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-dark">Save Changes</button>
+          <a href="/profile" class="btn-cancel">Cancel</a>
+        </div>
+
+      </form>
+
+    </main>
+  </div>
+
+  <script>
+    var uploadInput = document.getElementById('avatar-upload');
+    var previewImg = document.getElementById('avatar-preview-img');
+    var placeholder = document.getElementById('avatar-preview-placeholder');
+    var removeBtn = document.getElementById('avatar-remove');
+
+    if (uploadInput) {
+      uploadInput.addEventListener('change', function () {
+        var file = uploadInput.files && uploadInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          previewImg.src = e.target.result;
+          previewImg.hidden = false;
+          if (placeholder) placeholder.hidden = true;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function () {
+        uploadInput.value = '';
+        previewImg.src = '';
+        previewImg.hidden = true;
+        if (placeholder) placeholder.hidden = false;
+      });
+    }
+  </script>
+
+</body>
+</html>

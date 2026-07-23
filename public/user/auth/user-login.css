@@ -1,0 +1,282 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    background-color: #FBF8F2;
+    color: #1c1c1e;
+    min-height: 100vh;
+}
+
+.login-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* ---------------- Left Hero Panel ---------------- */
+.hero-panel {
+    flex: 0 0 50%;
+    position: relative;
+    min-height: 100vh;
+    /* Replace with your product photo: */
+    background-image: linear-gradient(160deg, #2c2c28 0%, #1a1a17 55%, #0d0d0b 100%);
+    /* background-image: url('/user/images/login-hero.jpg'); */
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 60px;
+    overflow: hidden;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10, 10, 8, 0) 40%, rgba(8, 8, 6, 0.75) 100%);
+    z-index: 1;
+}
+
+.hero-bottom {
+    position: relative;
+    z-index: 2;
+    max-width: 400px;
+}
+
+.hero-brand {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.9rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+
+.hero-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+.hero-desc {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: #d8d4c9;
+    font-weight: 400;
+    max-width: 340px;
+}
+
+/* ---------------- Right Form Panel ---------------- */
+.form-panel {
+    flex: 1;
+    background-color: #FBF8F2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+}
+
+.login-form-wrapper {
+    width: 100%;
+    max-width: 380px;
+}
+
+.form-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: #1c1c1e;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.title-underline {
+    width: 44px;
+    height: 1px;
+    background-color: #bfa15f;
+    margin: 18px auto 44px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.form-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #8a8378;
+    text-transform: uppercase;
+}
+
+.forgot-link {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #b5763c;
+    text-decoration: none;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+.form-input {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #ddd6c7;
+    padding: 12px 4px;
+    font-size: 0.9rem;
+    color: #1c1c1e;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-input::placeholder {
+    color: #c2bcae;
+}
+
+.form-input:focus {
+    border-bottom-color: #1c1c1e;
+}
+
+.submit-btn {
+    background-color: #17130d;
+    color: #ffffff;
+    border: none;
+    padding: 16px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.submit-btn:hover {
+    background-color: #322a1d;
+}
+
+.submit-btn:active {
+    transform: scale(0.99);
+}
+
+/* Divider */
+.divider-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 28px 0;
+}
+
+.divider-line {
+    flex: 1;
+    height: 1px;
+    background-color: #e6e0d3;
+}
+
+.divider-text {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: #a8a196;
+    text-transform: uppercase;
+}
+
+/* Google button */
+.google-btn {
+    width: 100%;
+    background-color: transparent;
+    border: 1px solid #e6e0d3;
+    color: #3a352c;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.google-btn:hover {
+    background-color: #f3efe4;
+    border-color: #d4cdba;
+}
+
+/* Sign up prompt */
+.signup-prompt {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #7a7367;
+    margin-top: 28px;
+}
+
+.signup-link {
+    color: #1c1c1e;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.signup-link:hover {
+    opacity: 0.7;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 1024px) {
+    .hero-panel {
+        flex: 0 0 42%;
+        padding: 40px;
+    }
+
+    .hero-title {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 800px) {
+    .login-container {
+        flex-direction: column;
+    }
+
+    .hero-panel {
+        flex: none;
+        min-height: 280px;
+        padding: 30px;
+    }
+
+    .hero-desc {
+        display: none;
+    }
+
+    .form-panel {
+        padding: 40px 24px;
+    }
+}

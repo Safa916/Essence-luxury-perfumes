@@ -1,0 +1,136 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    background-color: #FBF8F2;
+    color: #1c1c1e;
+    min-height: 100vh;
+}
+
+.success-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* ---------------- Left Hero Panel ---------------- */
+.hero-panel {
+    flex: 0 0 50%;
+    position: relative;
+    min-height: 100vh;
+    /* Replace with your product photo: */
+    background-image: linear-gradient(135deg, #e9dcc4 0%, #ddc9a3 45%, #cbb381 100%);
+    /* background-image: url('/user/images/reset-success-hero.jpg'); */
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+}
+
+/* ---------------- Right Form Panel ---------------- */
+.form-panel {
+    flex: 1;
+    background-color: #FBF8F2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+}
+
+.success-wrapper {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.success-icon {
+    width: 68px;
+    height: 68px;
+    border: 1.5px solid #bfa15f;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bfa15f;
+    margin: 0 auto 32px;
+}
+
+.success-icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+.success-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    line-height: 1.5;
+    color: #17130d;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+}
+
+.success-subtitle {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: #7a7367;
+    margin-bottom: 40px;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    background-color: #14110c;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 16px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: background-color 0.2s;
+}
+
+.back-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.back-btn:hover {
+    background-color: #322a1d;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 1024px) {
+    .hero-panel {
+        flex: 0 0 42%;
+    }
+
+    .success-title {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 800px) {
+    .success-container {
+        flex-direction: column;
+    }
+
+    .hero-panel {
+        flex: none;
+        min-height: 240px;
+    }
+
+    .form-panel {
+        padding: 40px 24px;
+    }
+}

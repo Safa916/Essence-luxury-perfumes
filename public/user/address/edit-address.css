@@ -1,0 +1,328 @@
+/* =============================================
+   ESSENCE — Edit Address Modal Styles
+   Palette: ink #171512, white #FFFFFF, field #F1F1EE
+   accent-corner #F2EDE4, gold #B79461
+   Display: Cormorant Garamond (bold) | Body/UI: Jost
+   ============================================= */
+
+:root {
+  --ink: #171512;
+  --white: #FFFFFF;
+  --field-bg: #F1F1EE;
+  --corner: #F3EEE4;
+  --gold: #B79461;
+  --line: rgba(23, 21, 18, 0.1);
+  --ink-soft: #6B675E;
+  --ink-faint: #A6A296;
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Jost', 'Helvetica Neue', Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ink);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ===== Dimmed page backdrop ===== */
+
+.page-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #8A857A;
+  filter: blur(2px);
+  opacity: 0.55;
+  z-index: 1;
+}
+
+.backdrop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2.5rem;
+}
+
+.backdrop-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: 0.2em;
+  color: var(--white);
+}
+
+.backdrop-icons {
+  color: var(--white);
+  opacity: 0.6;
+}
+
+.backdrop-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 2rem;
+  padding: 2rem 2.5rem;
+}
+
+.backdrop-sidebar {
+  height: 260px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.backdrop-line {
+  height: 34px;
+  width: 220px;
+  background: rgba(255, 255, 255, 0.18);
+  margin-bottom: 1.5rem;
+}
+
+.backdrop-card {
+  height: 130px;
+  background: rgba(255, 255, 255, 0.14);
+  margin-bottom: 1.5rem;
+}
+
+/* ===== Modal ===== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  overflow-y: auto;
+}
+
+.modal-card {
+  position: relative;
+  background: var(--white);
+  width: 100%;
+  max-width: 460px;
+  padding: 3rem 3rem 2.5rem;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+}
+
+.modal-corner {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 160px;
+  height: 160px;
+  background: var(--corner);
+  transform: rotate(45deg);
+  z-index: 0;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+  z-index: 1;
+}
+
+.modal-close:hover {
+  color: var(--ink);
+}
+
+.modal-title {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.1rem;
+  letter-spacing: 0.01em;
+  margin: 0 0 0.9rem;
+  line-height: 1;
+}
+
+.title-underline {
+  display: block;
+  width: 56px;
+  height: 4px;
+  background: var(--ink);
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Form ===== */
+
+.address-form {
+  position: relative;
+  z-index: 1;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 500;
+  margin-bottom: 0.6rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="tel"] {
+  width: 100%;
+  border: none;
+  background: var(--field-bg);
+  padding: 0.85rem 0.9rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="tel"]:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+/* ===== Address type toggle ===== */
+
+.type-toggle {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.type-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.type-toggle label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.4rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.type-toggle input:checked + label {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.type-toggle input:focus-visible + label {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ===== Actions ===== */
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  margin-top: 1rem;
+}
+
+.btn-update {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--ink);
+  color: var(--white);
+  border: 1px solid var(--ink);
+  padding: 0.9rem 1.75rem;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-update:hover {
+  background: transparent;
+  color: var(--ink);
+}
+
+.arrow {
+  transition: transform 0.2s ease;
+}
+
+.btn-update:hover .arrow {
+  transform: translateX(3px);
+}
+
+.btn-cancel {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 0.2s ease;
+}
+
+.btn-cancel:hover {
+  color: var(--ink);
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 560px) {
+  .backdrop-body { display: none; }
+
+  .modal-card {
+    padding: 2.25rem 1.5rem 2rem;
+  }
+
+  .modal-title { font-size: 1.75rem; }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}

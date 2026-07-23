@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email — Essence</title>
+    <link rel="stylesheet" href="/user/auth/otp-verification.css">
+</head>
+<body>
+
+    <div class="otp-container">
+
+        <!-- Left Panel: Brand Hero -->
+        <div class="hero-panel">
+            <div class="hero-overlay"></div>
+
+            <div class="hero-top">
+                <div class="hero-brand">Essence</div>
+            </div>
+
+            <div class="hero-bottom">
+                <h1 class="hero-title">The Art of Olfaction</h1>
+                <p class="hero-desc">Enter the curated world of Ethereal Essence, where every scent tells a silent poem of luxury.</p>
+            </div>
+        </div>
+
+        <!-- Right Panel: OTP Form -->
+        <div class="form-panel">
+            <div class="otp-form-wrapper">
+                <h2 class="form-title">Verify Email</h2>
+                <p class="form-subtitle">
+                    An invitation code has been sent to
+                    <span class="user-email" id="userEmail"><%= typeof email !== 'undefined' ? email : '' %></span>. Please authenticate to continue your journey.
+                </p>
+
+                <form class="otp-form" id="otpForm">
+                    <button type="submit" class="verify-btn">
+                        Verify&amp;Continue
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+
+                    <div class="otp-inputs">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp1" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp2" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp3" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp4" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp5" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp6" autocomplete="off">
+                    </div>
+                </form>
+
+                <p class="resend-prompt">
+                    Awaiting your code?<br>
+                    <button type="button" class="resend-btn" id="resendBtn">Resend</button>
+                    <span class="resend-timer" id="resendTimer">00:56</span>
+                </p>
+
+                <div class="otp-divider"></div>
+
+                <a href="/auth/signup" class="change-email-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Change Email
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Get the email either from the server-rendered value, or fallback to the URL query param
+        const urlParams = new URLSearchParams(window.location.search);
+        const userEmail = "<%= typeof email !== 'undefined' ? email : '' %>" || urlParams.get('email') || '';
+        document.getElementById('userEmail').textContent = userEmail;
+
+        // Auto-advance between OTP boxes
+        const digits = document.querySelectorAll('.otp-digit');
+        digits.forEach(function (input, index) {
+            input.addEventListener('input', function () {
+                this.value = this.value.replace(/[^0-9]/g, '');
+                if (this.value && index < digits.length - 1) {
+                    digits[index + 1].focus();
+                }
+            });
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Backspace' && !this.value && index > 0) {
+                    digits[index - 1].focus();
+                }
+            });
+        });
+
+        // Countdown timer for Resend button
+        const resendBtn = document.getElementById('resendBtn');
+        const timerEl = document.getElementById('resendTimer');
+        let seconds = 56;
+        let interval;
+
+        function startCountdown() {
+            seconds = 56;
+            resendBtn.disabled = true;
+            resendBtn.classList.remove('active');
+            timerEl.style.display = 'inline';
+
+            interval = setInterval(function () {
+                seconds--;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    timerEl.textContent = '';
+                    resendBtn.disabled = false;
+                    resendBtn.classList.add('active');
+                } else {
+                    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+                    const s = String(seconds % 60).padStart(2, '0');
+                    timerEl.textContent = m + ':' + s;
+                }
+            }, 1000);
+        }
+        startCountdown();
+
+        // Submit OTP for verification
+        document.getElementById('otpForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const otp = Array.from(digits).map(d => d.value).join('');
+
+            if (otp.length !== 6) {
+                alert('Please enter all 6 digits');
+                return;
+            }
+
+            try {
+                const res = await fetch('/auth/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: userEmail, otp })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('Email verified successfully! Please log in.');
+                    window.location.href = '/auth/login';
+                } else {
+                    alert(data.message || 'Verification failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Something went wrong verifying your OTP');
+            }
+        });
+
+        // Resend OTP
+        resendBtn.addEventListener('click', async function () {
+            if (resendBtn.disabled) return;
+
+            try {
+                const res = await fetch('/auth/resend-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: userEmail })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('A new code has been sent to your email');
+                    digits.forEach(d => d.value = '');
+                    digits[0].focus();
+                    startCountdown();
+                } else {
+                    alert(data.message || 'Could not resend OTP');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Something went wrong resending the OTP');
+            }
+        });
+    </script>
+
+</body>
+</html>
+
