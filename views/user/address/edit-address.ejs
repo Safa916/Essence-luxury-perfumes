@@ -47,6 +47,16 @@
       <button type="button" class="modal-close" aria-label="Close" onclick="window.location.href='/address'">&times;</button>
 
       <h1 class="modal-title" id="edit-address-title"><%= address.id === 'new' ? 'New Address' : 'Edit Address' %></h1>
+
+      <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+  <div class="form-errors">
+    <ul>
+      <% errors.forEach(function(err) { %>
+        <li><%= err %></li>
+      <% }); %>
+    </ul>
+  </div>
+<% } %>
       <span class="title-underline"></span>
 
       <form action="<%= address.id === 'new' ? '/address/new' : '/address/' + address.id + '/edit' %>" method="POST" class="address-form">
@@ -101,7 +111,9 @@
 
         <!-- Actions -->
         <div class="form-actions">
-          <button type="submit" class="btn-update">Update Address <span class="arrow">&rarr;</span></button>
+          <button type="submit" class="btn-update">
+  <%= address.id === 'new' ? 'Add Address' : 'Update Address' %> <span class="arrow">&rarr;</span>
+</button>
           <a href="/address" class="btn-cancel">Cancel</a>
         </div>
 
@@ -109,6 +121,7 @@
 
     </div>
   </div>
+
 
 </body>
 </html>

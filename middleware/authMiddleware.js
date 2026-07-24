@@ -61,3 +61,26 @@ exports.checkUser = async (req, res, next) => {
 
   next();
 };
+
+// @desc    Require a logged-in user (cookie-based) — redirect to login if not authenticated
+exports.requireAuth = async (req, res, next) => {
+  const token = req.cookies.token;
+
+  if (!token) {
+    return res.redirect('/auth/login');
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password_hash');
+
+    if (!user || !user.is_active) {
+      return res.redirect('/auth/login');
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.redirect('/auth/login');
+  }
+};

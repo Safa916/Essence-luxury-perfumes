@@ -32,15 +32,15 @@ const addressSchema = new mongoose.Schema(
       trim: true,
     },
     state: {
-      type: String,
-      required: [true, 'State is required'],
-      trim: true,
-    },
-    country: {
-      type: String,
-      required: [true, 'Country is required'],
-      trim: true,
-    },
+  type: String,
+  trim: true,
+  default: '',
+   },
+  country: {
+  type: String,
+  trim: true,
+  default: 'India',
+},
     pincode: {
       type: String,
       required: [true, 'Pincode is required'],
