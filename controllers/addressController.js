@@ -27,9 +27,10 @@ const validateAddressInput = (data) => {
   if (!data.city || data.city.trim().length < 2) {
     errors.push('City is required');
   }
-  if (!data.pincode || !/^\d{6}$/.test(data.pincode.trim())) {
-    errors.push('Pincode must be exactly 6 digits');
-  }
+  
+  if (!data.pincode || !/^[1-9][0-9]{5}$/.test(data.pincode.trim())) {
+  errors.push('Enter a valid 6-digit Indian pincode');
+}
   if (!data.phone || !/^[6-9]\d{9}$/.test(data.phone.trim())) {
     errors.push('Phone number must be a valid 10-digit Indian mobile number');
   }
