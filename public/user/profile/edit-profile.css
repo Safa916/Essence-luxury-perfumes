@@ -343,6 +343,24 @@ ul { list-style: none; margin: 0; padding: 0; }
   padding-top: 1rem;
 }
 
+.form-errors {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0.9rem 1.2rem;
+  background: rgba(179, 64, 44, 0.08);
+  border-left: 3px solid var(--red);
+  color: var(--red);
+  font-size: 0.82rem;
+}
+
+.form-errors li {
+  margin-bottom: 0.3rem;
+}
+
+.form-errors li:last-child {
+  margin-bottom: 0;
+}
+
 /* ===== Responsive ===== */
 
 @media (max-width: 1000px) {

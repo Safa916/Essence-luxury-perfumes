@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Change Email — Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/profile/edit-profile.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="logo">ESSENCE</a>
+      <nav class="main-nav">
+        <a href="/" class="nav-link is-active">Home</a>
+        <a href="/categories" class="nav-link">Categories</a>
+        <a href="/brands" class="nav-link">Brands</a>
+        <a href="/new-arrivals" class="nav-link">New Arrivals</a>
+        <a href="/limited-edition" class="nav-link">Limited Edition</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="account-layout">
+    <aside class="account-sidebar">
+      <p class="sidebar-label">Account</p>
+      <nav class="sidebar-nav">
+        <a href="/profile" class="sidebar-link">Profile</a>
+        <a href="/address" class="sidebar-link">Address</a>
+        <a href="/orders" class="sidebar-link">My Orders</a>
+        <a href="/wallet" class="sidebar-link">Wallet</a>
+      </nav>
+    </aside>
+
+    <main class="account-main">
+      <p class="eyebrow">Account Overview</p>
+      <h1 class="page-title">Change Email</h1>
+
+      <% if (typeof errors !== 'undefined' && errors && errors.length) { %>
+        <ul class="form-errors">
+          <% errors.forEach(function(err) { %>
+            <li><%= err %></li>
+          <% }); %>
+        </ul>
+      <% } %>
+
+      <form action="/profile/security/email" method="POST" class="edit-profile-form">
+        <div class="field-grid">
+          <div class="form-field">
+            <label for="currentEmail">Current Email</label>
+            <input type="email" id="currentEmail" value="<%= user.email %>" disabled>
+          </div>
+          <div class="form-field">
+            <label for="newEmail">New Email Address</label>
+            <input type="email" id="newEmail" name="newEmail" placeholder="Enter your new email" required>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-dark">Send Verification Code</button>
+          <a href="/profile" class="btn-cancel">Cancel</a>
+        </div>
+      </form>
+    </main>
+  </div>
+
+</body>
+</html>

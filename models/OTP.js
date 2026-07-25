@@ -23,10 +23,10 @@ const otpSchema = new mongoose.Schema(
       required: [true, 'OTP code is required'],
     },
     purpose: {
-      type: String,
-      enum: ['registration', 'login', 'password_reset', 'email_verification'],
-      required: [true, 'Purpose is required'],
-    },
+  type: String,
+  enum: ['registration', 'login', 'password_reset', 'email_verification', 'email_change'],
+  required: [true, 'Purpose is required'],
+},
     is_used: {
       type: Boolean,
       default: false,

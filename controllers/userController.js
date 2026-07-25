@@ -8,7 +8,7 @@ const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper: generate a 6-digit OTP code
-const generateOTPCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+const { generateOTPCode } = require('../utils/otp');
 
 // @desc    Register a new user (customer)
 // @route   POST /auth/signup
