@@ -30,7 +30,11 @@
             <div class="login-form-wrapper">
                 <h2 class="form-title">ADMIN LOGIN</h2>
                 <p class="form-subtitle">Enter your credentials to access dashboard</p>
-                
+
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <p style="color:#E5484D;font-size:0.8rem;font-weight:600;margin-bottom:20px;"><%= error %></p>
+                <% } %>
+
                 <form action="/admin/login" method="POST" class="login-form">
                     <!-- Email Input -->
                     <div class="form-group">

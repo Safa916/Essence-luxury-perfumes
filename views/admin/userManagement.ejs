@@ -95,13 +95,16 @@
         <!-- Page Header -->
         <header class="page-header">
             <h2 class="page-title">User Management</h2>
-            <div class="page-search-wrapper">
+            <form action="/admin/users" method="GET" class="page-search-wrapper" style="display:flex; align-items:center;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="7"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="text" class="page-search-input" placeholder="Search users, IDs, or emails...">
-            </div>
+                <input type="text" name="search" class="page-search-input" placeholder="Search users, IDs, or emails..." value="<%= search %>">
+                <% if (search) { %>
+                    <a href="/admin/users" title="Clear search" style="margin-left:10px; font-size:0.7rem; font-weight:700; letter-spacing:0.05em; color:#8E8E93; text-decoration:none; white-space:nowrap;">CLEAR &times;</a>
+                <% } %>
+            </form>
         </header>
 
         <!-- Stat Cards -->
@@ -119,13 +122,7 @@
                     <span class="stat-label">Total Users</span>
                 </div>
                 <div class="stat-value-row">
-                    <span class="stat-value">12,842</span>
-                    <span class="stat-trend">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                            <polyline points="18 15 12 9 6 15"></polyline>
-                        </svg>
-                        12%
-                    </span>
+                    <span class="stat-value"><%= totalUsersAll.toLocaleString() %></span>
                 </div>
             </div>
 
@@ -138,11 +135,10 @@
                             <polyline points="17 11 19 13 23 9"></polyline>
                         </svg>
                     </div>
-                    <span class="stat-label">Active Now</span>
+                    <span class="stat-label">Active Users</span>
                 </div>
                 <div class="stat-value-row">
-                    <span class="stat-value">4,129</span>
-                    <span class="stat-suffix">Live</span>
+                    <span class="stat-value"><%= totalActive.toLocaleString() %></span>
                 </div>
             </div>
         </section>
@@ -165,124 +161,279 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Static rows below. To make dynamic, pass a `users` array from your route
-                         and wrap this tbody content in a forEach loop in server-rendered EJS. -->
-                    <tr>
-                        <td class="col-sl">01</td>
-                        <td class="col-user">
-                            <div class="user-cell">
-                                <div class="avatar-placeholder">SJ</div>
-                                <div class="user-cell-text">
-                                    <span class="user-name">Sarah Jenkins</span>
-                                    <span class="user-email">sarah.j@example.com</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="col-id"><span class="id-pill">123abc2</span></td>
-                        <td class="col-status"><span class="status-badge active">Active</span></td>
-                        <td class="col-joined">
-                            <span class="joined-date">Oct 21, 2023</span>
-                            <span class="joined-time">10:45 AM</span>
-                        </td>
-                        <td class="col-actions">
-                            <div class="action-group">
-                                <button class="action-btn view-btn">View</button>
-                                <button class="action-icon-btn block-btn" title="Block user">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td class="col-sl">02</td>
-                        <td class="col-user">
-                            <div class="user-cell">
-                                <img class="avatar-img" src="/images/avatars/marcus.jpg" alt="Marcus Chen" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="avatar-placeholder" style="display:none;">MC</div>
-                                <div class="user-cell-text">
-                                    <span class="user-name">Marcus Chen</span>
-                                    <span class="user-email">marcus.c@example.com</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="col-id"><span class="id-pill">891d34e</span></td>
-                        <td class="col-status"><span class="status-badge active">Active</span></td>
-                        <td class="col-joined">
-                            <span class="joined-date">Nov 02, 2023</span>
-                            <span class="joined-time">09:12 AM</span>
-                        </td>
-                        <td class="col-actions">
-                            <div class="action-group">
-                                <button class="action-btn view-btn">View</button>
-                                <button class="action-icon-btn block-btn" title="Block user">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <tr class="row-blocked">
-                        <td class="col-sl">03</td>
-                        <td class="col-user">
-                            <div class="user-cell">
-                                <div class="avatar-placeholder muted">EL</div>
-                                <div class="user-cell-text">
-                                    <span class="user-name strikethrough">Emily Larsson</span>
-                                    <span class="user-email">emily.l@example.com</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="col-id"><span class="id-pill muted">abcd1234</span></td>
-                        <td class="col-status"><span class="status-badge blocked">Blocked</span></td>
-                        <td class="col-joined">
-                            <span class="joined-date">Sep 15, 2023</span>
-                            <span class="joined-time">04:30 PM</span>
-                        </td>
-                        <td class="col-actions">
-                            <div class="action-group">
-                                <button class="action-btn view-btn">View</button>
-                                <button class="action-icon-btn unblock-btn" title="Unblock user">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                    <% if (users.length === 0) { %>
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:40px; color:#8E8E93;">
+                                No users found<% if (search) { %> for "<%= search %>"<% } %>
+                            </td>
+                        </tr>
+                    <% } else { %>
+                        <% users.forEach((user, index) => { %>
+                            <% const serial = (page - 1) * limit + index + 1; %>
+                            <% const initials = (user.full_name || '?').trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase(); %>
+                            <% const shortId = user._id.toString().slice(-7); %>
+                            <% const joined = new Date(user.created_at); %>
+                            <% const redirectTo = `/admin/users?search=${encodeURIComponent(search)}&page=${page}`; %>
+                            <tr class="<%= !user.is_active ? 'row-blocked' : '' %>">
+                                <td class="col-sl"><%= String(serial).padStart(2, '0') %></td>
+                                <td class="col-user">
+                                    <div class="user-cell">
+                                        <div class="avatar-placeholder <%= !user.is_active ? 'muted' : '' %>"><%= initials %></div>
+                                        <div class="user-cell-text">
+                                            <span class="user-name <%= !user.is_active ? 'strikethrough' : '' %>"><%= user.full_name %></span>
+                                            <span class="user-email"><%= user.email %></span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="col-id"><span class="id-pill <%= !user.is_active ? 'muted' : '' %>"><%= shortId %></span></td>
+                                <td class="col-status">
+                                    <span class="status-badge <%= user.is_active ? 'active' : 'blocked' %>"><%= user.is_active ? 'Active' : 'Blocked' %></span>
+                                </td>
+                                <td class="col-joined">
+                                    <span class="joined-date"><%= joined.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) %></span>
+                                    <span class="joined-time"><%= joined.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %></span>
+                                </td>
+                                <td class="col-actions">
+                                    <div class="action-group">
+                                        <form action="/admin/users/<%= user._id %>/toggle-block" method="POST"
+                                              class="block-toggle-form"
+                                              data-name="<%= user.full_name %>"
+                                              data-active="<%= user.is_active %>">
+                                            <input type="hidden" name="redirectTo" value="<%= redirectTo %>">
+                                            <button type="submit" class="action-icon-btn <%= user.is_active ? 'block-btn' : 'unblock-btn' %>" title="<%= user.is_active ? 'Block user' : 'Unblock user' %>">
+                                                <% if (user.is_active) { %>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                                                    </svg>
+                                                <% } else { %>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                                    </svg>
+                                                <% } %>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
                 </tbody>
             </table>
 
+            <%
+                // figure out which page numbers to show, with ellipses for large totals
+                const delta = 1;
+                const pagesToShow = [];
+                for (let p = 1; p <= totalPages; p++) {
+                    if (p === 1 || p === totalPages || (p >= page - delta && p <= page + delta)) {
+                        pagesToShow.push(p);
+                    }
+                }
+                const qs = (p) => `/admin/users?search=${encodeURIComponent(search)}&page=${p}`;
+            %>
             <div class="table-footer">
-                <span class="table-count">Showing 1 to 3 of 12,842 users</span>
+                <span class="table-count">
+                    Showing <%= users.length === 0 ? 0 : (page - 1) * limit + 1 %>
+                    to <%= Math.min(page * limit, matchedUsers) %>
+                    of <%= matchedUsers.toLocaleString() %> users
+                </span>
                 <div class="pagination">
-                    <button class="page-nav-btn" disabled>
+                    <% if (page > 1) { %>
+                        <a class="page-nav-btn" href="<%= qs(page - 1) %>">
+                    <% } else { %>
+                        <a class="page-nav-btn" style="pointer-events:none; opacity:0.35;">
+                    <% } %>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
-                    </button>
-                    <button class="page-num-btn active">1</button>
-                    <button class="page-num-btn">2</button>
-                    <button class="page-num-btn">3</button>
-                    <span class="page-ellipsis">...</span>
-                    <button class="page-num-btn">428</button>
-                    <button class="page-nav-btn">
+                    </a>
+
+                    <% let prevPage = 0; %>
+                    <% pagesToShow.forEach(p => { %>
+                        <% if (p - prevPage > 1) { %><span class="page-ellipsis">...</span><% } %>
+                        <a class="page-num-btn <%= p === page ? 'active' : '' %>" href="<%= qs(p) %>"><%= p %></a>
+                        <% prevPage = p; %>
+                    <% }) %>
+
+                    <% if (page < totalPages) { %>
+                        <a class="page-nav-btn" href="<%= qs(page + 1) %>">
+                    <% } else { %>
+                        <a class="page-nav-btn" style="pointer-events:none; opacity:0.35;">
+                    <% } %>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
-                    </button>
+                    </a>
                 </div>
             </div>
         </section>
 
     </main>
 
+    <!-- Block/unblock confirmation modal -->
+    <div id="confirmOverlay" class="confirm-overlay">
+        <div class="confirm-card">
+            <h3 id="confirmTitle" class="confirm-title">Block User</h3>
+            <p id="confirmMessage" class="confirm-message">Are you sure?</p>
+            <div class="confirm-actions">
+                <button type="button" id="confirmCancelBtn" class="confirm-btn confirm-btn-cancel">Cancel</button>
+                <button type="button" id="confirmOkBtn" class="confirm-btn confirm-btn-ok">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(28, 28, 30, 0.55);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-overlay.open {
+            display: flex;
+        }
+
+        .confirm-card {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 380px;
+            padding: 32px 32px 28px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+            animation: confirmPopIn 0.16s ease-out;
+        }
+
+        @keyframes confirmPopIn {
+            from { opacity: 0; transform: translateY(6px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .confirm-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 10px;
+        }
+
+        .confirm-message {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #636366;
+            margin-bottom: 26px;
+        }
+
+        .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .confirm-btn {
+            border: none;
+            padding: 11px 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .confirm-btn-cancel {
+            background-color: #ffffff;
+            border: 1px solid #d1d1d6;
+            color: #48484a;
+        }
+
+        .confirm-btn-cancel:hover {
+            background-color: #f2f2f7;
+            border-color: #8e8e93;
+        }
+
+        .confirm-btn-ok {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        .confirm-btn-ok:hover {
+            background-color: #1c1c1e;
+        }
+
+        .confirm-btn-ok.danger {
+            background-color: #E5484D;
+        }
+
+        .confirm-btn-ok.danger:hover {
+            background-color: #cf3f44;
+        }
+
+        .confirm-btn-ok.success {
+            background-color: #1E9E43;
+        }
+
+        .confirm-btn-ok.success:hover {
+            background-color: #197f37;
+        }
+    </style>
+
+    <!-- Block/unblock confirmation - reads safely-escaped data-attributes instead of
+         building a JS string directly inside the HTML, so names with quotes/apostrophes
+         can't break the page -->
+    <script>
+        const confirmOverlay = document.getElementById('confirmOverlay');
+        const confirmTitle = document.getElementById('confirmTitle');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmOkBtn = document.getElementById('confirmOkBtn');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+
+        let pendingForm = null;
+
+        function openConfirm(form) {
+            const name = form.dataset.name;
+            const isActive = form.dataset.active === 'true';
+
+            pendingForm = form;
+            confirmTitle.textContent = isActive ? 'Block User' : 'Unblock User';
+            confirmMessage.textContent = isActive
+                ? `Block ${name}? They will no longer be able to log in.`
+                : `Unblock ${name}? They will regain access immediately.`;
+
+            confirmOkBtn.className = 'confirm-btn confirm-btn-ok ' + (isActive ? 'danger' : 'success');
+            confirmOkBtn.textContent = isActive ? 'Block' : 'Unblock';
+
+            confirmOverlay.classList.add('open');
+        }
+
+        function closeConfirm() {
+            confirmOverlay.classList.remove('open');
+            pendingForm = null;
+        }
+
+        document.querySelectorAll('.block-toggle-form').forEach((form) => {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                openConfirm(form);
+            });
+        });
+
+        confirmOkBtn.addEventListener('click', () => {
+            if (pendingForm) pendingForm.submit();
+        });
+
+        confirmCancelBtn.addEventListener('click', closeConfirm);
+
+        confirmOverlay.addEventListener('click', (e) => {
+            if (e.target === confirmOverlay) closeConfirm();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && confirmOverlay.classList.contains('open')) closeConfirm();
+        });
+    </script>
 </body>
 </html>
-

@@ -61,11 +61,10 @@ const adminSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
-adminSchema.pre('save', async function (next) {
-  if (!this.isModified('password_hash')) return next();
+adminSchema.pre('save', async function () {
+  if (!this.isModified('password_hash')) return;
   const salt = await bcrypt.genSalt(10);
   this.password_hash = await bcrypt.hash(this.password_hash, salt);
-  next();
 });
 
 // Compare entered password with hashed one (used at login)
@@ -73,5 +72,6 @@ adminSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password_hash);
 };
 
-const admin = mongoose.model('admin', adminSchema);
+
+const admin = mongoose.models.admin || mongoose.model('admin', adminSchema);
 module.exports = admin;
