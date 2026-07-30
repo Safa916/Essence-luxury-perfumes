@@ -1,4 +1,4 @@
-const Address = require('../models/Address');
+const Address = require('../../models/Address');
 
 // Helper: format one address doc into what myAddresses.ejs expects
 const formatAddressForList = (addr) => ({

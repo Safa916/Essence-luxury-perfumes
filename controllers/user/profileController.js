@@ -1,9 +1,8 @@
-const User = require('../models/User');
-const OTP = require('../models/OTP');
-const { sendOTPEmail } = require('../services/emailService');
-const { generateOTPCode } = require('../utils/otp');
+const User = require('../../models/User');
+const OTP = require('../../models/OTP');
+const { sendOTPEmail } = require('../../services/emailService');
+const { generateOTPCode } = require('../../utils/otp');
 
-// Helper: format a date into "3 months ago" style text
 const formatRelativeTime = (date) => {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
   const intervals = [
@@ -20,7 +19,6 @@ const formatRelativeTime = (date) => {
   return 'just now';
 };
 
-// Helper: format a user doc into what the profile views expect
 const formatUserForProfile = (user) => ({
   id: user._id.toString(),
   fullName: user.full_name,
@@ -37,8 +35,7 @@ const formatUserForProfile = (user) => ({
     : 'Password never changed',
 });
 
-// @desc    Show the logged-in user's profile
-// @route   GET /profile
+
 exports.getProfile = (req, res) => {
   try {
     res.render('user/profile/user-profile', {
@@ -50,8 +47,7 @@ exports.getProfile = (req, res) => {
     res.status(500).send('Server error loading profile');
   }
 };
-// @desc    Show the "Edit Profile" form
-// @route   GET /profile/edit
+
 exports.getEditProfileForm = (req, res) => {
   try {
     res.render('user/profile/edit-profile', { user: formatUserForProfile(req.user) });
@@ -61,8 +57,7 @@ exports.getEditProfileForm = (req, res) => {
   }
 };
 
-// @desc    Update profile (name, phone, avatar) — NOT email or password
-// @route   POST /profile/edit
+
 exports.updateProfile = async (req, res) => {
   try {
     const { fullName, phone } = req.body;
@@ -100,13 +95,13 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// @desc    Show "Change Email" form
+
 // @route   GET /profile/security/email
 exports.getChangeEmailForm = (req, res) => {
   res.render('user/profile/change-email', { user: formatUserForProfile(req.user) });
 };
 
-// @desc    Request email change - sends OTP to NEW email
+
 // @route   POST /profile/security/email
 exports.requestEmailChange = async (req, res) => {
   try {
@@ -150,8 +145,7 @@ exports.requestEmailChange = async (req, res) => {
   }
 };
 
-// @desc    Verify OTP and finalize email change
-// @route   POST /profile/security/email/verify
+
 exports.verifyEmailChange = async (req, res) => {
   try {
     const { newEmail, otp } = req.body;
@@ -190,14 +184,12 @@ exports.verifyEmailChange = async (req, res) => {
 
 };
 
-// @desc    Show "Change Password" form
-// @route   GET /profile/security/password
+
 exports.getChangePasswordForm = (req, res) => {
   res.render('user/profile/change-password');
 };
 
-// @desc    Change password - requires current password
-// @route   POST /profile/security/password
+
 exports.updatePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmNewPassword } = req.body;

@@ -9,9 +9,9 @@ const {
   getChangeEmailForm,
   requestEmailChange,
   verifyEmailChange,
-} = require('../controllers/profileController');
+} = require('../controllers/user/profileController');
 
-const { getChangePasswordForm, updatePassword } = require('../controllers/profileController');
+const { getChangePasswordForm, updatePassword } = require('../controllers/user/profileController');
 
 
 router.get('/security/email', requireAuth, getChangeEmailForm);

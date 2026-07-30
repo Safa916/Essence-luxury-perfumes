@@ -1,17 +1,14 @@
 
-const User = require('../models/User');
-const OTP = require('../models/OTP');
+const User = require('../../models/User');
+const OTP = require('../../models/OTP');
 const jwt = require('jsonwebtoken');
-const { sendOTPEmail } = require('../services/emailService');
+const { sendOTPEmail } = require('../../services/emailService');
 
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Helper: generate a 6-digit OTP code
-const { generateOTPCode } = require('../utils/otp');
+const { generateOTPCode } = require('../../utils/otp');
 
-// @desc    Register a new user (customer)
-// @route   POST /auth/signup
 exports.registerUser = async (req, res) => {
   try {
     const { fullName, email, password, confirmPassword } = req.body;
@@ -63,8 +60,7 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-// @desc    Verify email using OTP
-// @route   POST /auth/verify-otp
+
 exports.verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -100,8 +96,7 @@ exports.verifyOTP = async (req, res) => {
   }
 };
 
-// @desc    Resend OTP for email verification
-// @route   POST /auth/resend-otp
+
 exports.resendOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -145,8 +140,7 @@ exports.resendOTP = async (req, res) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /auth/login
+
 exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -200,8 +194,7 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// @desc    Request password reset - sends OTP
-// @route   POST /auth/forgot-password
+
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -241,8 +234,6 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-// @desc    Verify password reset OTP
-// @route   POST /auth/verify-reset-code
 exports.verifyResetCode = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -273,8 +264,6 @@ exports.verifyResetCode = async (req, res) => {
   }
 };
 
-// @desc    Reset password using verified OTP
-// @route   POST /auth/reset-password
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword, confirmNewPassword } = req.body;
@@ -321,8 +310,7 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-// @desc    Signup/Login with Google
-// @route   POST /auth/google
+
 exports.googleAuth = async (req, res) => {
   try {
     const { idToken } = req.body;
@@ -384,8 +372,7 @@ exports.googleAuth = async (req, res) => {
   }
 };
 
-// @desc    Logout user
-// @route   POST /auth/logout
+
 exports.logoutUser = async (req, res) => {
   try {
     res.clearCookie('token', { httpOnly: true });

@@ -1,19 +1,4 @@
-/**
- * APIFeatures — the "util service" your mentor mentioned.
- *
- * It wraps a Mongoose query and lets you chain search / sort / pagination
- * onto it based on the query string (req.query), instead of writing that
- * logic separately in every controller.
- *
- * Usage (see controllers/userManagementController.js):
- *
- *   const features = new APIFeatures(User.find(), req.query)
- *     .search(['full_name', 'email'])
- *     .sort('-created_at')
- *     .paginate();
- *
- *   const users = await features.query;
- */
+
 class APIFeatures {
   constructor(query, queryString) {
     this.query = query; // a Mongoose Query, e.g. User.find()

@@ -3,6 +3,8 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 
 
+
+
 const { registerUser,
      verifyOTP,
      resendOTP,
@@ -11,9 +13,9 @@ const { registerUser,
      verifyResetCode,
      resetPassword,
      logoutUser,
-     googleAuth } = require('../controllers/userController');
+     googleAuth } = require('../controllers/user/userController');
 
-// Page route — shows the signup page in the browser
+
 router.get('/signup', (req, res) => {
   res.render('user/auth/userSignup');
 });
@@ -41,6 +43,8 @@ router.get('/new-password', (req, res) => {
 router.get('/reset-success', (req, res) => {
   res.render('user/auth/reset-success');
 });
+
+
 // API routes — handle form submissions
 router.post('/signup', registerUser);
 router.post('/verify-otp', verifyOTP);
@@ -51,5 +55,6 @@ router.post('/verify-reset-code', verifyResetCode);
 router.post('/reset-password', resetPassword);
 router.post('/google', googleAuth);
 router.post('/logout', logoutUser);
+
 
 module.exports = router;

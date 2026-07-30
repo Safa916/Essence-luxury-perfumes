@@ -9,7 +9,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// @desc Send an OTP code to a user's email
+//  Send an OTP code to a user's email
 const sendOTPEmail = async (toEmail, otpCode, purpose = 'registration') => {
   const subjectMap = {
     registration: 'Verify Your Email — Essence',

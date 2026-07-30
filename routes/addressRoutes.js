@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/authMiddleware');
 
-// Note: 'protect' here expects a Bearer token — since your app uses cookies,
-// we actually need a cookie-based guard. See note below about using checkUser + redirect instead.
 const {
   listAddresses,
   getNewAddressForm,
@@ -12,7 +10,7 @@ const {
   updateAddress,
   deleteAddress,
   getDeleteConfirmation,
-} = require('../controllers/addressController');
+} = require('../controllers/user/addressController');
 
 router.get('/', requireAuth, listAddresses);
 router.get('/new', requireAuth, getNewAddressForm);

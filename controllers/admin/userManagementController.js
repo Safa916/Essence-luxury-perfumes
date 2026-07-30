@@ -1,5 +1,5 @@
-const User = require('../models/user');
-const APIFeatures = require('../utils/apiFeatures');
+const User = require('../../models/user');
+const APIFeatures = require('../../utils/apiFeatures');
 
 // GET /admin/users?search=&page=&limit=
 exports.getUsersPage = async (req, res) => {
@@ -10,21 +10,19 @@ exports.getUsersPage = async (req, res) => {
 
     const baseQuery = User.find().select('-password_hash');
 
-    // search + sort (latest first) + pagination, all handled by the util service
+   
     const features = new APIFeatures(baseQuery, { search, page, limit })
       .search(['full_name', 'email'])
-      .sort('-created_at')
+      .sort('created_at')
       .paginate();
 
     const users = await features.query;
 
-    // "matchedUsers" reflects the search filter (used for pagination math) but NOT the page/limit,
-    // otherwise "totalPages" would always come out as 1
+   
     const countFeatures = new APIFeatures(User.find(), { search }).search(['full_name', 'email']);
     const matchedUsers = await countFeatures.query.countDocuments();
 
-    // these two are always the TRUE totals across the whole collection,
-    // regardless of any active search - that's what the stat cards should show
+  
     const totalUsersAll = await User.countDocuments({});
     const totalActive = await User.countDocuments({ is_active: true });
 
@@ -64,3 +62,7 @@ exports.toggleBlockUser = async (req, res) => {
     res.redirect('/admin/users');
   }
 };
+
+
+
+

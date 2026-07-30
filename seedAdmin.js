@@ -13,8 +13,8 @@ const run = async () => {
   await mongoose.connect(process.env.MONGODB_URI);
 
   const email = 'safa@gmail.com';
-  const password = 'safa123'; // change this after your first login
-
+  const password = 'safa123'; 
+  
   const exists = await Admin.findOne({ email });
   if (exists) {
     console.log('An admin with this email already exists:', email);
