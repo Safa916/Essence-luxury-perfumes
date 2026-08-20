@@ -131,6 +131,42 @@ body {
     max-width: 380px;
 }
 
+/* Custom error toast (replaces alert()) */
+.error-toast {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background-color: #fbeee7;
+    border: 1px solid #d9a37a;
+    color: #8a3d1c;
+    padding: 14px 16px;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    border-radius: 2px;
+    margin-bottom: 26px;
+    animation: toastFadeIn 0.25s ease-out;
+}
+
+.error-toast.show {
+    display: flex;
+}
+
+.error-toast-close {
+    background: none;
+    border: none;
+    color: #8a3d1c;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0 0 12px;
+}
+
+@keyframes toastFadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .form-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.9rem;
@@ -186,6 +222,51 @@ body {
     border-bottom-color: #1c1c1e;
 }
 
+.form-input.input-invalid {
+    border-bottom-color: #dc2626;
+}
+
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper .form-input {
+    width: 100%;
+    padding-right: 30px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 2px;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #a8a196;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-toggle:hover {
+    color: #3a352c;
+}
+
+.eye-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.field-error {
+    display: block;
+    min-height: 14px;
+    font-size: 0.72rem;
+    color: #dc2626;
+    margin-top: 2px;
+}
+
 .submit-btn {
     background-color: #17130d;
     color: #ffffff;
@@ -198,6 +279,8 @@ body {
     cursor: pointer;
     margin-top: 12px;
     transition: background-color 0.2s, transform 0.1s;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .submit-btn:hover {
@@ -206,6 +289,12 @@ body {
 
 .submit-btn:active {
     transform: scale(0.99);
+}
+
+.submit-btn:disabled {
+    background-color: #4a4133;
+    color: #d8d0c0;
+    cursor: not-allowed;
 }
 
 /* Divider */

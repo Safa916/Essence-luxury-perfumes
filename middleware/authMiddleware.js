@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-// @desc    Protect routes - verifies JWT and attaches user to req
+ 
 exports.protect = async (req, res, next) => {
   try {
     let token;
@@ -53,7 +53,14 @@ exports.checkUser = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-password_hash');
-    req.user = user || null;
+
+    if (!user || !user.is_active) {
+      res.clearCookie('token', { httpOnly: true }); // force logout
+      req.user = null;
+      return next();
+    }
+
+    req.user = user;
   } catch (err) {
     req.user = null;
   }

@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -108,12 +110,22 @@
                     Sales Report
                 </button>
                 <div class="admin-profile">
+                    
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="8" r="4"></circle>
                         <path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path>
                     </svg>
+                    
                     Admin_root
                 </div>
+                <button type="button" id="adminLogoutBtn" class="admin-logout-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </button>
             </div>
         </header>
 
@@ -395,6 +407,49 @@
         </section>
 
     </main>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="admin-logout-modal-overlay" style="display: none;">
+        <div class="admin-logout-modal-box">
+            <div class="admin-logout-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </div>
+            <h3 class="admin-logout-title">Log Out</h3>
+            <p class="admin-logout-subtitle">Are you sure you want to end this admin session?</p>
+            <button id="confirmAdminLogout" class="admin-logout-confirm-btn">Yes, Logout</button>
+            <button id="cancelAdminLogout" class="admin-logout-cancel-btn">Stay</button>
+        </div>
+    </div>
+
+    <script>
+        var adminLogoutBtn = document.getElementById('adminLogoutBtn');
+        var logoutModal = document.getElementById('logoutModal');
+        var cancelAdminLogout = document.getElementById('cancelAdminLogout');
+        var confirmAdminLogout = document.getElementById('confirmAdminLogout');
+
+        adminLogoutBtn?.addEventListener('click', function () {
+            logoutModal.style.display = 'flex';
+        });
+
+        cancelAdminLogout?.addEventListener('click', function () {
+            logoutModal.style.display = 'none';
+        });
+
+        confirmAdminLogout?.addEventListener('click', function () {
+            window.location.href = '/admin/logout';
+        });
+
+        // Also close on backdrop click, for convenience
+        logoutModal?.addEventListener('click', function (e) {
+            if (e.target === logoutModal) {
+                logoutModal.style.display = 'none';
+            }
+        });
+    </script>
 
 </body>
 </html>

@@ -2,6 +2,9 @@ const User = require('../../models/user');
 const APIFeatures = require('../../utils/apiFeatures');
 
 // GET /admin/users?search=&page=&limit=
+
+
+
 exports.getUsersPage = async (req, res) => {
   try {
     const search = (req.query.search || '').trim();
@@ -10,10 +13,10 @@ exports.getUsersPage = async (req, res) => {
 
     const baseQuery = User.find().select('-password_hash');
 
-   
+  
     const features = new APIFeatures(baseQuery, { search, page, limit })
       .search(['full_name', 'email'])
-      .sort('created_at')
+      .sort({createdAt:1})
       .paginate();
 
     const users = await features.query;

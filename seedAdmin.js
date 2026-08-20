@@ -1,9 +1,4 @@
-// Run this once to create your first admin account:
-//   node seedAdmin.js
-//
-// There is intentionally no public "admin signup" page — admins are
-// created directly in the database (or by another admin later on),
-// never through a form anyone on the internet can reach.
+
 
 require('dotenv').config();
 const mongoose = require('mongoose');

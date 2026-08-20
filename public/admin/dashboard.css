@@ -226,6 +226,119 @@ body {
     height: 16px;
 }
 
+.admin-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #ffffff;
+    border: 1px solid #d1d1d6;
+    color: #48484a;
+    padding: 8px 16px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.admin-logout-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.admin-logout-btn:hover {
+    background-color: #fbeae7;
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+/* Logout confirmation modal */
+.admin-logout-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-logout-modal-box {
+    background: #ffffff;
+    padding: 40px 36px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.admin-logout-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #f2f2f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    color: #1c1c1e;
+}
+
+.admin-logout-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #1c1c1e;
+    margin-bottom: 10px;
+}
+
+.admin-logout-subtitle {
+    font-size: 0.82rem;
+    color: #8E8E93;
+    line-height: 1.5;
+    margin-bottom: 26px;
+}
+
+.admin-logout-confirm-btn {
+    width: 100%;
+    background-color: #dc2626;
+    color: #ffffff;
+    border: none;
+    padding: 13px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: background-color 0.2s;
+}
+
+.admin-logout-confirm-btn:hover {
+    background-color: #b91c1c;
+}
+
+.admin-logout-cancel-btn {
+    width: 100%;
+    background: none;
+    border: 1px solid #d1d1d6;
+    color: #48484a;
+    padding: 13px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.admin-logout-cancel-btn:hover {
+    background-color: #f2f2f7;
+}
+
 /* Portfolio Title Section */
 .report-title-section {
     display: flex;

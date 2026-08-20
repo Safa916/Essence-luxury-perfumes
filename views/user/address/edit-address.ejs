@@ -21,6 +21,7 @@
     pincode: '679501',
     phone: '+91 8330857937'
   }; %>
+  <% var errors = typeof errors !== 'undefined' ? errors : {}; %>
 
   <!-- ===== Dimmed page backdrop (page this modal sits over) ===== -->
   <div class="page-backdrop" aria-hidden="true">
@@ -48,16 +49,8 @@
 
       <h1 class="modal-title" id="edit-address-title"><%= address.id === 'new' ? 'New Address' : 'Edit Address' %></h1>
 
-      <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
-  <div class="form-errors">
-    <ul>
-      <% errors.forEach(function(err) { %>
-        <li><%= err %></li>
-      <% }); %>
-    </ul>
-  </div>
-<% } %>
-      <span class="title-underline"></span>
+      
+
 
       <form action="<%= address.id === 'new' ? '/address/new' : '/address/' + address.id + '/edit' %>" method="POST" class="address-form">
 
@@ -71,19 +64,28 @@
             <input type="radio" id="type-work" name="type" value="work" <%= address.type === 'work' ? 'checked' : '' %>>
             <label for="type-work">Work</label>
           </div>
+          <% if (errors.type) { %>
+            <span class="field-error"><%= errors.type %></span>
+          <% } %>
         </div>
 
         <!-- Full name -->
         <div class="form-group">
           <label class="field-label" for="fullName">Full Name</label>
-          <input type="text" id="fullName" name="fullName" value="<%= address.fullName %>">
+          <input type="text" id="fullName" name="fullName" value="<%= address.fullName %>" class="<%= errors.fullName ? 'input-invalid' : '' %>">
+          <% if (errors.fullName) { %>
+            <span class="field-error"><%= errors.fullName %></span>
+          <% } %>
         </div>
 
         <!-- Address lines -->
         <div class="form-row">
           <div class="form-group">
             <label class="field-label" for="line1">Address Line 1</label>
-            <input type="text" id="line1" name="line1" value="<%= address.line1 %>">
+            <input type="text" id="line1" name="line1" value="<%= address.line1 %>" class="<%= errors.line1 ? 'input-invalid' : '' %>">
+            <% if (errors.line1) { %>
+              <span class="field-error"><%= errors.line1 %></span>
+            <% } %>
           </div>
           <div class="form-group">
             <label class="field-label" for="line2">Address Line 2</label>
@@ -95,18 +97,27 @@
         <div class="form-row">
           <div class="form-group">
             <label class="field-label" for="city">City</label>
-            <input type="text" id="city" name="city" value="<%= address.city %>">
+            <input type="text" id="city" name="city" value="<%= address.city %>" class="<%= errors.city ? 'input-invalid' : '' %>">
+            <% if (errors.city) { %>
+              <span class="field-error"><%= errors.city %></span>
+            <% } %>
           </div>
           <div class="form-group">
             <label class="field-label" for="pincode">Pincode</label>
-            <input type="text" id="pincode" name="pincode" value="<%= address.pincode %>">
+            <input type="text" id="pincode" name="pincode" value="<%= address.pincode %>" class="<%= errors.pincode ? 'input-invalid' : '' %>">
+            <% if (errors.pincode) { %>
+              <span class="field-error"><%= errors.pincode %></span>
+            <% } %>
           </div>
         </div>
 
         <!-- Phone -->
         <div class="form-group">
           <label class="field-label" for="phone">Phone Number</label>
-          <input type="tel" id="phone" name="phone" value="<%= address.phone %>">
+          <input type="tel" id="phone" name="phone" value="<%= address.phone %>" class="<%= errors.phone ? 'input-invalid' : '' %>">
+          <% if (errors.phone) { %>
+            <span class="field-error"><%= errors.phone %></span>
+          <% } %>
         </div>
 
         <!-- Actions -->

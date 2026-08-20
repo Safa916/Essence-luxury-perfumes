@@ -25,6 +25,13 @@
         <!-- Right Panel: OTP Form -->
         <div class="form-panel">
             <div class="otp-form-wrapper">
+
+                <!-- Custom toast (replaces alert()) -->
+                <div id="info-toast" class="info-toast" role="status">
+                    <span id="info-toast-message"></span>
+                    <button type="button" class="info-toast-close" onclick="hideInfoToast()">&times;</button>
+                </div>
+
                 <h2 class="form-title">Verify New Email</h2>
                 <p class="form-subtitle">
                     A verification code has been sent to
@@ -79,6 +86,18 @@
     </div>
 
     <script>
+        // ===== Custom toast (replaces alert()) =====
+        function showInfoToast(message) {
+            const toast = document.getElementById('info-toast');
+            const msgEl = document.getElementById('info-toast-message');
+            msgEl.textContent = message;
+            toast.classList.add('show');
+        }
+
+        function hideInfoToast() {
+            document.getElementById('info-toast').classList.remove('show');
+        }
+
         const newEmail = "<%= newEmail %>";
 
         // Auto-advance between OTP boxes
@@ -131,7 +150,7 @@
 
             const otp = Array.from(digits).map(d => d.value).join('');
             if (otp.length !== 6) {
-                alert('Please enter all 6 digits');
+                showInfoToast('Please enter all 6 digits');
                 return;
             }
 
@@ -166,15 +185,17 @@
                     body: 'newEmail=' + encodeURIComponent(newEmail)
                 });
                 if (res.ok) {
-                    digits.forEach(d => d.value = '');
-                    digits[0].focus();
-                    startCountdown();
-                } else {
-                    alert('Could not resend code');
+    digits.forEach(d => d.value = '');
+    digits[0].focus();
+    startCountdown(true); // force a new 56s window, ignore any saved one
+    showInfoToast(data.message || 'A new code has been sent');
+}
+                 else {
+                    showInfoToast('Could not resend code');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Something went wrong resending the code');
+                showInfoToast('Something went wrong resending the code');
             }
         });
     </script>

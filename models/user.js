@@ -24,13 +24,17 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Password is required'],
       minlength: 6,
     },
+    has_password: {
+      type: Boolean,
+      default: false, // true only when the user has actually set a real password
+    },
     profile_picture: {
       type: String,
       default: null,
     },
     auth_provider: {
       type: String,
-      default: 'local', // e.g. 'local', 'google'
+      default: 'local', // kept for display/info only — no longer used to gate login
     },
     is_verified: {
       type: Boolean,

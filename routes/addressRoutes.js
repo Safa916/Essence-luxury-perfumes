@@ -24,4 +24,3 @@ router.post('/:id/delete', requireAuth, deleteAddress);
 
 
 module.exports = router;
-module.exports = router;

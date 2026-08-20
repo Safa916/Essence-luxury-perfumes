@@ -15,12 +15,24 @@ const { getChangePasswordForm, updatePassword } = require('../controllers/user/p
 
 
 router.get('/security/email', requireAuth, getChangeEmailForm);
+
 router.post('/security/email', requireAuth, requestEmailChange);
+
 router.post('/security/email/verify', requireAuth, verifyEmailChange)
 
 router.get('/', requireAuth, getProfile);
+
 router.get('/edit', requireAuth, getEditProfileForm);
-router.post('/edit', requireAuth, uploadAvatar.single('avatar'), updateProfile);
+
+router.post('/edit', requireAuth, (req, res, next) => {
+  uploadAvatar.single('avatar')(req, res, (err) => {
+    
+    if (err) {
+      return res.redirect('/profile/edit?error=' + encodeURIComponent(err.message));
+    }
+    next();
+  });
+}, updateProfile);
 
 router.get('/security/password', requireAuth, getChangePasswordForm);
 router.post('/security/password', requireAuth, updatePassword);

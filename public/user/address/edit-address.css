@@ -14,6 +14,7 @@
   --line: rgba(23, 21, 18, 0.1);
   --ink-soft: #6B675E;
   --ink-faint: #A6A296;
+  --error: #DC2626;
 
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Jost', 'Helvetica Neue', Arial, sans-serif;
@@ -160,12 +161,23 @@ a { color: inherit; text-decoration: none; }
   line-height: 1;
 }
 
+/* Hint lines shown at the top of the form (pincode/phone format guidance) */
+.modal-hint {
+  position: relative;
+  z-index: 1;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.4rem;
+  line-height: 1.5;
+}
+
 .title-underline {
   display: block;
   width: 56px;
   height: 4px;
   background: var(--ink);
   margin-bottom: 2rem;
+  margin-top: 1.25rem;
   position: relative;
   z-index: 1;
 }
@@ -212,6 +224,19 @@ a { color: inherit; text-decoration: none; }
 .form-group input[type="tel"]:focus {
   outline: none;
   box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+/* Invalid field state + inline error message (matches signup/profile pattern) */
+.form-group input.input-invalid {
+  box-shadow: inset 0 0 0 1px var(--error);
+}
+
+.field-error {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--error);
+  margin-top: 0.5rem;
+  line-height: 1.4;
 }
 
 /* ===== Address type toggle ===== */

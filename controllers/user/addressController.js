@@ -1,4 +1,5 @@
 const Address = require('../../models/Address');
+const { isValidName } = require('../../utils/validators');
 
 // Helper: format one address doc into what myAddresses.ejs expects
 const formatAddressForList = (addr) => ({
@@ -14,28 +15,29 @@ const formatAddressForList = (addr) => ({
   ].filter(Boolean),
 });
 
-// Helper: validate address form fields
+// Helper: validate address form fields.
+// Returns an object keyed by field name so the template can show each
+// error directly under its own input, instead of one lumped list at top.
 const validateAddressInput = (data) => {
-  const errors = [];
+  const errors = {};
 
-  if (!data.fullName || data.fullName.trim().length < 2) {
-    errors.push('Full name must be at least 2 characters');
+  if (!isValidName(data.fullName)) {
+    errors.fullName = 'Please enter a valid full name (letters only)';
   }
   if (!data.line1 || data.line1.trim().length < 5) {
-    errors.push('Address line 1 must be at least 5 characters');
+    errors.line1 = 'Address line 1 must be at least 5 characters';
   }
   if (!data.city || data.city.trim().length < 2) {
-    errors.push('City is required');
+    errors.city = 'City is required';
   }
-  
   if (!data.pincode || !/^[1-9][0-9]{5}$/.test(data.pincode.trim())) {
-  errors.push('Enter a valid 6-digit Indian pincode');
-}
+    errors.pincode = 'Enter a valid 6-digit Indian pincode';
+  }
   if (!data.phone || !/^[6-9]\d{9}$/.test(data.phone.trim())) {
-    errors.push('Phone number must be a valid 10-digit Indian mobile number');
+    errors.phone = 'Phone number must be a valid 10-digit Indian mobile number';
   }
   if (!['home', 'work'].includes(data.type)) {
-    errors.push('Invalid address type');
+    errors.type = 'Please select an address type';
   }
 
   return errors;
@@ -120,7 +122,7 @@ exports.createAddress = async (req, res) => {
     const { type, fullName, line1, line2, city, pincode, phone } = req.body;
 
     const errors = validateAddressInput(req.body);
-    if (errors.length > 0) {
+    if (Object.keys(errors).length > 0) {
       return res.render('user/address/edit-address', {
         address: { id: 'new', type, fullName, line1, line2, city, pincode, phone },
         errors,
@@ -152,7 +154,7 @@ exports.updateAddress = async (req, res) => {
     const { type, fullName, line1, line2, city, pincode, phone } = req.body;
 
     const errors = validateAddressInput(req.body);
-    if (errors.length > 0) {
+    if (Object.keys(errors).length > 0) {
       return res.render('user/address/edit-address', {
         address: { id: req.params.id, type, fullName, line1, line2, city, pincode, phone },
         errors,

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
+const { protect,checkUser } = require('../middleware/authMiddleware');
 
 
 
@@ -16,18 +16,39 @@ const { registerUser,
      googleAuth } = require('../controllers/user/userController');
 
 
-router.get('/signup', (req, res) => {
-  res.render('user/auth/userSignup');
-});
-router.get('/verify-otp-page', (req, res) => {
+
+  router.get('/verify-otp-page', (req, res) => {
   res.render('user/auth/otp-verification', {
     email: req.query.email,
-    purpose: req.query.purpose || 'registration',
+    purpose: req.query.purpose 
   });
 });
-router.get('/login', (req, res) => {
+
+router.get('/login', checkUser, (req, res) => {
+  if (req.user) {
+    return res.redirect('/');
+  }
+
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
   res.render('user/auth/user-login');
 });
+
+
+router.get('/user-signup', checkUser, (req, res) => {
+  if (req.user) {
+    return res.redirect('/');
+  }
+
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
+  res.render('user/auth/user-signup');
+});
+
 
 router.get('/forgot-password', (req, res) => {
   res.render('user/auth/reset-password');
@@ -55,6 +76,7 @@ router.post('/verify-reset-code', verifyResetCode);
 router.post('/reset-password', resetPassword);
 router.post('/google', googleAuth);
 router.post('/logout', logoutUser);
+
 
 
 module.exports = router;

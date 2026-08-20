@@ -25,10 +25,17 @@
         <!-- Right Panel: Login Form -->
         <div class="form-panel">
             <div class="login-form-wrapper">
+
+                <!-- Custom toast (replaces alert()) -->
+                <div id="error-toast" class="error-toast" role="alert">
+                    <span id="error-toast-message"></span>
+                    <button type="button" class="error-toast-close" onclick="hideErrorToast()">&times;</button>
+                </div>
+
                 <h2 class="form-title">Login</h2>
                 <div class="title-underline"></div>
 
-                <form class="login-form" id="loginForm">
+                <form class="login-form" id="loginForm" novalidate>
                     <div class="form-group">
                         <label class="form-label" for="email">Email Address</label>
                         <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email" required>
@@ -37,7 +44,7 @@
                     <div class="form-group">
                         <div class="label-row">
                             <label class="form-label" for="password">Password</label>
-                            <a href="/auth/forgot-password-page" class="forgot-link">Forgot?</a>
+                            <a href="/auth/forgot-password" class="forgot-link">Forgot?</a>
                         </div>
                         <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required>
                     </div>
@@ -60,7 +67,7 @@
                     </svg>
                 </button>
 
-                <p class="signup-prompt">Don't have an account? <a href="/auth/signup" class="signup-link">Sign up</a></p>
+                <p class="signup-prompt">Don't have an account? <a href="/auth/user-signup" class="signup-link">Sign up</a></p>
             </div>
         </div>
 
@@ -70,6 +77,23 @@
     <div id="hiddenGoogleBtn" style="display: none;"></div>
 
     <script>
+        // ===== Custom toast (replaces alert()) =====
+        let toastTimeout;
+
+        function showErrorToast(message) {
+            const toast = document.getElementById('error-toast');
+            const msgEl = document.getElementById('error-toast-message');
+            msgEl.textContent = message;
+            toast.classList.add('show');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(hideErrorToast, 5000);
+        }
+
+        function hideErrorToast() {
+            document.getElementById('error-toast').classList.remove('show');
+        }
+
         // ===== Regular email/password login =====
         document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -90,11 +114,11 @@
                     localStorage.setItem('token', data.token);
                     window.location.href = '/';
                 } else {
-                    alert(data.message || 'Login failed');
+                    showErrorToast(data.message || 'Login failed');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Something went wrong during login');
+                showErrorToast('Something went wrong during login');
             }
         });
 
@@ -132,11 +156,11 @@
                     localStorage.setItem('token', data.token);
                     window.location.href = '/';
                 } else {
-                    alert(data.message || 'Google sign-in failed');
+                    showErrorToast(data.message || 'Google sign-in failed');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Something went wrong signing in with Google');
+                showErrorToast('Something went wrong signing in with Google');
             }
         }
     </script>

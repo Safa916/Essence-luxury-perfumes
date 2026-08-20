@@ -27,13 +27,31 @@
         <!-- Right Panel: OTP Form -->
         <div class="form-panel">
             <div class="otp-form-wrapper">
+
+                <!-- Custom toast (replaces alert()) -->
+                <div id="info-toast" class="info-toast" role="status">
+                    <span id="info-toast-message"></span>
+                    <button type="button" class="info-toast-close" onclick="hideInfoToast()">&times;</button>
+                </div>
+
                 <h2 class="form-title">Verify Email</h2>
                 <p class="form-subtitle">
                     An invitation code has been sent to
                     <span class="user-email" id="userEmail"><%= typeof email !== 'undefined' ? email : '' %></span>. Please authenticate to continue your journey.
                 </p>
 
-                <form class="otp-form" id="otpForm">
+                <!--
+                    Non-committal hint — shown only for password-reset flow.
+                    Does NOT confirm or deny whether the email is registered;
+                    just helps genuine users who mistyped or need to check spam.
+                -->
+                <% if (typeof purpose !== 'undefined' && purpose === 'password_reset') { %>
+                    <p class="otp-hint">
+                        Didn't get a code? Check your spam folder, confirm the email address is correct, or request a new code below.
+                    </p>
+                <% } %>
+
+                <form class="otp-form" id="otpForm" novalidate>
                     <button type="submit" class="verify-btn">
                         Verify&amp;Continue
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -60,19 +78,47 @@
 
                 <div class="otp-divider"></div>
 
-                <a href="/auth/signup" class="change-email-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    Change Email
-                </a>
+                <% if (typeof purpose !== 'undefined' && purpose === 'password_reset') { %>
+                    <a href="/auth/forgot-password" class="change-email-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        Change Email
+                    </a>
+                <% } else { %>
+                    <a href="/auth/signup" class="change-email-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        Change Email
+                    </a>
+                <% } %>
             </div>
         </div>
 
     </div>
 
     <script>
+        window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+        // Page was restored from bfcache (e.g. via back button) — force a fresh reload
+        window.location.reload();
+    }
+});
+        // ===== Custom toast (replaces alert()) =====
+        function showInfoToast(message) {
+            const toast = document.getElementById('info-toast');
+            const msgEl = document.getElementById('info-toast-message');
+            msgEl.textContent = message;
+            toast.classList.add('show');
+        }
+
+        function hideInfoToast() {
+            document.getElementById('info-toast').classList.remove('show');
+        }
+
         const purpose = "<%= typeof purpose !== 'undefined' ? purpose : 'registration' %>";
         const urlParams = new URLSearchParams(window.location.search);
         const userEmail = "<%= typeof email !== 'undefined' ? email : '' %>" || urlParams.get('email') || '';
@@ -95,32 +141,55 @@
         });
 
         // Countdown timer for Resend button
-        const resendBtn = document.getElementById('resendBtn');
-        const timerEl = document.getElementById('resendTimer');
-        let seconds = 56;
-        let interval;
+// Countdown timer for Resend button
+const resendBtn = document.getElementById('resendBtn');
+const timerEl = document.getElementById('resendTimer');
+let interval;
+let endTime;
 
-        function startCountdown() {
-            seconds = 56;
-            resendBtn.disabled = true;
-            resendBtn.classList.remove('active');
-            timerEl.style.display = 'inline';
+const timerStorageKey = 'otpTimerEnd_' + purpose + '_' + userEmail;
 
-            interval = setInterval(function () {
-                seconds--;
-                if (seconds <= 0) {
-                    clearInterval(interval);
-                    timerEl.textContent = '';
-                    resendBtn.disabled = false;
-                    resendBtn.classList.add('active');
-                } else {
-                    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-                    const s = String(seconds % 60).padStart(2, '0');
-                    timerEl.textContent = m + ':' + s;
-                }
-            }, 1000);
-        }
-        startCountdown();
+function startCountdown(forceNew) {
+    if (interval) clearInterval(interval);
+
+    const saved = sessionStorage.getItem(timerStorageKey);
+
+    if (!forceNew && saved && parseInt(saved, 10) > Date.now()) {
+        // Resume existing countdown (e.g. after a refresh)
+        endTime = parseInt(saved, 10);
+    } else {
+        // Fresh countdown (first load, or after a real Resend click)
+        endTime = Date.now() + 56 * 1000;
+        sessionStorage.setItem(timerStorageKey, endTime);
+    }
+
+    resendBtn.disabled = true;
+    resendBtn.classList.remove('active');
+    timerEl.style.display = 'inline';
+
+    interval = setInterval(updateTimerDisplay, 250);
+    updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+    const remainingMs = endTime - Date.now();
+    const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+
+    if (remainingSeconds <= 0) {
+        clearInterval(interval);
+        timerEl.textContent = '';
+        resendBtn.disabled = false;
+        resendBtn.classList.add('active');
+        sessionStorage.removeItem(timerStorageKey);
+        return;
+    }
+
+    const m = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
+    const s = String(remainingSeconds % 60).padStart(2, '0');
+    timerEl.textContent = m + ':' + s;
+}
+
+startCountdown(); // resumes if a valid saved timer exists
 
         // Submit OTP for verification
         document.getElementById('otpForm').addEventListener('submit', async function (e) {
@@ -129,7 +198,7 @@
             const otp = Array.from(digits).map(d => d.value).join('');
 
             if (otp.length !== 6) {
-                alert('Please enter all 6 digits');
+                showInfoToast('Please enter all 6 digits');
                 return;
             }
 
@@ -151,11 +220,11 @@
                         window.location.href = '/';
                     }
                 } else {
-                    alert(data.message || 'Verification failed');
+                    showInfoToast(data.message || 'Verification failed');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Something went wrong verifying your OTP');
+                showInfoToast('Something went wrong verifying your OTP');
             }
         });
 
@@ -178,12 +247,13 @@
                     digits.forEach(d => d.value = '');
                     digits[0].focus();
                     startCountdown();
+                    showInfoToast(data.message || 'A new code has been sent');
                 } else {
-                    alert(data.message || 'Could not resend code');
+                    showInfoToast(data.message || 'Could not resend code');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Something went wrong resending the code');
+                showInfoToast('Something went wrong resending the code');
             }
         });
     </script>

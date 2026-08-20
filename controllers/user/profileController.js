@@ -1,7 +1,8 @@
-const User = require('../../models/User');
+const User = require('../../models/user');
 const OTP = require('../../models/OTP');
 const { sendOTPEmail } = require('../../services/emailService');
 const { generateOTPCode } = require('../../utils/otp');
+const { isValidName, isValidPassword } = require('../../utils/validators');
 
 const formatRelativeTime = (date) => {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -19,12 +20,16 @@ const formatRelativeTime = (date) => {
   return 'just now';
 };
 
+// Shapes a raw Mongoose user document into exactly what the profile EJS
+// templates expect — renamed fields, computed fields, and authProvider
+// (used to hide the Change Password option for Google-authenticated accounts).
 const formatUserForProfile = (user) => ({
   id: user._id.toString(),
   fullName: user.full_name,
   email: user.email,
   phone: user.phone_number || '',
   avatar: user.profile_picture || null,
+  authProvider: user.auth_provider || 'local',
   memberSince: (user.created_at || user.createdAt).getFullYear().toString(),
   referralCode: `ESSENCE-${user.full_name.split(' ')[0].toUpperCase()}-${user._id
     .toString()
@@ -50,7 +55,10 @@ exports.getProfile = (req, res) => {
 
 exports.getEditProfileForm = (req, res) => {
   try {
-    res.render('user/profile/edit-profile', { user: formatUserForProfile(req.user) });
+    res.render('user/profile/edit-profile', {
+      user: formatUserForProfile(req.user),
+      errors: req.query.error ? [req.query.error] : [],
+    });
   } catch (error) {
     console.error('Get edit profile form error:', error.message);
     res.status(500).send('Server error loading edit profile form');
@@ -63,8 +71,8 @@ exports.updateProfile = async (req, res) => {
     const { fullName, phone } = req.body;
 
     const errors = [];
-    if (!fullName || fullName.trim().length < 2) {
-      errors.push('Full name must be at least 2 characters');
+    if (!isValidName(fullName)) {
+      errors.push('Please enter a valid full name (letters only)');
     }
     if (phone && !/^[6-9]\d{9}$/.test(phone.trim())) {
       errors.push('Phone number must be a valid 10-digit Indian mobile number');
@@ -186,12 +194,18 @@ exports.verifyEmailChange = async (req, res) => {
 
 
 exports.getChangePasswordForm = (req, res) => {
+  if (req.user.auth_provider === 'google') {
+    return res.redirect('/profile');
+  }
   res.render('user/profile/change-password');
 };
 
-
 exports.updatePassword = async (req, res) => {
   try {
+    if (req.user.auth_provider === 'google') {
+      return res.redirect('/profile');
+    }
+
     const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
     const errors = [];
@@ -199,8 +213,8 @@ exports.updatePassword = async (req, res) => {
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       errors.push('All fields are required');
     }
-    if (newPassword && newPassword.length < 6) {
-      errors.push('New password must be at least 6 characters');
+    if (newPassword && !isValidPassword(newPassword)) {
+      errors.push('New password must be at least 8 characters and include a letter and a number');
     }
     if (newPassword && confirmNewPassword && newPassword !== confirmNewPassword) {
       errors.push('New passwords do not match');
@@ -225,6 +239,10 @@ exports.updatePassword = async (req, res) => {
         errors: ['New password must be different from current password'],
       });
     }
+
+    user.password_hash = newPassword;
+    user.password_changed_at = new Date();
+    await user.save();
 
     res.redirect('/profile?passwordChanged=true');
   } catch (error) {

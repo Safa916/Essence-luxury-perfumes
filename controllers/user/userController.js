@@ -1,13 +1,12 @@
-
-const User = require('../../models/User');
+const User = require('../../models/user');
 const OTP = require('../../models/OTP');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { sendOTPEmail } = require('../../services/emailService');
-
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 const { generateOTPCode } = require('../../utils/otp');
+const { isValidName, isValidPassword, suggestEmailCorrection } = require('../../utils/validators');
 
 exports.registerUser = async (req, res) => {
   try {
@@ -17,19 +16,39 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
+    if (!isValidName(fullName)) {
+      return res.status(400).json({ message: 'Please enter a valid full name (letters only)' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+      return res.status(400).json({ message: 'Please enter a valid email address' });
+    }
+
+    const suggestion = suggestEmailCorrection(normalizedEmail);
+    if (suggestion) {
+      return res.status(400).json({ message: `Did you mean ${suggestion}? Please double-check your email address.` });
+    }
+
+    if (!isValidPassword(password)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters and include a letter and a number' });
+    }
+
     if (password !== confirmPassword) {
       return res.status(400).json({ message: 'Passwords do not match' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).json({ message: 'Email is already registered' });
     }
 
     const newUser = await User.create({
       full_name: fullName,
-      email,
+      email: normalizedEmail,
       password_hash: password,
+        has_password: true, 
     });
 
     const otpCode = generateOTPCode();
@@ -56,10 +75,14 @@ exports.registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error('Register error:', error.message);
+
+    if (error.code === 11000) {
+      return res.status(409).json({ message: 'Email is already registered' });
+    }
+
     res.status(500).json({ message: 'Server error during registration' });
   }
 };
-
 
 exports.verifyOTP = async (req, res) => {
   try {
@@ -69,8 +92,10 @@ exports.verifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'Email and OTP are required' });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const otpRecord = await OTP.findOne({
-      email,
+      email: normalizedEmail,
       otp_code: otp,
       purpose: 'registration',
       is_used: false,
@@ -84,10 +109,10 @@ exports.verifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'OTP has expired' });
     }
 
+    await User.findOneAndUpdate({ email: normalizedEmail }, { is_verified: true });
+
     otpRecord.is_used = true;
     await otpRecord.save();
-
-    await User.findOneAndUpdate({ email }, { is_verified: true });
 
     res.status(200).json({ message: 'Email verified successfully' });
   } catch (error) {
@@ -95,7 +120,6 @@ exports.verifyOTP = async (req, res) => {
     res.status(500).json({ message: 'Server error during OTP verification' });
   }
 };
-
 
 exports.resendOTP = async (req, res) => {
   try {
@@ -105,7 +129,9 @@ exports.resendOTP = async (req, res) => {
       return res.status(400).json({ message: 'Email is required' });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({ message: 'No account found with this email' });
     }
@@ -115,7 +141,7 @@ exports.resendOTP = async (req, res) => {
     }
 
     await OTP.updateMany(
-      { email, purpose: 'registration', is_used: false },
+      { email: normalizedEmail, purpose: 'registration', is_used: false },
       { is_used: true }
     );
 
@@ -140,7 +166,6 @@ exports.resendOTP = async (req, res) => {
   }
 };
 
-
 exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -149,22 +174,33 @@ exports.loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
+
+
+   const user = await User.findOne({ email: normalizedEmail });
+
+
+if (!user) {
+  return res.status(401).json({ message: 'Invalid email or password' });
+}
+
+// Block only if this account never had a real password set — not based on auth_provider.
+if (!user.has_password) {
+  return res.status(400).json({ message: 'This account uses Google Sign-In. Please continue with Google.' });
+}
+
+const isMatch = await user.comparePassword(password);
+if (!isMatch) {
+  return res.status(401).json({ message: 'Invalid email or password' });
+}
 
     if (!user.is_verified) {
       return res.status(403).json({ message: 'Please verify your email before logging in' });
     }
 
     if (!user.is_active) {
-      return res.status(403).json({ message: 'This account has been deactivated' });
+      return res.status(403).json({ message: 'Your account has been suspended. Please contact support.' });
     }
 
     const token = jwt.sign(
@@ -173,14 +209,15 @@ exports.loginUser = async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    // Cookie-setting is an HTTP concern.
     res.cookie('token', token, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
-      message: 'Login successful',
       token,
+      message: 'Login successful',
       user: {
         id: user._id,
         fullName: user.full_name,
@@ -194,7 +231,6 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -203,13 +239,22 @@ exports.forgotPassword = async (req, res) => {
       return res.status(400).json({ message: 'Email is required' });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    // Deliberately the SAME response whether or not the user exists —
+    // prevents account enumeration.
     if (!user) {
       return res.status(200).json({ message: 'If this email is registered, a reset code has been sent' });
     }
 
+    // Google-auth accounts have no real password to reset.
+    if (user.auth_provider === 'google') {
+      return res.status(200).json({ message: 'If this email is registered, a reset code has been sent' });
+    }
+
     await OTP.updateMany(
-      { email, purpose: 'password_reset', is_used: false },
+      { email: normalizedEmail, purpose: 'password_reset', is_used: false },
       { is_used: true }
     );
 
@@ -242,8 +287,10 @@ exports.verifyResetCode = async (req, res) => {
       return res.status(400).json({ message: 'Email and OTP are required' });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const otpRecord = await OTP.findOne({
-      email,
+      email: normalizedEmail,
       otp_code: otp,
       purpose: 'password_reset',
       is_used: false,
@@ -272,12 +319,18 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
+    if (!isValidPassword(newPassword)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters and include a letter and a number' });
+    }
+
     if (newPassword !== confirmNewPassword) {
       return res.status(400).json({ message: 'Passwords do not match' });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const otpRecord = await OTP.findOne({
-      email,
+      email: normalizedEmail,
       otp_code: otp,
       purpose: 'password_reset',
       is_used: false,
@@ -291,7 +344,7 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'OTP has expired' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -310,7 +363,6 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-
 exports.googleAuth = async (req, res) => {
   try {
     const { idToken } = req.body;
@@ -319,31 +371,39 @@ exports.googleAuth = async (req, res) => {
       return res.status(400).json({ message: 'Google ID token is required' });
     }
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    const { email, name, sub: googleId, picture } = payload;
-
-    let user = await User.findOne({ email });
-
-    if (!user) {
-      user = await User.create({
-        full_name: name,
-        email,
-        password_hash: googleId,
-        auth_provider: 'google',
-        google_id: googleId,
-        profile_picture: picture,
-        is_verified: true,
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
-    } else if (user.auth_provider !== 'google') {
-      user.google_id = googleId;
-      user.auth_provider = 'google';
-      await user.save();
+      payload = ticket.getPayload();
+    } catch (err) {
+      return res.status(401).json({ message: 'Invalid Google token' });
     }
+
+    const { email, name, sub: googleId, picture } = payload;
+    const normalizedEmail = email.trim().toLowerCase();
+
+
+let user = await User.findOne({ email: normalizedEmail });
+
+if (!user) {
+  user = await User.create({
+    full_name: name,
+    email: normalizedEmail,
+    password_hash: crypto.randomBytes(32).toString('hex'),
+    auth_provider: 'google',
+    google_id: googleId,
+    profile_picture: picture,
+    is_verified: true,
+    has_password: false,          // ← explicit, this account has no real password
+  });
+} else if (!user.google_id) {
+  // Just link the Google account — never touch password_hash, has_password, or auth_provider
+  user.google_id = googleId;
+  await user.save();
+}
 
     const token = jwt.sign(
       { id: user._id, email: user.email },
@@ -357,8 +417,8 @@ exports.googleAuth = async (req, res) => {
     });
 
     res.status(200).json({
-      message: 'Google authentication successful',
       token,
+      message: 'Google authentication successful',
       user: {
         id: user._id,
         fullName: user.full_name,
@@ -371,7 +431,6 @@ exports.googleAuth = async (req, res) => {
     res.status(401).json({ message: 'Invalid Google token' });
   }
 };
-
 
 exports.logoutUser = async (req, res) => {
   try {

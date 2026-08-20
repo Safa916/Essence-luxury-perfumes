@@ -3,6 +3,11 @@ const Admin = require('../../models/admin');
 
 // GET /admin/login
 exports.getLoginPage = (req, res) => {
+
+res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
   res.render('admin/login', { error: null });
 };
   

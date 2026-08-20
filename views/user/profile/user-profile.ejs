@@ -20,6 +20,7 @@
     phone: '+91 8330857937',
     referralCode: 'ESSENCE-SAFA-25',
     passwordUpdated: 'Last updated 3 months ago',
+    authProvider: 'local',
     avatar: null
   }; %>
 
@@ -116,9 +117,15 @@
             <p class="info-label">Security Status</p>
             <div class="info-card-row">
               <span class="info-value">Password</span>
-              <a href="/profile/security/password" class="link-change">Change</a>
+              <% if (user.authProvider !== 'google') { %>
+                <a href="/profile/security/password" class="link-change">Change</a>
+              <% } %>
             </div>
-            <p class="info-sub"><%= user.passwordUpdated %></p>
+            <% if (user.authProvider === 'google') { %>
+              <p class="info-sub">Managed by Google — sign in with Google to access this account</p>
+            <% } else { %>
+              <p class="info-sub"><%= user.passwordUpdated %></p>
+            <% } %>
           </div>
 
           <div class="info-card info-card-dark">

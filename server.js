@@ -13,6 +13,8 @@ const adminRoutes = require('./routes/adminRoutes');
 
 
 
+
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -28,13 +30,15 @@ app.get('/', checkUser, (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
-  res.render('user/home/homepage', { user: req.user });
+
+    res.render('user/home/homepage', { user: req.user });
 });
 
 app.use('/auth', userRoutes);
 app.use('/address', addressRoutes);
 app.use('/profile', profileRoutes);
 app.use('/admin', adminRoutes);
+
 
 
 
