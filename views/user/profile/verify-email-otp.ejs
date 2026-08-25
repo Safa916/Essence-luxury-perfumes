@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify New Email — Essence</title>
+    <link rel="stylesheet" href="/user/auth/otp-verification.css">
+</head>
+<body>
+
+    <div class="otp-container">
+
+        <!-- Left Panel: Brand Hero -->
+        <div class="hero-panel">
+            <div class="hero-overlay"></div>
+            <div class="hero-top">
+                <div class="hero-brand">Essence</div>
+            </div>
+            <div class="hero-bottom">
+                <h1 class="hero-title">The Art of Olfaction</h1>
+                <p class="hero-desc">Enter the curated world of Ethereal Essence, where every scent tells a silent poem of luxury.</p>
+            </div>
+        </div>
+
+        <!-- Right Panel: OTP Form -->
+        <div class="form-panel">
+            <div class="otp-form-wrapper">
+
+                <!-- Custom toast (replaces alert()) -->
+                <div id="info-toast" class="info-toast" role="status">
+                    <span id="info-toast-message"></span>
+                    <button type="button" class="info-toast-close" onclick="hideInfoToast()">&times;</button>
+                </div>
+
+                <h2 class="form-title">Verify New Email</h2>
+                <p class="form-subtitle">
+                    A verification code has been sent to
+                    <span class="user-email" id="userEmail"><%= newEmail %></span>. Enter it below to confirm this email change.
+                </p>
+
+                <% if (typeof errors !== 'undefined' && errors && errors.length) { %>
+                  <ul class="form-errors">
+                    <% errors.forEach(function(err) { %>
+                      <li><%= err %></li>
+                    <% }); %>
+                  </ul>
+                <% } %>
+
+                <form class="otp-form" id="otpForm">
+                    <button type="submit" class="verify-btn">
+                        Verify&amp;Continue
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+
+                    <div class="otp-inputs">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp1" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp2" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp3" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp4" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp5" autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" name="otp6" autocomplete="off">
+                    </div>
+                </form>
+
+                <p class="resend-prompt">
+                    Awaiting your code?<br>
+                    <button type="button" class="resend-btn" id="resendBtn">Resend</button>
+                    <span class="resend-timer" id="resendTimer">00:56</span>
+                </p>
+
+                <div class="otp-divider"></div>
+
+                <a href="/profile/security/email" class="change-email-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Change Email
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ===== Custom toast (replaces alert()) =====
+        function showInfoToast(message) {
+            const toast = document.getElementById('info-toast');
+            const msgEl = document.getElementById('info-toast-message');
+            msgEl.textContent = message;
+            toast.classList.add('show');
+        }
+
+        function hideInfoToast() {
+            document.getElementById('info-toast').classList.remove('show');
+        }
+
+        const newEmail = "<%= newEmail %>";
+
+        // Auto-advance between OTP boxes
+        const digits = document.querySelectorAll('.otp-digit');
+        digits.forEach(function (input, index) {
+            input.addEventListener('input', function () {
+                this.value = this.value.replace(/[^0-9]/g, '');
+                if (this.value && index < digits.length - 1) {
+                    digits[index + 1].focus();
+                }
+            });
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Backspace' && !this.value && index > 0) {
+                    digits[index - 1].focus();
+                }
+            });
+        });
+
+        // Countdown timer for Resend button
+        const resendBtn = document.getElementById('resendBtn');
+        const timerEl = document.getElementById('resendTimer');
+        let seconds = 56;
+        let interval;
+
+        function startCountdown() {
+            seconds = 56;
+            resendBtn.disabled = true;
+            resendBtn.classList.remove('active');
+            timerEl.style.display = 'inline';
+
+            interval = setInterval(function () {
+                seconds--;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    timerEl.textContent = '';
+                    resendBtn.disabled = false;
+                    resendBtn.classList.add('active');
+                } else {
+                    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+                    const s = String(seconds % 60).padStart(2, '0');
+                    timerEl.textContent = m + ':' + s;
+                }
+            }, 1000);
+        }
+        startCountdown();
+
+        // Submit OTP — posts as a normal form since our controller renders EJS directly, not JSON
+        document.getElementById('otpForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const otp = Array.from(digits).map(d => d.value).join('');
+            if (otp.length !== 6) {
+                showInfoToast('Please enter all 6 digits');
+                return;
+            }
+
+            // Build and submit a real form so the server can res.render() directly
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/profile/security/email/verify';
+
+            const emailInput = document.createElement('input');
+            emailInput.type = 'hidden';
+            emailInput.name = 'newEmail';
+            emailInput.value = newEmail;
+            form.appendChild(emailInput);
+
+            const otpInput = document.createElement('input');
+            otpInput.type = 'hidden';
+            otpInput.name = 'otp';
+            otpInput.value = otp;
+            form.appendChild(otpInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        });
+
+        // Resend OTP
+        resendBtn.addEventListener('click', async function () {
+            if (resendBtn.disabled) return;
+            try {
+                const res = await fetch('/profile/security/email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'newEmail=' + encodeURIComponent(newEmail)
+                });
+                if (res.ok) {
+    digits.forEach(d => d.value = '');
+    digits[0].focus();
+    startCountdown(true); // force a new 56s window, ignore any saved one
+    showInfoToast(data.message || 'A new code has been sent');
+}
+                 else {
+                    showInfoToast('Could not resend code');
+                }
+            } catch (err) {
+                console.error(err);
+                showInfoToast('Something went wrong resending the code');
+            }
+        });
+    </script>
+
+</body>
+</html>

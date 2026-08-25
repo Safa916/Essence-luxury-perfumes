@@ -1,0 +1,656 @@
+/* =============================================
+   ESSENCE — Homepage Styles
+   Palette: cream #F4F0E6, ink #1C1A16, gold #B79461, rose #C9A9A0
+   Display: Cormorant Garamond | Body/UI: Jost
+   ============================================= */
+
+:root {
+  --cream: #F4F0E6;
+  --cream-deep: #ECE5D6;
+  --ink: #1C1A16;
+  --ink-soft: #3A362E;
+  --gold: #B79461;
+  --line: rgba(28, 26, 22, 0.12);
+  --white: #FFFFFF;
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Jost', 'Helvetica Neue', Arial, sans-serif;
+
+  --container: 1240px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+ul { list-style: none; margin: 0; padding: 0; }
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 1.25rem;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.95rem 2.1rem;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.btn-dark {
+  background: var(--ink);
+  color: var(--cream);
+  border-color: var(--ink);
+}
+
+.btn-dark:hover {
+  background: transparent;
+  color: var(--ink);
+}
+
+/* ===== Header ===== */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--cream);
+  border-bottom: 1px solid var(--line);
+}
+
+.header-inner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 1.15rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+.main-nav {
+  display: flex;
+  gap: 2.25rem;
+}
+
+.nav-link {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding-bottom: 4px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-link:hover,
+.nav-link.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--gold);
+}
+
+.header-icons {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  padding: 0.25rem;
+}
+
+/* --- Signed-in: profile + logout --- */
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding-left: 1.1rem;
+  border-left: 1px solid var(--line);
+}
+
+.profile-btn {
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.logout-form {
+  margin: 0;
+}
+
+.btn-logout {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-logout:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+/* --- Signed-out: sign in --- */
+
+.btn-login {
+  padding: 0.6rem 1.4rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-login:hover {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+/* ===== Hero ===== */
+
+.hero {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 3.5rem 2rem 4.5rem;
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 3.5rem;
+  align-items: center;
+}
+
+.hero-copy {
+  max-width: 420px;
+}
+
+.hero-quote {
+  margin: 0 0 2rem;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.hero-image {
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  background: var(--cream-deep);
+}
+
+.hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ===== Split banner (For Her / For Him) ===== */
+
+.split-banner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+}
+
+.banner-card {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  display: block;
+}
+
+.banner-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.banner-card:hover img {
+  transform: scale(1.04);
+}
+
+.banner-label {
+  position: absolute;
+  left: 2rem;
+  bottom: 1.75rem;
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+/* ===== New Arrivals ===== */
+
+.new-arrivals {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 4.5rem 2rem 3.5rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 2.25rem;
+}
+
+.section-heading h2,
+.houses-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 2rem;
+  margin: 0;
+}
+
+.view-all {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 2px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.75rem;
+}
+
+.product-card {
+  display: block;
+}
+
+.product-image {
+  aspect-ratio: 1 / 1;
+  background: var(--white);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.05);
+}
+
+.product-house {
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 0.25rem;
+}
+
+.product-name {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 500;
+  margin: 0 0 0.3rem;
+}
+
+.product-price {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* ===== The Houses ===== */
+
+.houses {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 2rem 2rem 5.5rem;
+  text-align: center;
+}
+
+.houses-title {
+  letter-spacing: 0.08em;
+  margin-bottom: 2.5rem;
+}
+
+.houses-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 3rem;
+  row-gap: 1.25rem;
+}
+
+.houses-list a {
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  transition: color 0.2s ease;
+}
+
+.houses-list a:hover {
+  color: var(--gold);
+}
+
+/* ===== Footer ===== */
+
+.site-footer {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.newsletter {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 5rem 2rem 3.5rem;
+  text-align: center;
+}
+
+.newsletter h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 2.1rem;
+  margin: 0 0 0.75rem;
+}
+
+.newsletter p {
+  font-size: 0.9rem;
+  color: rgba(244, 240, 230, 0.65);
+  margin: 0 0 2rem;
+}
+
+.newsletter-form {
+  display: flex;
+  border-bottom: 1px solid rgba(244, 240, 230, 0.3);
+  padding-bottom: 0.75rem;
+}
+
+.newsletter-form input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.5rem 0;
+}
+
+.newsletter-form input::placeholder {
+  color: rgba(244, 240, 230, 0.45);
+}
+
+.newsletter-form input:focus {
+  outline: none;
+}
+
+.newsletter-form button {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.footer-columns {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 2rem;
+  border-top: 1px solid rgba(244, 240, 230, 0.12);
+}
+
+.footer-logo {
+  font-size: 1.2rem;
+  letter-spacing: 0.2em;
+  margin: 0 0 0.75rem;
+}
+
+.footer-tagline {
+  font-size: 0.82rem;
+  color: rgba(244, 240, 230, 0.6);
+  margin: 0;
+  max-width: 220px;
+}
+
+.footer-col h3 {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(244, 240, 230, 0.55);
+  margin: 0 0 1rem;
+}
+
+.footer-col a {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(244, 240, 230, 0.85);
+  margin-bottom: 0.65rem;
+  transition: color 0.2s ease;
+}
+
+.footer-col a:hover {
+  color: var(--gold);
+}
+
+.footer-bottom {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 1.5rem 2rem 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(244, 240, 230, 0.12);
+  font-size: 0.75rem;
+  color: rgba(244, 240, 230, 0.5);
+}
+
+.footer-legal {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.footer-legal a:hover {
+  color: var(--gold);
+}
+/* ===== Logout Modal ===== */
+.logout-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.logout-modal-box {
+  background: #fff;
+  padding: 40px 48px;
+  border-radius: 4px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.logout-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #1c1c1e;
+}
+
+.logout-title {
+  font-family: 'Jost', sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  color: #1c1c1e;
+  margin-bottom: 12px;
+}
+
+.logout-subtitle {
+  font-size: 14px;
+  color: #7a7367;
+  margin-bottom: 28px;
+}
+
+.btn-yes-logout {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: #1c1c1e;
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.2s;
+}
+
+.btn-yes-logout:hover {
+  background: #333;
+}
+
+.btn-stay {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: #fff;
+  color: #1c1c1e;
+  border: 1px solid #ddd;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-stay:hover {
+  background: #f5f5f5;
+}
+
+
+/* ===== Responsive ===== */
+
+@media (max-width: 900px) {
+  .main-nav { display: none; }
+
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-top: 2.5rem;
+  }
+
+  .hero-copy { max-width: 100%; }
+
+  .split-banner { grid-template-columns: 1fr; }
+
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .footer-columns { grid-template-columns: 1fr 1fr; }
+
+  .footer-brand { grid-column: 1 / -1; margin-bottom: 1rem; }
+}
+
+@media (max-width: 520px) {
+  .header-inner { padding: 1rem 1.25rem; }
+
+  .profile-label { display: none; }
+
+  .user-menu { gap: 0.75rem; padding-left: 0.75rem; }
+
+  .btn-login { padding: 0.5rem 1rem; }
+
+  .hero,
+  .new-arrivals,
+  .houses { padding-left: 1.25rem; padding-right: 1.25rem; }
+
+  .hero-quote { font-size: 1.6rem; }
+
+  .product-grid { grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+
+  .footer-columns { grid-template-columns: 1fr; }
+
+  .footer-bottom { flex-direction: column; gap: 0.75rem; text-align: center; }
+
+  .newsletter-form { flex-direction: column; gap: 0.75rem; border-bottom: none; }
+
+  .newsletter-form button { text-align: left; }
+}

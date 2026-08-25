@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Edit Address — Essence' %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/address/edit-address.css">
+</head>
+<body>
+
+  <% var address = typeof address !== 'undefined' && address ? address : {
+    id: 'addr_1',
+    type: 'home',
+    fullName: 'Safa',
+    line1: '124 Performance Way',
+    line2: 'Studio 4B',
+    city: 'palakkad',
+    pincode: '679501',
+    phone: '+91 8330857937'
+  }; %>
+  <% var errors = typeof errors !== 'undefined' ? errors : {}; %>
+
+  <!-- ===== Dimmed page backdrop (page this modal sits over) ===== -->
+  <div class="page-backdrop" aria-hidden="true">
+    <header class="backdrop-header">
+      <span class="backdrop-logo">ESSENCE</span>
+      <span class="backdrop-icons">&#9776;</span>
+    </header>
+    <div class="backdrop-body">
+      <div class="backdrop-sidebar"></div>
+      <div class="backdrop-content">
+        <div class="backdrop-line short"></div>
+        <div class="backdrop-card"></div>
+        <div class="backdrop-card"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Edit Address modal ===== -->
+  <div class="modal-overlay">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="edit-address-title">
+
+      <span class="modal-corner" aria-hidden="true"></span>
+
+      <button type="button" class="modal-close" aria-label="Close" onclick="window.location.href='/address'">&times;</button>
+
+      <h1 class="modal-title" id="edit-address-title"><%= address.id === 'new' ? 'New Address' : 'Edit Address' %></h1>
+
+      
+
+
+      <form action="<%= address.id === 'new' ? '/address/new' : '/address/' + address.id + '/edit' %>" method="POST" class="address-form">
+
+        <!-- Address type -->
+        <div class="form-group">
+          <p class="field-label">Address Type</p>
+          <div class="type-toggle">
+            <input type="radio" id="type-home" name="type" value="home" <%= address.type === 'home' ? 'checked' : '' %>>
+            <label for="type-home">Home</label>
+
+            <input type="radio" id="type-work" name="type" value="work" <%= address.type === 'work' ? 'checked' : '' %>>
+            <label for="type-work">Work</label>
+          </div>
+          <% if (errors.type) { %>
+            <span class="field-error"><%= errors.type %></span>
+          <% } %>
+        </div>
+
+        <!-- Full name -->
+        <div class="form-group">
+          <label class="field-label" for="fullName">Full Name</label>
+          <input type="text" id="fullName" name="fullName" value="<%= address.fullName %>" class="<%= errors.fullName ? 'input-invalid' : '' %>">
+          <% if (errors.fullName) { %>
+            <span class="field-error"><%= errors.fullName %></span>
+          <% } %>
+        </div>
+
+        <!-- Address lines -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="field-label" for="line1">Address Line 1</label>
+            <input type="text" id="line1" name="line1" value="<%= address.line1 %>" class="<%= errors.line1 ? 'input-invalid' : '' %>">
+            <% if (errors.line1) { %>
+              <span class="field-error"><%= errors.line1 %></span>
+            <% } %>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="line2">Address Line 2</label>
+            <input type="text" id="line2" name="line2" value="<%= address.line2 %>">
+          </div>
+        </div>
+
+        <!-- City / Pincode -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="field-label" for="city">City</label>
+            <input type="text" id="city" name="city" value="<%= address.city %>" class="<%= errors.city ? 'input-invalid' : '' %>">
+            <% if (errors.city) { %>
+              <span class="field-error"><%= errors.city %></span>
+            <% } %>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="pincode">Pincode</label>
+            <input type="text" id="pincode" name="pincode" value="<%= address.pincode %>" class="<%= errors.pincode ? 'input-invalid' : '' %>">
+            <% if (errors.pincode) { %>
+              <span class="field-error"><%= errors.pincode %></span>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class="form-group">
+          <label class="field-label" for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" value="<%= address.phone %>" class="<%= errors.phone ? 'input-invalid' : '' %>">
+          <% if (errors.phone) { %>
+            <span class="field-error"><%= errors.phone %></span>
+          <% } %>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button type="submit" class="btn-update">
+  <%= address.id === 'new' ? 'Add Address' : 'Update Address' %> <span class="arrow">&rarr;</span>
+</button>
+          <a href="/address" class="btn-cancel">Cancel</a>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+
+</body>
+</html>

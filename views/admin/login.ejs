@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Essence Admin Login</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/admin/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div class="brand-info">
+                <h1 class="brand-title">ESSENCE</h1>
+                <h1 class="brand-subtitle">ADMIN</h1>
+                <p class="brand-desc">MANAGE YOUR STORE WITH PRECISION AND CONTROL.</p>
+            </div>
+        </div>
+        
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- Top Right Logo -->
+            <div class="top-logo">ESSENCE</div>
+            
+            <!-- Login Form Wrapper -->
+            <div class="login-form-wrapper">
+                <h2 class="form-title">ADMIN LOGIN</h2>
+                <p class="form-subtitle">Enter your credentials to access dashboard</p>
+
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <p style="color:#E5484D;font-size:0.8rem;font-weight:600;margin-bottom:20px;"><%= error %></p>
+                <% } %>
+
+                <form action="/admin/login" method="POST" class="login-form">
+                    <!-- Email Input -->
+                    <div class="form-group">
+                        <label for="email" class="form-label">EMAIL ADDRESS</label>
+                        <input type="email" id="email" name="email" class="form-input" placeholder="admin@ESSENCE.com" required>
+                    </div>
+                    
+                    <!-- Password Input -->
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="password" class="form-label">PASSWORD</label>
+                            <button type="button" class="toggle-password" id="togglePasswordBtn">
+                                <!-- Eye SVG Icon -->
+                                <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <span class="toggle-text">SHOW</span>
+                            </button>
+                        </div>
+                        <input type="password" id="password" name="password" class="form-input" placeholder="••••••••" required>
+                    </div>
+                    
+                    <!-- Form Options (Remember Me & Forgot Password) -->
+                    <div class="form-options">
+                        <label class="remember-me-container">
+                            <input type="checkbox" name="remember" id="rememberMe">
+                            <span class="custom-checkbox"></span>
+                            <span class="checkbox-label">REMEMBER ME</span>
+                        </label>
+                        <a href="#" class="forgot-password-link">FORGOT PASSWORD?</a>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" class="submit-btn">LOGIN TO DASHBOARD</button>
+                </form>
+            </div>
+            
+            <!-- Footer -->
+            <footer class="right-footer">
+                <div class="copyright">© 2026 ESSENCE ADMIN PANEL</div>
+                <div class="footer-links">
+                    <a href="#">SUPPORT</a>
+                    <a href="#">PRIVACY</a>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Toggle Password Visibility JS -->
+    <script>
+        const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+        const passwordInput = document.getElementById('password');
+        const toggleText = togglePasswordBtn.querySelector('.toggle-text');
+        const eyeIcon = togglePasswordBtn.querySelector('.eye-icon');
+
+        togglePasswordBtn.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleText.textContent = 'HIDE';
+                eyeIcon.innerHTML = `
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                `;
+            } else {
+                passwordInput.type = 'password';
+                toggleText.textContent = 'SHOW';
+                eyeIcon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
