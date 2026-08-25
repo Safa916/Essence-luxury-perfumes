@@ -115,6 +115,24 @@ exports.getDeleteConfirmation = async (req, res) => {
   }
 };
 
+
+
+ exports.setDefaultAddress = async (req, res) => {
+  try {
+    await Address.updateMany(
+      { user_id: req.user._id },
+      { is_default: false }        // clears default on EVERY address for this user
+    );
+    await Address.findOneAndUpdate(
+      { _id: req.params.id, user_id: req.user._id },
+      { is_default: true }         // sets only the clicked one to true
+    );
+    res.redirect('/address');
+  } catch (error) {
+    console.error('Set default address error:', error.message);
+    res.status(500).send('Server error setting default address');
+  }
+};
 // @desc    Create a new address
 // @route   POST /address/new
 exports.createAddress = async (req, res) => {

@@ -100,10 +100,23 @@
           <% addresses.forEach(function(addr) { %>
             <article class="address-card <%= addr.isDefault ? 'is-default' : '' %>">
               <div class="address-card-top">
-                <span class="address-badge <%= addr.isDefault ? 'badge-default' : 'badge-plain' %>">
-                  <%= addr.label %>
-                </span>
+               <span class="address-badge <%= addr.isDefault ? 'badge-default' : 'badge-plain' %>">
+  <%= addr.isDefault ? 'Default Address' : addr.label %>
+</span>
                 <div class="address-card-actions">
+                   
+                 <% if (!addr.isDefault) { %>
+  <form action="/address/<%= addr.id %>/set-default" method="POST" style="display:inline;">
+    <button type="submit" class="set-default-btn" aria-label="Set as default" title="Set as default">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M8 12.5l2.5 2.5L16 9.5"/>
+      </svg>
+      Set as Default
+    </button>
+  </form>
+<% } %>
+
                   <a href="/address/<%= addr.id %>/edit" class="icon-action" aria-label="Edit address">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
                   </a>

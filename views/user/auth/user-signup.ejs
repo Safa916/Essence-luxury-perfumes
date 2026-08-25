@@ -154,6 +154,63 @@
             });
         });
 
+                // ===== Live validation (clears errors as you type) =====
+        const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/;
+        const emailRegex = /^\S+@\S+\.\S+$/;
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+        function validateField(fieldId) {
+            const value = document.getElementById(fieldId).value;
+
+            if (fieldId === 'fullName') {
+                if (value.trim() === '' || nameRegex.test(value.trim())) {
+                    clearFieldError('fullName');
+                } else {
+                    setFieldError('fullName', 'Please enter a valid full name (letters only)');
+                }
+            }
+
+            if (fieldId === 'email') {
+                if (value.trim() === '' || emailRegex.test(value.trim())) {
+                    clearFieldError('email');
+                } else {
+                    setFieldError('email', 'Please enter a valid email address');
+                }
+            }
+
+            if (fieldId === 'password') {
+                if (value === '' || passwordRegex.test(value)) {
+                    clearFieldError('password');
+                } else {
+                    setFieldError('password', 'Must be at least 8 characters with a letter and a number');
+                }
+                // Password changed, so also re-check confirm password
+                if (document.getElementById('confirmPassword').value !== '') {
+                    validateField('confirmPassword');
+                }
+            }
+
+            if (fieldId === 'confirmPassword') {
+                const password = document.getElementById('password').value;
+                if (value === '' || value === password) {
+                    clearFieldError('confirmPassword');
+                } else {
+                    setFieldError('confirmPassword', 'Passwords do not match');
+                }
+            }
+        }
+
+        // Attach the live check to all 4 fields
+        ['fullName', 'email', 'password', 'confirmPassword'].forEach(function (fieldId) {
+            document.getElementById(fieldId).addEventListener('input', function () {
+                validateField(fieldId);
+            });
+        });
+
+
+
+
+
         // ===== Regular email/password signup =====
         const signupForm = document.getElementById('signupForm');
         const submitBtn = document.querySelector('.submit-btn');

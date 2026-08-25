@@ -184,7 +184,7 @@ exports.verifyEmailChange = async (req, res) => {
 
     await User.findByIdAndUpdate(req.user._id, { email: newEmail });
 
-    res.redirect('/profile');
+  res.redirect('/profile?emailChanged=true');
   } catch (error) {
     console.error('Verify email change error:', error.message);
     res.status(500).send('Server error verifying email change');
