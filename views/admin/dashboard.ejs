@@ -8,89 +8,12 @@
     <title>Essence Admin Dashboard</title>
     <!-- CSS stylesheet link -->
     <link rel="stylesheet" href="/admin/dashboard.css">
+       <link rel="stylesheet" href="/admin/partials/sidebar.css" />
 </head>
 <body>
 
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-        <div class="brand-section">
-            <h1 class="brand-name">ESSENCE</h1>
-            <div class="brand-role">System Admin</div>
-        </div>
-
-        <nav class="sidebar-menu">
-            <a href="/admin/dashboard" class="menu-item active">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="9"></rect>
-                    <rect x="14" y="3" width="7" height="5"></rect>
-                    <rect x="14" y="12" width="7" height="9"></rect>
-                    <rect x="3" y="16" width="7" height="5"></rect>
-                </svg>
-                Dashboard
-            </a>
-
-            <div class="menu-subheader">Products</div>
-            <a href="/admin/categories" class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="6" cy="6" r="3"></circle>
-                    <circle cx="18" cy="6" r="3"></circle>
-                    <circle cx="12" cy="18" r="3"></circle>
-                </svg>
-                Categories
-            </a>
-            <a href="/admin/orders" class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-                    <path d="M3 6h18"></path>
-                    <path d="M16 10a4 4 0 0 1-8 0"></path>
-                </svg>
-                Orders
-            </a>
-            <a href="/admin/offers" class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24L4 3v5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.83 0l3.59-3.59a2 2 0 0 0 0-2.83Z"></path>
-                    <circle cx="7.5" cy="7.5" r="1.5"></circle>
-                </svg>
-                Offers
-            </a>
-            <a href="/admin/coupons" class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-                    <path d="M2 10h20"></path>
-                </svg>
-                Coupons
-            </a>
-            <a href="/admin/users" class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                Users
-            </a>
-            <a href="/admin/returns" class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                    <path d="M3 3v5h5"></path>
-                </svg>
-                Returns
-            </a>
-            <a href="/admin/review" class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
-                Review
-            </a>
-            <a href="/admin/brand" class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"></path>
-                    <circle cx="7.5" cy="7.5" r="1.5"></circle>
-                </svg>
-                Brand
-            </a>
-        </nav>
-    </aside>
+   <%- include('./partials/sidebar', { activePage: 'dashboard' }) %>
 
     <!-- Main Content -->
     <main class="main-content">

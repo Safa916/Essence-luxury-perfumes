@@ -22,19 +22,23 @@ const categorySchema = new mongoose.Schema(
     type: {
       type: String,
       trim: true,
-      // e.g. could represent category grouping like "gender", "occasion" — adjust based on your app's use case
     },
     is_active: {
       type: Boolean,
       default: true,
     },
+    is_deleted: {
+      // soft delete flag — kept separate from is_active (the storefront visibility toggle)
+      type: Boolean,
+      default: false,
+    },
     parent_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category', // self-reference — points to another Category document
+      ref: 'category',
       default: null,
     },
   },
-  { timestamps: { createdAt: 'created_at', updatedAt: false } } // diagram only shows created_at
+  { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
 
 const category = mongoose.model('category', categorySchema);

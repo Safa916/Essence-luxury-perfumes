@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories — Essence Admin</title>
+     <link rel="stylesheet" href="/admin/category/categoryManagement.css">
+    <link rel="stylesheet" href="/admin/partials/sidebar.css" />
+    <link rel="stylesheet" href="/admin/category/categoryModal.css" /> 
+
+   </head>
+<body>
+
+    <%- include('../partials/sidebar', { activePage: 'categories' }) %>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Top Header Bar (same as dashboard) -->
+        <header class="top-header">
+            <div class="top-search-wrapper">
+                <input type="text" class="top-search-input" placeholder="Search categories, products...">
+            </div>
+        </header>
+
+        <!-- Page Header -->
+        <header class="page-header">
+            <div>
+                <h2 class="page-title">Categories</h2>
+                <p class="page-subtitle">Manage and organize your product catalog architecture.</p>
+            </div>
+            <button type="button" class="add-category-btn" id="openAddModalBtn">+ Add Category</button>
+        </header>
+
+        <!-- Stat Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Total Categories</span>
+                </div>
+                <div class="stat-value-row">
+                    <span class="stat-value"><%= totalCategoriesAll %></span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Active Categories</span>
+                </div>
+                <div class="stat-value-row">
+                    <span class="stat-value"><%= totalActive %></span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Inactive Categories</span>
+                </div>
+                <div class="stat-value-row">
+                    <span class="stat-value"><%= String(totalInactive).padStart(2, '0') %></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Table -->
+        <section class="table-card">
+            <div class="table-header">
+                <h3 class="table-title">All Categories</h3>
+
+                <form action="/admin/categories" method="GET" class="table-search-wrapper">
+                    <input type="text" name="search" class="table-search-input" placeholder="Search by name..." value="<%= search %>">
+                    <div class="search-actions">
+                        <% if (search) { %>
+                            <a href="/admin/categories" class="clear-search-link" title="Clear search">✕</a>
+                        <% } %>
+                        <button type="submit" class="search-submit-btn" title="Search">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="7"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <table class="categories-table">
+                <thead>
+                    <tr>
+                        <th class="col-sl">SL<br>NO</th>
+                        <th class="col-name">Category Name</th>
+                        <th class="col-count">Products</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (categories.length === 0) { %>
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:40px; color:#8E8E93;">
+                                No categories found<% if (search) { %> for "<%= search %>"<% } %>
+                            </td>
+                        </tr>
+                    <% } else { %>
+                        <% categories.forEach((cat, index) => { %>
+                            <% const serial = (page - 1) * limit + index + 1; %>
+                            <tr>
+                                <td class="col-sl"><%= String(serial).padStart(2, '0') %></td>
+                                <td class="col-name"><%= cat.name %></td>
+                                <td class="col-count"><%= cat.productCount || 0 %></td>
+                                <td class="col-status">
+                                    <span class="status-badge <%= cat.is_active ? 'active' : 'inactive' %>">
+                                        <%= cat.is_active ? 'Active' : 'Inactive' %>
+                                    </span>
+                                    <form action="/admin/categories/<%= cat._id %>/status" method="POST" class="toggle-form">
+                                        <input type="hidden" name="_method" value="PATCH">
+                                        <button type="submit" class="toggle-switch <%= cat.is_active ? 'is-on' : '' %>" aria-label="Toggle status">
+                                            <span class="toggle-knob"></span>
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="col-actions">
+                                    <div class="action-group">
+                                        <button
+                                            type="button"
+                                            class="action-icon-btn edit-btn"
+                                            title="Edit category"
+                                            data-id="<%= cat._id %>"
+                                            data-name="<%= cat.name %>"
+                                            data-active="<%= cat.is_active %>"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="action-icon-btn delete-btn"
+                                            title="Delete category"
+                                            data-id="<%= cat._id %>"
+                                            data-name="<%= cat.name %>"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+
+            <%
+                const delta = 1;
+                const pagesToShow = [];
+                for (let p = 1; p <= totalPages; p++) {
+                    if (p === 1 || p === totalPages || (p >= page - delta && p <= page + delta)) {
+                        pagesToShow.push(p);
+                    }
+                }
+                const qs = (p) => `/admin/categories?search=${encodeURIComponent(search)}&page=${p}`;
+            %>
+            <div class="table-footer">
+                <span class="table-count">
+                    Showing <%= categories.length === 0 ? 0 : (page - 1) * limit + 1 %>
+                    to <%= Math.min(page * limit, matchedCategories) %>
+                    of <%= matchedCategories.toLocaleString() %> categories
+                </span>
+                <div class="pagination">
+                    <% if (page > 1) { %>
+                        <a class="page-nav-btn" href="<%= qs(page - 1) %>">
+                    <% } else { %>
+                        <a class="page-nav-btn" style="pointer-events:none; opacity:0.35;">
+                    <% } %>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </a>
+
+                    <% let prevPage = 0; %>
+                    <% pagesToShow.forEach(p => { %>
+                        <% if (p - prevPage > 1) { %><span class="page-ellipsis">...</span><% } %>
+                        <a class="page-num-btn <%= p === page ? 'active' : '' %>" href="<%= qs(p) %>"><%= p %></a>
+                        <% prevPage = p; %>
+                    <% }) %>
+
+                    <% if (page < totalPages) { %>
+                        <a class="page-nav-btn" href="<%= qs(page + 1) %>">
+                    <% } else { %>
+                        <a class="page-nav-btn" style="pointer-events:none; opacity:0.35;">
+                    <% } %>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== ADD CATEGORY MODAL ===== -->
+    <div class="modal-overlay" id="addModalOverlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Add New Category</h2>
+                <button type="button" class="modal-close" data-close="addModalOverlay">✕</button>
+            </div>
+            <% if (typeof formError !== 'undefined' && formError && openModal === 'add') { %>
+                <p class="form-error"><%= formError %></p>
+            <% } %>
+            <form action="/admin/categories/add" method="POST">
+                <div class="form-group">
+                    <label>Category Name</label>
+                    <input
+                        type="text"
+                        name="name"
+                        placeholder="e.g: Unisex"
+                        value="<%= (typeof openModal !== 'undefined' && openModal === 'add' && typeof enteredName !== 'undefined') ? enteredName : '' %>"
+                        required
+                    />
+                </div>
+                <div class="form-row-toggle">
+                    <div>
+                        <div class="toggle-label">Status</div>
+                        <div class="toggle-sublabel">Mark as Active</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" name="is_active" checked />
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" data-close="addModalOverlay">Cancel</button>
+                    <button type="submit" class="btn-confirm">Add Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== EDIT CATEGORY MODAL ===== -->
+    <div class="modal-overlay" id="editModalOverlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Edit Category</h2>
+                <button type="button" class="modal-close" data-close="editModalOverlay">✕</button>
+            </div>
+            <% if (typeof formError !== 'undefined' && formError && openModal === 'edit') { %>
+                <p class="form-error"><%= formError %></p>
+            <% } %>
+            <form action="/admin/categories/0/edit" method="POST" id="editCategoryForm">
+                <input type="hidden" name="_method" value="PUT">
+                <div class="form-group">
+                    <label>Category Name</label>
+                    <input type="text" name="name" id="editCategoryName" required />
+                </div>
+                <div class="form-row-toggle">
+                    <div>
+                        <div class="toggle-label">Mark as Active</div>
+                        <div class="toggle-sublabel">Visible on store frontend</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" name="is_active" id="editCategoryActive" />
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" data-close="editModalOverlay">Cancel</button>
+                    <button type="submit" class="btn-confirm">Update Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== DELETE CATEGORY MODAL ===== -->
+    <div class="modal-overlay" id="deleteModalOverlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Delete Category</h2>
+                <button type="button" class="modal-close" data-close="deleteModalOverlay">✕</button>
+            </div>
+            <div class="delete-warning">
+                <span class="warning-icon">⚠</span>
+                <span class="warning-label">Permanent Action</span>
+            </div>
+            <p class="delete-message">
+                Are you sure you want to delete the <strong id="deleteCategoryName"></strong> category?
+                This action will remove all associated products from the store frontend. This action cannot be undone.
+            </p>
+            <form action="/admin/categories/0" method="POST" id="deleteCategoryForm">
+                <input type="hidden" name="_method" value="DELETE">
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" data-close="deleteModalOverlay">Cancel</button>
+                    <button type="submit" class="btn-delete-confirm">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+        document.querySelectorAll('[data-close]').forEach((btn) => {
+            btn.addEventListener('click', () => closeModal(btn.dataset.close));
+        });
+        document.querySelectorAll('.modal-overlay').forEach((overlay) => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeModal(overlay.id);
+            });
+        });
+
+        // Open Add modal
+        document.getElementById('openAddModalBtn').addEventListener('click', () => {
+            openModal('addModalOverlay');
+        });
+
+        // Open Edit modal, prefilled per row
+        document.querySelectorAll('.edit-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                document.getElementById('editCategoryForm').action = `/admin/categories/${id}/edit`;
+                document.getElementById('editCategoryName').value = btn.dataset.name;
+                document.getElementById('editCategoryActive').checked = btn.dataset.active === 'true';
+                openModal('editModalOverlay');
+            });
+        });
+
+        // Open Delete modal, per row
+        document.querySelectorAll('.delete-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                document.getElementById('deleteCategoryForm').action = `/admin/categories/${id}`;
+                document.getElementById('deleteCategoryName').textContent = `"${btn.dataset.name}"`;
+                openModal('deleteModalOverlay');
+            });
+        });
+
+        // Reopen a modal automatically if the server redirected back with a validation error
+        <% if (typeof openModal !== 'undefined' && openModal === 'add') { %>
+            openModal('addModalOverlay');
+        <% } else if (typeof openModal !== 'undefined' && openModal === 'edit' && typeof editId !== 'undefined') { %>
+            (function () {
+                const btn = document.querySelector('.edit-btn[data-id="<%= editId %>"]');
+                if (btn) {
+                    document.getElementById('editCategoryForm').action = '/admin/categories/<%= editId %>/edit';
+                    document.getElementById('editCategoryName').value = '<%= typeof enteredName !== "undefined" ? enteredName : "" %>' || btn.dataset.name;
+                    document.getElementById('editCategoryActive').checked = btn.dataset.active === 'true';
+                    openModal('editModalOverlay');
+                }
+            })();
+        <% } %>
+    </script>
+
+</body>
+</html>

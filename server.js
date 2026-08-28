@@ -1,5 +1,6 @@
 require('dotenv').config() 
 const express=  require("express")
+const methodOverride = require('method-override'); 
 const app =express()
 const path = require("path");
 app.set("view engine", "ejs");
@@ -15,9 +16,20 @@ const adminRoutes = require('./routes/adminRoutes');
 
 
 
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(methodOverride(function (req, res) {
+  if (req.body && typeof req.body === 'object' && '_method' in req.body) {
+    const method = req.body._method;
+    delete req.body._method;
+    return method;
+  }
+}));
+
+app.use(methodOverride('_method'));   
 
 app.use(cookieParser());
 
@@ -34,10 +46,19 @@ app.get('/', checkUser, (req, res) => {
     res.render('user/home/homepage', { user: req.user });
 });
 
+
+
 app.use('/auth', userRoutes);
 app.use('/address', addressRoutes);
 app.use('/profile', profileRoutes);
 app.use('/admin', adminRoutes);
+app.use(methodOverride(function (req, res) {
+  if (req.body && typeof req.body === 'object' && '_method' in req.body) {
+    const method = req.body._method;
+    delete req.body._method;
+    return method;
+  }
+}));
 
 
 
