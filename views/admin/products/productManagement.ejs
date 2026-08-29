@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Management · Essence Admin</title>
+
+  <link rel="stylesheet" href="/admin/products/productManagement.css" />
+  <link rel="stylesheet" href="/admin/partials/sidebar.css" />
+</head>
+<body>
+  <div class="layout">
+    <%- include('../partials/sidebar', { activePage: 'products' }) %>
+
+    <!-- Main -->
+    <main class="main-content">
+
+      <div class="topbar">
+  <form class="search-box" method="GET" action="/admin/products">
+    <span class="search-icon">⌕</span>
+    <input type="text" name="search" value="<%= query.search || '' %>" placeholder="Quick search inventory..." />
+    <% if (query.search) { %>
+      <a href="/admin/products" class="clear-search-btn" title="Clear search">✕</a>
+    <% } %>
+  </form>
+</div>
+
+      <div class="page-header">
+        <div>
+          <h1>Product Management</h1>
+          <p class="page-subtitle">Curate and monitor the performance of elite scents in the global warehouse.</p>
+        </div>
+        <a href="/admin/products/add" class="btn-primary">+ Add Product</a>
+      </div>
+
+      <div class="filters">
+        <div class="filter-select">
+          <span>All Categories</span>
+          <span class="chevron">⌄</span>
+        </div>
+        <div class="filter-select">
+          <span>Status</span>
+          <span class="chevron">⌄</span>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th class="col-sl">SL NO</th>
+              <th class="col-img">PDT IMAGE</th>
+              <th class="col-name">PDT NAME &amp; SKU</th>
+              <th>CATEGORY</th>
+              <th>PRICE</th>
+              <th>STOCK</th>
+              <th>STATUS</th>
+              <th class="col-actions">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% products.forEach(function(product) { %>
+              <tr>
+                <td class="col-sl"><%= product.sl %></td>
+                <td class="col-img">
+                  <div class="pdt-thumb">
+                    <% if (product.image) { %>
+                      <img src="<%= product.image %>" alt="<%= product.name %>" />
+                    <% } %>
+                  </div>
+                </td>
+                <td class="col-name">
+                  <div class="pdt-name"><%= product.name %></div>
+                  <div class="pdt-sku"><%= product.sku %></div>
+                </td>
+                <td><span class="category"><%= product.category %></span></td>
+                <td class="price">$<%= Number(product.price || 0).toFixed(2) %></td>
+                <td>
+                  <div class="stock-cell">
+                    <span class="stock-track"><span class="stock-fill <%= product.stock <= 20 ? 'low' : '' %>" style="width: <%= Math.min((product.stock / 150) * 100, 100) %>%;"></span></span>
+                   
+                    <span class="stock-count <%= product.stock <= 20 ? 'low' : '' %>"><%= product.stock %></span>
+                  </div>
+                </td>
+                <td>
+                  <span class="status-pill <%= product.status === 'Active' ? 'active' : 'inactive' %>">
+                    <%= product.status.toUpperCase() %>
+                  </span>
+                </td>
+                <td class="col-actions">
+                  <div class="actions">
+                    <a class="btn-edit" href="/admin/products/<%= product._id %>/edit">✎ Edit</a>
+                    <button
+                      type="button"
+                      class="btn-delete"
+                      data-id="<%= product._id %>"
+                      data-name="<%= product.name %>"
+                    >🗑 Delete</button>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+
+        <div class="table-footer">
+          <div class="showing-count">
+            Showing <strong><%= products.length %></strong> of <strong><%= totalProducts %></strong> products
+          </div>
+          <div class="pagination">
+            <a class="page-btn nav-btn" href="?page=<%= currentPage - 1 %>">‹</a>
+            <% for (let i = 1; i <= Math.min(totalPages, 4); i++) { %>
+              <a class="page-btn <%= i === currentPage ? 'active' : '' %>" href="?page=<%= i %>">
+                <%= i.toString().padStart(2, '0') %>
+              </a>
+            <% } %>
+            <% if (totalPages > 4) { %>
+              <span class="page-ellipsis">…</span>
+              <a class="page-btn" href="?page=<%= totalPages %>"><%= totalPages %></a>
+            <% } %>
+            <a class="page-btn nav-btn" href="?page=<%= currentPage + 1 %>">›</a>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ===== Delete Product confirmation popup ===== -->
+  <div class="modal-overlay" id="deleteProductOverlay">
+    <div class="modal-card delete-product-card">
+      <div class="modal-side">
+        <div class="modal-side-icon">🗄</div>
+        <div class="modal-side-label">SYSTEM NOTIFICATION</div>
+        <div class="modal-side-ref" id="deleteProductRef"></div>
+      </div>
+      <div class="modal-body">
+        <button type="button" class="modal-close" id="closeDeleteProductBtn">✕</button>
+        <h2>DELETE<br />PRODUCT</h2>
+        <p>Are you sure you want to delete the <strong id="deleteProductName"></strong>?</p>
+        <p class="modal-warning">
+          This action cannot be undone and will remove all associated variant data
+          from the inventory system including stock levels, SKU mappings, and sales history.
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="btn-danger" id="confirmDeleteProductBtn">🗑 Delete</button>
+          <button type="button" class="btn-secondary" id="cancelDeleteProductBtn">Cancel</button>
+        </div>
+        <div class="modal-footnote">Confirming removal from admin portal</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/admin/js/productManagement.js"></script>
+</body>
+</html>

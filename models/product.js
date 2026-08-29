@@ -4,12 +4,12 @@ const productSchema = new mongoose.Schema(
   {
     brand_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Brand',
+      ref: 'brands',
       default: null,
     },
     category_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+      ref: 'category',
       default: null,
     },
     name: {
@@ -42,6 +42,20 @@ const productSchema = new mongoose.Schema(
       type: [String], // array of image URLs
       default: [],
     },
+    // Base price shown on the Product Management table.
+    price: {
+      type: Number,
+      required: [true, 'Price is required'],
+      min: 0,
+      default: 0,
+    },
+    // Aggregate stock shown on the table (kept in sync with variant totals
+    // by variantController.js's recalcProductStock()).
+    stock: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     is_active: {
       type: Boolean,
       default: true,
@@ -50,9 +64,25 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // ---- Soft delete ----
+    is_deleted: {
+      type: Boolean,
+      default: false,
+    },
+    deleted_at: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
+
+// Hide soft-deleted products from every normal find/findOne automatically.
+productSchema.pre(/^find/, function () {
+  if (!this.getOptions().withDeleted) {
+    this.where({ is_deleted: { $ne: true } });
+  }
+});
 
 const product = mongoose.model('product', productSchema);
 module.exports = product;

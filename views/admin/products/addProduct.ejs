@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Product · Essence Admin</title>
+  <link rel="stylesheet" href="/admin/products/addEditProduct.css" />
+  <link rel="stylesheet" href="/admin/partials/sidebar.css" />
+</head>
+<body>
+  <div class="layout">
+    <%- include('../partials/sidebar', { activePage: 'products' }) %>
+
+    <main class="main-content">
+      <div class="topbar">
+        <div class="search-box">
+          <span class="search-icon">⌕</span>
+          <input type="text" placeholder="Quick find product or SKU..." />
+        </div>
+      </div>
+
+      <% if (errors && errors.length) { %>
+        <div class="form-errors">
+          <% errors.forEach(function(e) { %><div><%= e %></div><% }); %>
+        </div>
+      <% } %>
+
+      <form class="product-form" method="POST" action="/admin/products/add" enctype="multipart/form-data">
+        <div class="form-main">
+          <h1>ADD NEW PRODUCT</h1>
+          <div class="section-title">GENERAL INFORMATION</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>PRODUCT NAME</label>
+              <input type="text" name="name" placeholder="e.g.Coco Noir Chanel," value="<%= oldInput && oldInput.name || '' %>" required />
+            </div>
+            <div class="form-group">
+              <label>SKU IDENTIFICATION</label>
+              <input type="text" name="sku" placeholder="CHANEL-CN-50ML" value="<%= oldInput && oldInput.sku || '' %>" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>PRODUCT DESCRIPTION</label>
+            <div class="rte-toolbar"><span>B</span><span><i>I</i></span><span>≔</span><span>⛓</span></div>
+            <textarea name="full_description" rows="5" placeholder="A luxurious floral bouquet of rose, jasmine, and geranium. Think of it like a rich velvet cloth layered over fresh spring petals."><%= oldInput && oldInput.full_description || '' %></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>BASE PRICE ($)</label>
+              <input type="number" step="0.01" min="0" name="price" placeholder="274.99" required />
+            </div>
+            <div class="form-group">
+              <label>INITIAL STOCK</label>
+              <input type="number" min="0" name="stock" placeholder="0" value="0" />
+            </div>
+          </div>
+
+          <div class="form-row toggles">
+            <div class="form-group">
+              <label>STATUS</label>
+              <label class="toggle">
+                <input type="checkbox" name="status" value="active" checked />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="toggle-text">ACTIVE</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label>LIMITED EDITION</label>
+              <label class="toggle">
+                <input type="checkbox" name="limited_edition" value="active" />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="toggle-text">ACTIVE</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="section-title">ORGANIZATION</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>BRAND</label>
+              <select name="brand_id">
+                <option value="">Select brand</option>
+                <% (brands || []).forEach(function(b) { %>
+                  <option value="<%= b._id %>"><%= b.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>CATEGORY</label>
+              <select name="category_id">
+                <option value="">Select category</option>
+                <% (categories || []).forEach(function(c) { %>
+                  <option value="<%= c._id %>"><%= c.name %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <a href="/admin/products" class="btn-cancel">CANCEL</a>
+            <button type="submit" class="btn-save">SAVE PRODUCT</button>
+          </div>
+        </div>
+
+        <aside class="form-media">
+          <div class="section-title">MEDIA</div>
+          <label class="dropzone" for="imagesInput">
+            <div class="dropzone-icon">⬆</div>
+            <div class="dropzone-text">DRAG &amp; DROP PRODUCT IMAGE</div>
+            <div class="dropzone-hint">4000 X 4000PX RECOMMENDED · MIN 3 IMAGES</div>
+            <span class="dropzone-btn">SELECT FILES</span>
+          </label>
+          <input id="imagesInput" type="file" name="images" accept="image/*" multiple  style="display:none" />
+
+          <div class="image-previews" id="imagePreviews">
+            <div class="preview-slot empty">+</div>
+            <div class="preview-slot empty">+</div>
+            <div class="preview-slot empty">+</div>
+          </div>
+          <div class="image-count-hint" id="imageCountHint">0 of 3 minimum images selected</div>
+        </aside>
+      </form>
+    </main>
+  </div>
+
+  <%- include('../partials/cropperModal') %>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <script src="/admin/js/productForm.js" data-mode="add" data-min-images="3"></script>
+</body>
+</html>

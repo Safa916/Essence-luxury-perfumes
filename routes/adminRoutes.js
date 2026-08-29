@@ -5,13 +5,13 @@ const { getLoginPage, postLogin, logout, getDashboard } = require('../controller
 const { getUsersPage, toggleBlockUser } = require('../controllers/admin/userManagementController');
 const { requireAdminAuth, redirectIfAdminLoggedIn } = require('../middleware/adminAuth');
 const categoryRoutes = require('./categoryRoutes');
+const productRoutes = require('./productRoutes');
+const variantRoutes = require('./variantRoutes');
 
 // Auth
 router.get('/login', redirectIfAdminLoggedIn, getLoginPage);
 router.post('/login', redirectIfAdminLoggedIn, postLogin);
 router.get('/logout', logout);
-
-
 
 // Dashboard
 router.get('/dashboard', requireAdminAuth, getDashboard);
@@ -20,8 +20,13 @@ router.get('/dashboard', requireAdminAuth, getDashboard);
 router.get('/users', requireAdminAuth, getUsersPage);
 router.post('/users/:id/toggle-block', requireAdminAuth, toggleBlockUser);
 
-//category Management
-router.use('/categories', requireAdminAuth, categoryRoutes)
+// Category Management
+router.use('/categories', requireAdminAuth, categoryRoutes);
 
+// Product Management (list, add, edit, soft-delete, view/variant-manager entry)
+router.use('/products', requireAdminAuth, productRoutes);
+
+// Variant Manager (Add/Edit/Delete variant popups — JSON endpoints)
+router.use('/variants', requireAdminAuth, variantRoutes);
 
 module.exports = router;

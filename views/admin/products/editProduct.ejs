@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Product · Essence Admin</title>
+  <link rel="stylesheet" href="/admin/products/addEditProduct.css" />
+  <link rel="stylesheet" href="/admin/partials/sidebar.css" />
+</head>
+<body>
+  <div class="layout">
+    <%- include('../partials/sidebar', { activePage: 'products' }) %>
+
+    <main class="main-content">
+      <div class="topbar">
+        <div class="search-box">
+          <span class="search-icon">⌕</span>
+          <input type="text" placeholder="Search inventory..." />
+        </div>
+      </div>
+
+      <% if (errors && errors.length) { %>
+        <div class="form-errors">
+          <% errors.forEach(function(e) { %><div><%= e %></div><% }); %>
+        </div>
+      <% } %>
+
+      <form class="product-form" method="POST" action="/admin/products/<%= product._id %>?_method=PUT" enctype="multipart/form-data">
+        <div class="form-main">
+          <h1>EDIT PRODUCT</h1>
+          <div class="section-title">GENERAL INFORMATION</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>PRODUCT NAME</label>
+              <input type="text" name="name" value="<%= product.name %>" required />
+            </div>
+            <div class="form-group">
+              <label>SKU</label>
+              <input type="text" name="sku" value="<%= product.sku %>" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>PRODUCT DESCRIPTION</label>
+            <textarea name="full_description" rows="5"><%= product.full_description || '' %></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>PRICE ($)</label>
+              <input type="number" step="0.01" min="0" name="price" value="<%= product.price %>" required />
+            </div>
+            <div class="form-group">
+              <label>STOCK</label>
+              <input type="number" min="0" name="stock" value="<%= product.stock %>" />
+            </div>
+          </div>
+
+          <div class="form-row toggles">
+            <div class="form-group">
+              <label>STATUS</label>
+              <label class="toggle">
+                <input type="checkbox" name="status" value="active" <%= product.is_active ? 'checked' : '' %> />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="toggle-text"><%= product.is_active ? 'ACTIVE' : 'INACTIVE' %></span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label>LIMITED EDITION</label>
+              <label class="toggle">
+                <input type="checkbox" name="limited_edition" value="active" <%= product.is_limited_edition ? 'checked' : '' %> />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="toggle-text"><%= product.is_limited_edition ? 'ACTIVE' : 'INACTIVE' %></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="section-title">ORGANIZATION</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>CATEGORY</label>
+              <select name="category_id">
+                <option value="">Select category</option>
+                <% (categories || []).forEach(function(c) { %>
+                  <option value="<%= c._id %>" <%= String(product.category_id && product.category_id._id || product.category_id) === String(c._id) ? 'selected' : '' %>><%= c.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>BRAND</label>
+              <select name="brand_id">
+                <option value="">Select brand</option>
+                <% (brands || []).forEach(function(b) { %>
+                  <option value="<%= b._id %>" <%= String(product.brand_id && product.brand_id._id || product.brand_id) === String(b._id) ? 'selected' : '' %>><%= b.name %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <a href="/admin/products" class="btn-cancel">CANCEL</a>
+            <button type="submit" class="btn-save">UPDATE PRODUCT</button>
+          </div>
+        </div>
+
+        <aside class="form-media">
+          <div class="section-title">PRODUCT IMAGES</div>
+          <div class="existing-images" id="existingImages">
+            <% (product.images || []).forEach(function(img) { %>
+              <div class="existing-image" data-src="<%= img %>">
+                <img src="<%= img %>" alt="<%= product.name %>" />
+                <button type="button" class="remove-image-btn" onclick="markImageForRemoval(this, '<%= img %>')">✕</button>
+              </div>
+            <% }); %>
+          </div>
+          <input type="hidden" name="removed_images" id="removedImagesInput" value="" />
+
+          <label class="dropzone" for="imagesInput">
+            <div class="dropzone-icon">⬆</div>
+            <div class="dropzone-text">ADD MORE IMAGES</div>
+            <span class="dropzone-btn">SELECT FILES</span>
+          </label>
+          <input id="imagesInput" type="file" name="images" accept="image/*" multiple style="display:none" />
+
+          <div class="image-previews" id="imagePreviews"></div>
+          <div class="image-count-hint" id="imageCountHint">At least 3 images required in total</div>
+        </aside>
+      </form>
+    </main>
+  </div>
+
+  <%- include('../partials/cropperModal') %>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <script>
+    window.__EXISTING_IMAGE_COUNT__ = <%= (product.images || []).length %>;
+  </script>
+  <script src="/admin/js/productForm.js" data-mode="edit" data-min-images="3"></script>
+</body>
+</html>
