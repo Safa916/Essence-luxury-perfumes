@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/authMiddleware');
+const { requireAuth } = require('../../middleware/authMiddleware');
 
 const {
   listAddresses,
@@ -11,7 +11,7 @@ const {
   deleteAddress,
   getDeleteConfirmation,
   setDefaultAddress
-} = require('../controllers/user/addressController');
+} = require('../../controllers/user/addressController');
 
 router.get('/', requireAuth, listAddresses);
 router.get('/new', requireAuth, getNewAddressForm);

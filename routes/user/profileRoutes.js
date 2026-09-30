@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/authMiddleware');
-const uploadAvatar = require('../config/upload');
+const { requireAuth } = require('../../middleware/authMiddleware');
+const uploadAvatar = require('../../config/upload');
 const {
   getProfile,
   getEditProfileForm,
@@ -9,9 +9,9 @@ const {
   getChangeEmailForm,
   requestEmailChange,
   verifyEmailChange,
-} = require('../controllers/user/profileController');
+} = require('../../controllers/user/profileController');
 
-const { getChangePasswordForm, updatePassword } = require('../controllers/user/profileController');
+const { getChangePasswordForm, updatePassword } = require('../../controllers/user/profileController');
 
 
 router.get('/security/email', requireAuth, getChangeEmailForm);
