@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop by Category — Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/categories/categories.css">
+</head>
+<body>
+
+  <%- include('../partials/header', { activePage: 'categories', user: typeof user !== 'undefined' ? user : null }) %>
+
+  <main class="categories-page">
+
+    <div class="categories-header">
+      <p class="eyebrow">Discover</p>
+      <h1 class="categories-title">Shop by Category</h1>
+      <p class="categories-subtitle">From timeless classics to rare new houses — explore our collection by scent family.</p>
+    </div>
+
+    <% if (!categories.length) { %>
+      <div class="categories-empty">
+        <p>No categories available yet. Please check back soon.</p>
+      </div>
+    <% } else { %>
+      <div class="categories-grid">
+        <% categories.forEach(function (cat) { %>
+          <a href="/shop?category=<%= cat._id %>" class="category-card">
+            <div class="category-image">
+              <img
+                src="<%= cat.banner_url || '/user/images/category-placeholder.jpg' %>"
+                alt="<%= cat.name %>"
+              >
+              <div class="category-overlay"></div>
+            </div>
+            <div class="category-info">
+              <p class="category-name"><%= cat.name %></p>
+              <p class="category-count">
+                <%= cat.productCount %> fragrance<%= cat.productCount === 1 ? '' : 's' %>
+              </p>
+              <span class="category-explore">Explore &rarr;</span>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+    <% } %>
+
+  </main>
+
+  <%- include('../partials/logout-modal') %>
+  <%- include('../partials/footer') %>
+
+</body>
+</html>

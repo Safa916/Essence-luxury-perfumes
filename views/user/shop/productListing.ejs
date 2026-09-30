@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Fragrance Gallery — Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/shop/productListing.css">
+</head>
+<body>
+
+  <%- include('../partials/header', { activePage: 'shop', user: typeof user !== 'undefined' ? user : null }) %>
+
+  <main class="shop-page">
+
+    <div class="shop-header">
+      <div class="shop-header-top">
+        <p class="eyebrow">Collection</p>
+        <div class="shop-search">
+          <input type="text" id="shopSearchInput" placeholder="Search" value="<%= query.search || '' %>" aria-label="Search fragrances">
+          <button type="button" id="shopSearchClearBtn" class="search-clear-btn" style="display: <%= query.search ? 'inline-flex' : 'none' %>;" aria-label="Clear search">&times;</button>
+          <button type="button" id="shopSearchBtn" class="search-icon-btn" aria-label="Search">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+        </div>
+      </div>
+      <h1 class="shop-title">The Fragrance Gallery</h1>
+    </div>
+
+    <div class="shop-layout">
+
+      <!-- ===== Sidebar filters ===== -->
+      <aside class="shop-sidebar">
+        <form id="filterForm">
+
+          <div class="filter-group">
+            <h3 class="filter-title">Category</h3>
+            <div class="filter-options">
+              <% categories.forEach(function (cat) { %>
+                <label class="filter-checkbox">
+                  <input type="checkbox" name="category" value="<%= cat._id %>"
+                    <%= (query.category || '').split(',').includes(String(cat._id)) ? 'checked' : '' %>>
+                  <span><%= cat.name %></span>
+                </label>
+              <% }); %>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h3 class="filter-title">Brands</h3>
+            <div class="filter-options">
+              <% brands.forEach(function (b) { %>
+                <label class="filter-checkbox">
+                  <input type="checkbox" name="brand" value="<%= b._id %>"
+                    <%= (query.brand || '').split(',').includes(String(b._id)) ? 'checked' : '' %>>
+                  <span><%= b.name %></span>
+                </label>
+              <% }); %>
+            </div>
+          </div>
+
+          <% if (concentrations.length) { %>
+            <div class="filter-group">
+              <h3 class="filter-title">Concentration</h3>
+              <div class="filter-options">
+                <% concentrations.forEach(function (c) { %>
+                  <label class="filter-checkbox">
+                    <input type="checkbox" name="concentration" value="<%= c %>"
+                      <%= (query.concentration || '').split(',').includes(c) ? 'checked' : '' %>>
+                    <span><%= c %></span>
+                  </label>
+                <% }); %>
+              </div>
+            </div>
+          <% } %>
+
+          <% if (sizes.length) { %>
+            <div class="filter-group">
+              <h3 class="filter-title">Size</h3>
+              <div class="size-options">
+                <% sizes.forEach(function (s) { %>
+                  <label class="size-chip">
+                    <input type="checkbox" name="size" value="<%= s %>"
+                      <%= (query.size || '').split(',').includes(String(s)) ? 'checked' : '' %>>
+                    <span><%= s %>ml</span>
+                  </label>
+                <% }); %>
+              </div>
+            </div>
+          <% } %>
+
+          <div class="filter-group">
+            <h3 class="filter-title">Price Range</h3>
+            <div class="price-slider" data-min="<%= priceMin %>" data-max="<%= priceMax %>">
+              <input type="range" id="priceMinRange" min="<%= priceMin %>" max="<%= priceMax %>"
+                value="<%= query.minPrice || priceMin %>">
+              <input type="range" id="priceMaxRange" min="<%= priceMin %>" max="<%= priceMax %>"
+                value="<%= query.maxPrice || priceMax %>">
+            </div>
+            <div class="price-labels">
+              <span id="priceMinLabel">₹<%= query.minPrice || priceMin %></span>
+              <span id="priceMaxLabel">₹<%= query.maxPrice || priceMax %></span>
+            </div>
+            <input type="hidden" name="minPrice" id="minPriceInput" value="<%= query.minPrice || priceMin %>">
+            <input type="hidden" name="maxPrice" id="maxPriceInput" value="<%= query.maxPrice || priceMax %>">
+          </div>
+
+          <button type="button" id="applyFiltersBtn" class="btn btn-dark filter-apply-btn">Apply Filters</button>
+          <button type="button" id="clearFiltersBtn" class="filter-clear-link">Clear all</button>
+        </form>
+      </aside>
+
+      <!-- ===== Product grid ===== -->
+      <section class="shop-results">
+        <div class="shop-toolbar">
+          <div class="sort-control">
+            <label for="sortSelect">Sort by</label>
+              <select id="sortSelect" name="sort">
+                <option value="newest" <%= (query.sort || 'newest') === 'newest' ? 'selected' : '' %>>Curated Selection</option>
+                <option value="price_low_high" <%= query.sort === 'price_low_high' ? 'selected' : '' %>>Price: Low to High</option>
+                <option value="price_high_low" <%= query.sort === 'price_high_low' ? 'selected' : '' %>>Price: High to Low</option>
+                <option value="name_a_z" <%= query.sort === 'name_a_z' ? 'selected' : '' %>>Name: A to Z</option>
+                <option value="name_z_a" <%= query.sort === 'name_z_a' ? 'selected' : '' %>>Name: Z to A</option>
+              </select>
+            </div>
+          </div>
+
+        <div id="productGridWrapper">
+          <%- include('./partials/productGrid', { products, totalProducts, currentPage, totalPages, limit, query }) %>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <%- include('../partials/logout-modal') %>
+<%- include('../partials/footer') %>
+
+ <script>
+  window.IS_LOGGED_IN = <%= user ? 'true' : 'false' %>;
+</script>
+<script src="/user/js/shop/productListing.js"></script>
+
+</body>
+</html>
