@@ -1,8 +1,8 @@
 const User = require('../../models/user');
 const APIFeatures = require('../../utils/apiFeatures');
 
-// GET /admin/users?search=&page=&limit=
 
+// GET /admin/users?search=&page=&limit=
 
 
 exports.getUsersPage = async (req, res) => {
@@ -10,22 +10,36 @@ exports.getUsersPage = async (req, res) => {
     const search = (req.query.search || '').trim();
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.max(parseInt(req.query.limit, 10) || 8, 1);
+    const joined = (req.query.joined || '').trim();
 
-    const baseQuery = User.find().select('-password_hash');
+    // ---- Build the "joined date" filter ----
+    const joinedFilter = {};
+    const now = new Date();
 
-  
+    if (joined === 'today') {
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      joinedFilter.created_at = { $gte: startOfToday };
+    } else if (joined === '7days') {
+      joinedFilter.created_at = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
+    } else if (joined === '30days') {
+      joinedFilter.created_at = { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
+    } else if (joined === 'thisyear') {
+      joinedFilter.created_at = { $gte: new Date(now.getFullYear(), 0, 1) };
+    }
+
+    const baseQuery = User.find(joinedFilter).select('-password_hash');
+
     const features = new APIFeatures(baseQuery, { search, page, limit })
       .search(['full_name', 'email'])
-      .sort({createdAt:1})
+      .sort({ is_active: -1 })
       .paginate();
 
     const users = await features.query;
 
-   
-    const countFeatures = new APIFeatures(User.find(), { search }).search(['full_name', 'email']);
+    // Count needs the SAME filters (search + joined) to match what's shown
+    const countFeatures = new APIFeatures(User.find(joinedFilter), { search }).search(['full_name', 'email']);
     const matchedUsers = await countFeatures.query.countDocuments();
 
-  
     const totalUsersAll = await User.countDocuments({});
     const totalActive = await User.countDocuments({ is_active: true });
 
@@ -39,7 +53,8 @@ exports.getUsersPage = async (req, res) => {
       matchedUsers,
       totalUsersAll,
       totalActive,
-      totalPages
+      totalPages,
+      joined, // <-- new: pass this to the view so the <select> shows the right selected option
     });
   } catch (err) {
     console.error('Error loading users page:', err);
@@ -64,7 +79,20 @@ exports.toggleBlockUser = async (req, res) => {
     console.error('Error toggling block status:', err);
     res.redirect('/admin/users');
   }
+
 };
+
+ 
+
+
+
+
+
+
+
+
+
+
 
 
 

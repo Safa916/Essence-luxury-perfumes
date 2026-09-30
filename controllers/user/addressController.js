@@ -43,8 +43,8 @@ const validateAddressInput = (data) => {
   return errors;
 };
 
-// @desc    List all addresses for the logged-in user
-// @route   GET /address
+  // List all addresses for the logged-in user
+    //  GET /address
 exports.listAddresses = async (req, res) => {
   try {
     const addresses = await Address.find({ user_id: req.user._id }).sort({ is_default: -1, created_at: -1 });
@@ -56,16 +56,16 @@ exports.listAddresses = async (req, res) => {
   }
 };
 
-// @desc    Show the "Add New Address" form
-// @route   GET /address/new
+// Show the "Add New Address" form
+//  GET /address/new
 exports.getNewAddressForm = (req, res) => {
   res.render('user/address/edit-address', {
     address: { id: 'new', type: 'home', fullName: '', line1: '', line2: '', city: '', pincode: '', phone: '' },
   });
 };
 
-// @desc    Show the "Edit Address" form for an existing address
-// @route   GET /address/:id/edit
+// Show the "Edit Address" form for an existing address
+// GET /address/:id/edit
 exports.getEditAddressForm = async (req, res) => {
   try {
     const addr = await Address.findOne({ _id: req.params.id, user_id: req.user._id });
@@ -89,10 +89,15 @@ exports.getEditAddressForm = async (req, res) => {
   }
 };
 
-// @desc    Show the "Delete Address" confirmation page
-// @route   GET /address/:id/delete
+//     Show the "Delete Address" confirmation page
+//   GET /address/:id/delete
 exports.getDeleteConfirmation = async (req, res) => {
   try {
+    
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
     const addr = await Address.findOne({ _id: req.params.id, user_id: req.user._id });
     if (!addr) return res.redirect('/address');
 
@@ -139,6 +144,7 @@ exports.createAddress = async (req, res) => {
   try {
     const { type, fullName, line1, line2, city, pincode, phone } = req.body;
 
+    
     const errors = validateAddressInput(req.body);
     if (Object.keys(errors).length > 0) {
       return res.render('user/address/edit-address', {
@@ -146,6 +152,14 @@ exports.createAddress = async (req, res) => {
         errors,
       });
     }
+    const addressCount= await Address.countDocuments({user_id:req.user._id})
+    if (addressCount>=3){
+       return res.render('user/address/edit-address', {
+        address: { id: 'new', type, fullName, line1, line2, city, pincode, phone },
+       errors:{limit:"You can only save up to 3 addresses."}
+       
+    })}
+
 
     await Address.create({
       user_id: req.user._id,
