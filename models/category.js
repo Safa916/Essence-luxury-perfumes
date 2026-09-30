@@ -13,7 +13,6 @@ const categorySchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      // e.g. "mens-perfume" — used in URLs like /categories/mens-perfume
     },
     banner_url: {
       type: String,
@@ -22,20 +21,32 @@ const categorySchema = new mongoose.Schema(
     type: {
       type: String,
       trim: true,
-      // e.g. could represent category grouping like "gender", "occasion" — adjust based on your app's use case
     },
     is_active: {
       type: Boolean,
       default: true,
     },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+    },
     parent_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category', // self-reference — points to another Category document
+      ref: 'category',
       default: null,
     },
   },
-  { timestamps: { createdAt: 'created_at', updatedAt: false } } // diagram only shows created_at
+  { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
+
+// Hide soft-deleted categories from every normal find/findOne automatically.
+// Bypass with .setOptions({ withDeleted: true }) if you ever need to see
+// deleted categories (e.g. an admin "trash" view).
+categorySchema.pre(/^find/, function () {
+  if (!this.getOptions().withDeleted) {
+    this.where({ is_deleted: { $ne: true } });
+  }
+});
 
 const category = mongoose.model('category', categorySchema);
 module.exports = category;

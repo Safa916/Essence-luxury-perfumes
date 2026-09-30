@@ -3,121 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= typeof title !== 'undefined' ? title : 'Wishlist — Essence' %></title>
+  <title>My Wishlist — Essence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/user/home/homepage.css">
-  <style>
-    .wishlist-container {
-      max-width: var(--container);
-      margin: 4rem auto 6rem;
-      padding: 0 1.5rem;
-    }
-    .wishlist-header {
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 2rem;
-      margin-bottom: 3rem;
-    }
-    .wishlist-title {
-      font-family: var(--font-display);
-      font-size: 2.5rem;
-      font-weight: 400;
-    }
-    .empty-wishlist-state {
-      text-align: center;
-      padding: 6rem 2rem;
-    }
-    .empty-wishlist-title {
-      font-family: var(--font-display);
-      font-size: 2.2rem;
-      color: var(--ink);
-      margin-bottom: 1rem;
-    }
-    .empty-wishlist-desc {
-      color: var(--ink-soft);
-      font-size: 0.95rem;
-      margin-bottom: 2.5rem;
-    }
-  </style>
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/shop/wishlist.css">
 </head>
 <body>
 
-  <!-- ===== Header ===== -->
-  <header class="site-header">
-    <div class="header-inner">
-      <a href="/" class="logo">ESSENCE</a>
-      <nav class="main-nav">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/collections" class="nav-link">Collections</a>
-        <a href="/houses" class="nav-link">Houses</a>
-        <a href="/about" class="nav-link">About</a>
-      </nav>
-      <div class="header-icons">
-        <button class="icon-btn" aria-label="Search">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </button>
-        <a href="/cart" class="icon-btn" aria-label="Bag">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
-        </a>
+  <%- include('../partials/header', { activePage: 'home', user: typeof user !== 'undefined' ? user : null }) %>
 
-        <% if (typeof user !== 'undefined' && user) { %>
-          <div class="user-menu" style="display: inline-flex; align-items: center; gap: 10px;">
-            <a href="/profile" class="icon-btn profile-btn" aria-label="My Profile">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-              <span class="profile-label" style="font-family: var(--font-body); font-size: 0.8rem; letter-spacing: 0.1em;"><%= user.fullName || 'Profile' %></span>
-            </a>
-            <form action="/auth/logout" method="POST" class="logout-form" style="display:inline;">
-              <button type="submit" class="btn-logout" style="background: none; border: none; cursor: pointer; font-family: var(--font-body); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold);">Logout</button>
-            </form>
-          </div>
-        <% } else { %>
-          <a href="/auth/login" class="icon-btn" aria-label="Account">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+  <div class="account-layout">
+
+    <%- include('../partials/account-sidebar', { activePage: 'wishlist' }) %>
+
+    <main class="account-main">
+
+      <p class="eyebrow">Items You Saved For Later</p>
+      <h1 class="page-title">My Wishlist</h1>
+
+      <% if (!items.length) { %>
+        <div class="wishlist-empty">
+          <p>You haven't saved any fragrances yet.</p>
+          <a href="/shop" class="btn btn-dark">Explore Fragrances</a>
+        </div>
+      <% } else { %>
+        <div class="wishlist-grid" id="wishlistGrid">
+          <% items.forEach(function (item) { %>
+            <div class="wishlist-card" data-wishlist-item-id="<%= item.wishlist_item_id %>">
+              <button type="button" class="wishlist-remove-btn" aria-label="Remove from wishlist">&times;</button>
+
+              <a href="/product/<%= item.product_slug %>" class="wishlist-image">
+                <% if (item.image) { %>
+                  <img src="<%= item.image %>" alt="<%= item.product_name %>" onerror="this.style.display='none'">
+                <% } %>
+              </a>
+
+              <div class="wishlist-info">
+                <a href="/product/<%= item.product_slug %>" class="wishlist-name"><%= item.product_name %></a>
+                <p class="wishlist-price">₹<%= item.price.toLocaleString('en-IN') %></p>
+
+                <% if (!item.available) { %>
+                  <p class="wishlist-unavailable">No longer available</p>
+                <% } else if (!item.inStock) { %>
+                  <button type="button" class="btn btn-dark wishlist-move-btn" disabled>Out of Stock</button>
+                <% } else { %>
+                  <button
+                    type="button"
+                    class="btn btn-dark wishlist-move-btn"
+                    data-product-id="<%= item.product_id %>"
+                    data-variant-id="<%= item.variant_id || '' %>"
+                  >Add to Bag &rarr;</button>
+                <% } %>
+              </div>
+            </div>
+          <% }); %>
+
+          <a href="/shop" class="wishlist-explore-card">
+            <span class="explore-icon">&#10022;</span>
+            <p class="explore-text">Finding more<br>inspiration?</p>
+            <span class="explore-link">Explore Collection</span>
           </a>
-          <a href="/auth/login" class="btn btn-login">Sign In</a>
-        <% } %>
-      </div>
-    </div>
-  </header>
+        </div>
+      <% } %>
 
-  <main class="wishlist-container">
-    <div class="wishlist-header">
-      <h1 class="wishlist-title">My Wishlist</h1>
-    </div>
+    </main>
+  </div>
 
-    <!-- Empty State -->
-    <div class="empty-wishlist-state">
-      <h2 class="empty-wishlist-title">Your wishlist is empty</h2>
-      <p class="empty-wishlist-desc">Save items you love to keep track of them here.</p>
-      <a href="/collections" class="btn btn-dark">Explore the Fragrances</a>
-    </div>
-  </main>
+  <%- include('../partials/logout-modal') %>
 
-  <!-- ===== Footer ===== -->
-  <footer class="site-footer">
-    <div class="footer-columns">
-      <div class="footer-brand">
-        <p class="logo footer-logo">ESSENCE</p>
-        <p class="footer-tagline">Fine fragrance, thoughtfully curated.</p>
-      </div>
-      <div class="footer-col">
-        <h3>Shop</h3>
-        <a href="/collections/for-her">For Her</a>
-        <a href="/collections/for-him">For Him</a>
-        <a href="/collections/new">New Arrivals</a>
-        <a href="/houses">The Houses</a>
-      </div>
-      <div class="footer-col">
-        <h3>Company</h3>
-        <a href="/about">About</a>
-        <a href="/contact">Contact</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>&copy; <%= new Date().getFullYear() %> Essence. All rights reserved.</p>
-    </div>
-  </footer>
-
+  <script src="/user/js/shop/wishlist.js"></script>
 </body>
 </html>

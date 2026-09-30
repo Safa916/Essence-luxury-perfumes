@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Wishlist — Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/wishlist/wishlist.css">
+</head>
+<body>
+
+  <%- include('../partials/header', { activePage: 'home', user: typeof user !== 'undefined' ? user : null }) %>
+
+  <div class="account-layout">
+
+    <%- include('../partials/account-sidebar', { activePage: 'wishlist' }) %>
+
+    <main class="account-main">
+
+      <p class="eyebrow">Items You Saved For Later</p>
+      <h1 class="page-title">My Wishlist</h1>
+
+      <% if (!items.length) { %>
+        <div class="wishlist-empty">
+          <p>You haven't saved any fragrances yet.</p>
+          <a href="/shop" class="btn btn-dark">Explore Fragrances</a>
+        </div>
+      <% } else { %>
+        <div class="wishlist-grid" id="wishlistGrid">
+          <% items.forEach(function (item) { %>
+            <div class="wishlist-card" data-wishlist-item-id="<%= item.wishlist_item_id %>">
+              <button type="button" class="wishlist-remove-btn" aria-label="Remove from wishlist">&times;</button>
+
+              <a href="/product/<%= item.product_slug %>" class="wishlist-image">
+                <% if (item.image) { %>
+                  <img src="<%= item.image %>" alt="<%= item.product_name %>" onerror="this.style.display='none'">
+                <% } %>
+              </a>
+
+              <div class="wishlist-info">
+                <a href="/product/<%= item.product_slug %>" class="wishlist-name"><%= item.product_name %></a>
+                <p class="wishlist-price">₹<%= item.price.toLocaleString('en-IN') %></p>
+
+                <% if (!item.available) { %>
+                  <p class="wishlist-unavailable">No longer available</p>
+                <% } else if (!item.inStock) { %>
+                  <button type="button" class="btn btn-dark wishlist-move-btn" disabled>Out of Stock</button>
+                <% } else { %>
+                  <button
+                    type="button"
+                    class="btn btn-dark wishlist-move-btn"
+                    data-product-id="<%= item.product_id %>"
+                    data-variant-id="<%= item.variant_id || '' %>"
+                  >Add to Bag &rarr;</button>
+                <% } %>
+              </div>
+            </div>
+          <% }); %>
+
+          <a href="/shop" class="wishlist-explore-card">
+            <span class="explore-icon">&#10022;</span>
+            <p class="explore-text">Finding more<br>inspiration?</p>
+            <span class="explore-link">Explore Collection</span>
+          </a>
+        </div>
+      <% } %>
+
+    </main>
+  </div>
+
+  <%- include('../partials/logout-modal') %>
+
+  <script src="/user/js/wishlist/wishlist.js"></script>
+</body>
+</html>

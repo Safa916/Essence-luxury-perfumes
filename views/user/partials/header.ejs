@@ -1,0 +1,108 @@
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="logo">ESSENCE</a>
+
+    <nav class="main-nav">
+      <a href="/" class="nav-link <%= activePage === 'home' ? 'is-active' : '' %>">Home</a>
+      <a href="/categories" class="nav-link <%= activePage === 'categories' ? 'is-active' : '' %>">Categories</a>
+      <a href="/brands" class="nav-link <%= activePage === 'brands' ? 'is-active' : '' %>">Brands</a>
+      <a href="/shop" class="nav-link <%= activePage === 'shop' ? 'is-active' : '' %>">Shop</a>
+      <a href="/new-arrivals" class="nav-link <%= activePage === 'new-arrivals' ? 'is-active' : '' %>">New arrivals</a>
+    </nav>
+
+    <div class="header-icons">
+
+           <% if (activePage !== 'shop') { %>
+      <div class="header-search" id="headerSearch">
+        <button type="button" class="icon-btn" id="headerSearchToggle" aria-label="Search" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <div class="header-search-panel" id="headerSearchPanel">
+          <input
+            type="text"
+            id="headerSearchInput"
+            class="header-search-input"
+            placeholder="Search fragrances..."
+            aria-label="Search fragrances"
+          >
+        </div>
+      </div>
+      <% } %>
+
+      <a href="/wishlist" class="icon-btn" aria-label="Wishlist">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20.5s-7.5-4.6-10-9.3C.5 7.8 2.4 4.5 5.8 4c2-.3 3.9.6 5.2 2.4C12.3 4.6 14.2 3.7 16.2 4c3.4.5 5.3 3.8 3.8 7.2-2.5 4.7-10 9.3-10 9.3z"/></svg>
+      </a>
+
+      <a href="/cart" class="icon-btn" aria-label="Bag">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+      </a>
+
+      <% if (typeof user !== 'undefined' && user) { %>
+        <!-- Signed-in state -->
+        <div class="user-menu">
+          <a href="/profile" class="icon-btn profile-btn" aria-label="My Profile">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+            <span class="profile-label"><%= user.fullName || user.full_name || 'Profile' %></span>
+          </a>
+          <button type="button" id="logoutBtn" class="btn-logout">Logout</button>
+        </div>
+      <% } else { %>
+        <!-- Signed-out state -->
+        <a href="/auth/login" class="icon-btn" aria-label="Account">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        </a>
+        <a href="/auth/login" class="btn btn-login">Sign In</a>
+      <% } %>
+    </div>
+  </div>
+</header>
+
+<script>
+  (function () {
+    var wrapper = document.getElementById('headerSearch');
+     if (!wrapper) return;
+    var toggleBtn = document.getElementById('headerSearchToggle');
+    var panel = document.getElementById('headerSearchPanel');
+    var input = document.getElementById('headerSearchInput');
+
+    function openSearch() {
+      wrapper.classList.add('is-open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+      input.focus();
+    }
+
+    function closeSearch() {
+      wrapper.classList.remove('is-open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    toggleBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (wrapper.classList.contains('is-open')) {
+        // Icon acts as submit once the panel is already open and has text
+        if (input.value.trim()) {
+          window.location.href = '/shop?search=' + encodeURIComponent(input.value.trim());
+          return;
+        }
+        closeSearch();
+      } else {
+        openSearch();
+      }
+    });
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var q = input.value.trim();
+        window.location.href = q ? '/shop?search=' + encodeURIComponent(q) : '/shop';
+      } else if (e.key === 'Escape') {
+        closeSearch();
+      }
+    });
+
+    // Click anywhere outside closes the panel
+    document.addEventListener('click', function (e) {
+      if (!wrapper.contains(e.target)) closeSearch();
+    });
+  })();
+</script>

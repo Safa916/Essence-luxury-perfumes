@@ -15,6 +15,20 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const { generateOTPCode } = require('../../utils/otp');
 const { isValidName, isValidPassword, suggestEmailCorrection } = require('../../utils/validators');
 
+
+//======================================================================================================
+
+
+
+
+
+
+
+
+
+//===============================================================================
+
+
 exports.registerUser = async ({ fullName, email, password, confirmPassword }) => {
   if (!fullName || !email || !password || !confirmPassword) {
     throw { status: 400, message: 'All fields are required' };

@@ -203,6 +203,45 @@ body {
     border-bottom-color: #1c1c1e;
 }
 
+/* Password toggle wrapper */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper .form-input {
+    width: 100%;
+    padding-right: 36px;
+}
+
+.pw-toggle {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #a09a8e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.pw-toggle:hover {
+    color: #1c1c1e;
+}
+
+.eye-icon {
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+
 .submit-btn {
     background-color: #17130d;
     color: #ffffff;

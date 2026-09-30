@@ -11,7 +11,7 @@ const cartSchema = new mongoose.Schema(
     items: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'CartItem', // points to documents in the CartItem collection
+        ref: 'cartItem', // points to documents in the cartItem collection (matches model registration name)
       },
     ],
     applied_coupon: {

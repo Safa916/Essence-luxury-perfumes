@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Bag — Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?familya=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/cart/cart.css">
+</head>
+<body>
+
+  <%- include('../partials/header', { activePage: 'cart', user: typeof user !== 'undefined' ? user : null }) %>
+
+  <main class="cart-page">
+    <p class="eyebrow">Your Selection</p>
+    <h1 class="cart-title">My Atelier Bag</h1>
+
+    <% if (!items.length && totalItems === 0) { %>
+      <div class="cart-empty">
+        <p>Your bag is empty.</p>
+        <a href="/shop" class="btn btn-dark">Explore Fragrances</a>
+      </div>
+    <% } else { %>
+
+      <% if (hasUnavailable) { %>
+        <div class="cart-notice">Some items in your bag are no longer available or out of stock. Remove them to continue to checkout.</div>
+      <% } %>
+
+      <div class="cart-layout">
+        <div class="cart-items-section">
+
+          <div class="cart-items-header">
+            <span class="cart-item-count"><%= totalItems %> item<%= totalItems !== 1 ? 's' : '' %> in your bag</span>
+            <% if (totalPages > 1) { %>
+              <span class="cart-page-indicator">Page <%= currentPage %> of <%= totalPages %></span>
+            <% } %>
+          </div>
+
+          <div class="cart-items" id="cartItems"
+               data-current-page="<%= currentPage %>"
+               data-total-pages="<%= totalPages %>">
+            <% items.forEach(function (item) { %>
+              <div class="cart-item <%= !item.available ? 'is-unavailable' : '' %>" data-cart-item-id="<%= item.cart_item_id %>">
+                <a href="/product/<%= item.product_slug %>" class="cart-item-image">
+                  <img src="<%= item.image %>" alt="<%= item.product_name %>">
+                </a>
+                <div class="cart-item-info">
+                  <a href="/product/<%= item.product_slug %>" class="cart-item-name"><%= item.product_name %></a>
+                  <p class="cart-item-size"><%= item.size_ml ? item.size_ml + 'ML' : '' %></p>
+                  <% if (!item.available) { %>
+                    <p class="cart-item-unavailable"><%= item.unavailableReason %></p>
+                  <% } else { %>
+                    <div class="qty-control">
+                      <button type="button" class="qty-btn qty-decrease" <%= item.quantity <= 1 ? 'disabled' : '' %>>&minus;</button>
+                      <span class="qty-value"><%= item.quantity %></span>
+                      <button type="button" class="qty-btn qty-increase" <%= item.quantity >= item.max_qty ? 'disabled' : '' %>>&plus;</button>
+                    </div>
+                  <% } %>
+                </div>
+                <div class="cart-item-price">
+                  <span class="item-total">₹<%= item.total_price.toLocaleString('en-IN') %></span>
+                  <button type="button" class="cart-item-remove">Remove</button>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+
+          <% if (totalPages > 1) { %>
+            <nav class="cart-pagination" aria-label="Cart pages">
+              <%
+                function cartPageUrl(p) {
+                  return '/cart?page=' + p;
+                }
+              %>
+
+              <a href="<%= cartPageUrl(currentPage - 1) %>"
+                 class="cart-pg-btn cart-pg-nav <%= currentPage <= 1 ? 'disabled' : '' %>"
+                 aria-label="Previous page">&#8249;</a>
+
+              <% for (let i = 1; i <= totalPages; i++) { %>
+                <a href="<%= cartPageUrl(i) %>"
+                   class="cart-pg-btn <%= i === currentPage ? 'active' : '' %>"
+                   aria-label="Page <%= i %>"
+                   aria-current="<%= i === currentPage ? 'page' : 'false' %>">
+                  <%= i %>
+                </a>
+              <% } %>
+
+              <a href="<%= cartPageUrl(currentPage + 1) %>"
+                 class="cart-pg-btn cart-pg-nav <%= currentPage >= totalPages ? 'disabled' : '' %>"
+                 aria-label="Next page">&#8250;</a>
+            </nav>
+          <% } %>
+
+        </div>
+
+        <aside class="cart-summary">
+          <h2 class="summary-heading">Order Summary</h2>
+          <div class="summary-row">
+            <span>Subtotal (<%= totalItems %> item<%= totalItems !== 1 ? 's' : '' %>)</span>
+            <span id="cartSubtotal">₹<%= subtotal.toLocaleString('en-IN') %></span>
+          </div>
+          <p class="summary-note">Complimentary delivery on all orders</p>
+          <button type="button" class="btn btn-dark checkout-btn" id="checkoutBtn" <%= hasUnavailable ? 'disabled' : '' %>>
+            Proceed to Checkout
+          </button>
+        </aside>
+      </div>
+    <% } %>
+  </main>
+
+  <%- include('../partials/logout-modal') %>
+  <%- include('../partials/footer') %>
+
+  <script src="/user/js/cart/cart.js"></script>
+  
+</body>
+</html>
+

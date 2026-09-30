@@ -8,6 +8,10 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const { generateOTPCode } = require('../../utils/otp');
 const { isValidName, isValidPassword, suggestEmailCorrection } = require('../../utils/validators');
 
+
+
+
+
 exports.registerUser = async (req, res) => {
   try {
     const { fullName, email, password, confirmPassword } = req.body;
@@ -441,3 +445,16 @@ exports.logoutUser = async (req, res) => {
     res.status(500).json({ message: 'Server error during logout' });
   }
 };
+
+ exports.searchUser=async (req,res)=>{
+
+  const search = req.query.search ||" ";
+  const users = await  userService.searchUsers(search)
+
+    res.render("admin/users",{
+      users,
+      search
+    })
+
+
+ }

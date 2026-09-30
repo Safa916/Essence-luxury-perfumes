@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= product.name %> · Variant Manager · Essence Admin</title>
+  <link rel="stylesheet" href="/admin/products/viewProduct.css" />
+  <link rel="stylesheet" href="/admin/partials/sidebar.css" />
+  <style>
+    #variantFormError {
+      display: none;
+      background: #fff1f1;
+      border: 1px solid #f5a0a0;
+      color: #c0392b;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 14px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <%- include('../partials/sidebar', { activePage: 'products' }) %>
+
+    <main class="main-content">
+      <div class="topbar">
+        <div class="vm-title">VARIANT MANAGER</div>
+        <div class="search-box">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="variantSearch" placeholder="Search variants..." />
+        </div>
+      </div>
+
+      <div class="product-head">
+        <div class="pdt-thumb-lg">
+          <% if (product.images && product.images[0]) { %>
+            <img src="<%= product.images[0] %>" alt="<%= product.name %>" />
+          <% } %>
+        </div>
+        <div class="pdt-head-info">
+          <h1><%= product.name %></h1>
+          <p><%= product.short_description || product.full_description || '' %></p>
+          <div class="pdt-head-tags">
+            <span class="sku-tag">SKU: <%= product.sku %></span>
+            <% if (product.category_id) { %><span class="series-tag"><%= product.category_id.name %></span><% } %>
+          </div>
+        </div>
+        <button class="btn-primary" id="openAddVariantBtn">+ ADD NEW VARIANT</button>
+      </div>
+
+      <div class="table-card">
+        <table class="variants-table">
+          <thead>
+            <tr>
+              <th>VARIANT ID</th>
+              <th>VARIANT NAME</th>
+              <th>CONCENTRATION</th>
+              <th>SIZE (ML)</th>
+              <th>STOCK LEVEL</th>
+              <th>PRICE</th>
+              <th>STATUS</th>
+              <th class="col-actions">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="variantsTbody">
+            <% if (!variants.length) { %>
+              <tr><td colspan="8" class="empty-row">No variants yet — add the first one.</td></tr>
+            <% } %>
+            <% variants.forEach(function(v) { %>
+              <tr data-variant-id="<%= v._id %>">
+                <td class="variant-id"><%= v.sku %></td>
+                <td class="variant-name-cell"><%= v.variant_name || '—' %></td>
+                <td><%= v.concentration || '—' %></td>
+                <td><%= v.size_ml %></td>
+                <td>
+                  <div class="stock-cell">
+                    <span class="stock-count <%= v.quantity <= 10 ? 'critical' : '' %>"><%= v.quantity %> units</span>
+                    <span class="stock-tag <%= v.quantity <= 0 ? 'soldout' : (v.quantity <= 10 ? 'critical' : 'high') %>">
+                      <%= v.quantity <= 0 ? 'Sold Out' : (v.quantity <= 10 ? 'Critical' : (v.quantity <= 60 ? 'Moderate' : 'High')) %>
+                    </span>
+                  </div>
+                </td>
+                <td class="price">₹<%= Number(v.price).toFixed(2) %></td>
+                <td>
+                  <span class="status-pill <%= v.quantity <= 0 ? 'soldout' : (v.quantity <= 10 ? 'lowstock' : (v.is_active ? 'active' : 'inactive')) %>">
+                    <%= v.quantity <= 0 ? 'OUT OF STOCK' : (v.quantity <= 10 ? 'LOW STOCK' : (v.is_active ? 'ACTIVE' : 'INACTIVE')) %>
+                  </span>
+                </td>
+                <td class="col-actions">
+                  <button class="icon-btn edit-variant-btn" data-id="<%= v._id %>" title="Edit">✎</button>
+                  <button class="icon-btn delete-variant-btn" data-id="<%= v._id %>" data-code="<%= v.sku %>" title="Delete">🗑</button>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+
+        <div class="table-footer">
+          <div class="showing-count">
+            SHOWING <strong><%= variants.length %></strong> OF <strong><%= totalVariants %></strong> VARIANTS
+          </div>
+          <div class="pagination">
+            <a class="page-btn nav-btn" href="?page=<%= currentPage - 1 %>">‹</a>
+            <% for (let i = 1; i <= totalPages; i++) { %>
+              <a class="page-btn <%= i === currentPage ? 'active' : '' %>" href="?page=<%= i %>"><%= i %></a>
+            <% } %>
+            <a class="page-btn nav-btn" href="?page=<%= currentPage + 1 %>">›</a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ===== Add / Edit Variant popup ===== -->
+  <div class="modal-overlay" id="variantFormOverlay">
+    <div class="modal-card variant-form-card">
+      <h2 id="variantFormTitle">ADD NEW VARIANT</h2>
+      <p class="variant-form-sub" id="variantFormSub">Configure specific attributes for <%= product.name.toLowerCase() %></p>
+
+      <form id="variantForm">
+        <input type="hidden" id="variantIdField" value="" />
+        <div class="form-group">
+          <label>VARIANT NAME <span style="color:#b0402c;">*</span></label>
+          <input type="text" id="variantName" placeholder="e.g. 50ml Eau de Parfum" required />
+          <span style="font-size:11px;color:#888;margin-top:4px;display:block;">Must be unique per product.</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>CONCENTRATION</label>
+            <input type="text" id="variantConcentration" placeholder="e.g. EDP" />
+          </div>
+          <div class="form-group">
+            <label>SIZE (ML)</label>
+            <input type="number" id="variantSize" min="1" placeholder="50" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>QUANTITY</label>
+            <input type="number" id="variantStock" min="0" placeholder="0" required />
+          </div>
+          <div class="form-group">
+            <label>PRICE (₹)</label>
+            <input type="number" step="0.01" min="0" id="variantPrice" placeholder="249.95" required />
+          </div>
+        </div>
+
+        <label class="toggle variant-active-toggle">
+          <input type="checkbox" id="variantActive" checked />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-text">ACTIVE STATUS</span>
+        </label>
+        <p class="toggle-hint">Enable to make this variant immediately available for purchase.</p>
+
+        <!-- Inline error banner (shown on duplicate / validation failures) -->
+        <div id="variantFormError"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelVariantFormBtn">Cancel</button>
+          <button type="submit" class="btn-save" id="saveVariantBtn">SAVE VARIANT</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Delete Variant confirmation popup ===== -->
+  <div class="modal-overlay" id="deleteVariantOverlay">
+    <div class="modal-card delete-variant-card">
+      <h3>DELETE VARIANT</h3>
+      <p>Are you sure you want to delete variant <strong id="deleteVariantCode"></strong>? This action is permanent and cannot be undone within the inventory management system.</p>
+      <div class="modal-actions">
+        <button class="btn-danger" id="confirmDeleteVariantBtn">DELETE</button>
+        <button class="btn-secondary" id="cancelDeleteVariantBtn">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__PRODUCT_ID__ = "<%= product._id %>";
+  </script>
+  <script src="/admin/js/viewProduct.js"></script>
+</body>
+</html>

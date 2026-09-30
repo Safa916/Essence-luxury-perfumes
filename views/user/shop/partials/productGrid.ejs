@@ -1,0 +1,105 @@
+<div class="listing-meta">
+  <p class="listing-count">Showing <%= totalProducts %> exquisite fragrance<%= totalProducts === 1 ? '' : 's' %></p>
+</div>
+
+<% if (!products.length) { %>
+  <div class="empty-state">
+    <p>No fragrances match your search just yet.</p>
+    <button type="button" class="btn btn-dark" id="clearAllFiltersBtn">Clear all filters</button>
+  </div>
+<% } else { %>
+  <div class="product-grid" id="productGrid">
+    <% products.forEach(function (product) { %>
+      <div class="product-card">
+
+        <a href="/product/<%= product.slug %>" class="product-card-link">
+          <div class="product-image">
+            <% if (product.is_limited_edition) { %>
+              <span class="badge">Bestseller</span>
+            <% } %>
+            <% if (product.stock <= 0) { %>
+              <span class="badge badge-oos">Out of Stock</span>
+            <% } %>
+            <img src="<%= (product.images && product.images[0]) || '/user/images/placeholder.jpg' %>" alt="<%= product.name %>" class="<%= product.stock <= 0 ? 'img-oos' : '' %>">
+
+            <!-- Wishlist heart — overlays on the product image -->
+            <button
+              type="button"
+              class="wishlist-toggle-btn <%= product.isWishlisted ? 'is-active' : '' %>"
+              data-product-id="<%= product._id %>"
+              aria-label="<%= product.isWishlisted ? 'Remove from wishlist' : 'Add to wishlist' %>"
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="<%= product.isWishlisted ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </button>
+          </div>
+          <p class="product-house"><%= product.brand || product.category || '' %></p>
+          <p class="product-name"><%= product.name %></p>
+          <% if (product.category) { %>
+            <p class="product-desc"><%= product.category %></p>
+          <% } %>
+          <p class="product-price">₹<%= Number(product.price).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></p>
+          <% if (product.stock <= 0) { %>
+            <p class="product-stock-status oos">Out of Stock</p>
+          <% } else if (product.stock <= 10) { %>
+            <p class="product-stock-status low">Only <%= product.stock %> left</p>
+          <% } %>
+        </a>
+
+        <% if (product.variant_count === 0) { %>
+          <button type="button" class="add-to-bag-btn" disabled>
+            Currently Unavailable
+          </button>
+        <% } else if (product.variant_count > 1) { %>
+          <a href="/product/<%= product.slug %>" class="add-to-bag-btn btn-select-options">
+            Add to Atelier Bag
+          </a>
+     <% } else if (product.stock <= 0) { %>
+  <button type="button" class="add-to-bag-btn btn-notify-me" data-product-id="<%= product._id %>">
+     Notify Me
+  </button>
+<% } else { %>
+  <button
+    type="button"
+    class="add-to-bag-btn"
+    data-product-id="<%= product._id %>"
+    data-default-variant-id="<%= product.default_variant_id %>"
+  >
+    Add to Atelier Bag
+  </button>
+<% } %>
+      </div>
+    <% }); %>
+  </div>
+
+  <% if (totalPages > 1) { %>
+    <nav class="pagination" aria-label="Product pagination">
+      <button
+        type="button"
+        class="page-btn page-prev"
+        data-page="<%= currentPage - 1 %>"
+        <%= currentPage === 1 ? 'disabled' : '' %>
+        aria-label="Previous page"
+      >&lsaquo;</button>
+
+      <% for (let p = 1; p <= totalPages; p++) { %>
+        <% if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1) { %>
+          <button type="button" class="page-btn <%= p === currentPage ? 'is-active' : '' %>" data-page="<%= p %>">
+            <%= p %>
+          </button>
+        <% } else if (p === currentPage - 2 || p === currentPage + 2) { %>
+          <span class="page-ellipsis">&hellip;</span>
+        <% } %>
+      <% } %>
+
+      <button
+        type="button"
+        class="page-btn page-next"
+        data-page="<%= currentPage + 1 %>"
+        <%= currentPage === totalPages ? 'disabled' : '' %>
+        aria-label="Next page"
+      >&rsaquo;</button>
+    </nav>
+  <% } %>
+<% } %>

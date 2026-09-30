@@ -1,0 +1,114 @@
+/* ===== Sidebar (shared across all admin pages) ===== */
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    background-color: #fcfcfd;
+    border-right: 1px solid #eef0f2;
+    padding: 40px 0;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+}
+
+.brand-section {
+    padding: 0 30px;
+    margin-bottom: 30px;
+}
+
+.brand-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #000000;
+    line-height: 1.2;
+}
+
+.brand-role {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #34C759;
+    margin-top: 4px;
+    text-transform: uppercase;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.menu-subheader {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #8E8E93;
+    letter-spacing: 0.08em;
+    padding: 20px 30px 10px;
+    text-transform: uppercase;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 30px;
+    color: #48484A;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.menu-item svg {
+    width: 16px;
+    height: 16px;
+    color: #8E8E93;
+    transition: color 0.2s;
+}
+
+.menu-item:hover {
+    background-color: #f2f2f7;
+    color: #000000;
+}
+
+.menu-item:hover svg {
+    color: #000000;
+}
+
+.menu-item.active {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+.menu-item.active svg {
+    color: #ffffff;
+}
+
+/* ===== Main content wrapper (shared shell around every page) ===== */
+.main-content {
+    margin-left: 260px;
+    flex: 1;
+    min-height: 100vh;
+    padding: 30px 50px 60px;
+    background-color: #ffffff;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        padding: 20px 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 20px;
+    }
+}

@@ -24,7 +24,7 @@ class APIFeatures {
   }
 
   // Sort — defaults to newest first (descending by created_at)
-  sort(defaultSort = '-created_at') {
+  sort(defaultSort = 'created_at') {
     if (this.queryString.sort) {
       const sortBy = this.queryString.sort.split(',').join(' ');
       this.query = this.query.sort(sortBy);
@@ -37,7 +37,7 @@ class APIFeatures {
   // Pagination using page & limit from the query string
   paginate() {
     const page = Math.max(parseInt(this.queryString.page, 10) || 1, 1);
-    const limit = Math.max(parseInt(this.queryString.limit, 10) || 8, 1);
+    const limit = Math.max(parseInt(this.queryString.limit, 10) || 7, 1);
     const skip = (page - 1) * limit;
 
     this.query = this.query.skip(skip).limit(limit);

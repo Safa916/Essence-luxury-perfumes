@@ -1,0 +1,28 @@
+<!-- ===== Image Crop Modal (requirement iii: crop + resize before upload) ===== -->
+<div class="modal-overlay" id="cropperOverlay">
+  <div class="modal-card cropper-card">
+    <div class="cropper-header">
+      <h3>CROP IMAGE</h3>
+      <span class="cropper-count" id="cropperCount"></span>
+    </div>
+    <div class="cropper-stage">
+      <img id="cropperImage" src="" alt="" />
+    </div>
+    <div class="cropper-controls">
+      <div class="aspect-group">
+        <button type="button" class="aspect-btn active" data-ratio="1">1:1</button>
+        <button type="button" class="aspect-btn" data-ratio="1.3333333333333333">4:3</button>
+        <button type="button" class="aspect-btn" data-ratio="0">Free</button>
+      </div>
+      <div class="zoom-group">
+        <button type="button" id="cropperZoomOut">−</button>
+        <button type="button" id="cropperZoomIn">+</button>
+        <button type="button" id="cropperRotate">⟳</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" id="cropperSkipBtn">Skip this image</button>
+      <button type="button" class="btn-save" id="cropperConfirmBtn">Crop &amp; Add</button>
+    </div>
+  </div>
+</div>

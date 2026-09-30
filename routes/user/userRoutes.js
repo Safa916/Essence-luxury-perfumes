@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect,checkUser } = require('../middleware/authMiddleware');
+const { protect,checkUser } = require('../../middleware/authMiddleware');
 
 
 
@@ -13,7 +13,7 @@ const { registerUser,
      verifyResetCode,
      resetPassword,
      logoutUser,
-     googleAuth } = require('../controllers/user/userController');
+     googleAuth } = require('../../controllers/user/userController');
 
 
 
@@ -48,6 +48,8 @@ router.get('/user-signup', checkUser, (req, res) => {
 
   res.render('user/auth/user-signup');
 });
+
+
 
 
 router.get('/forgot-password', (req, res) => {
