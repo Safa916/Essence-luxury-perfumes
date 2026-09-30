@@ -1,82 +1,77 @@
 const multer = require('multer');
+const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
-const sharp = require('sharp');
 
-const uploadDir = path.join(__dirname, '../public/uploads/products');
+// Make sure the upload folder exists
+const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'products');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
-// Ensure the folder exists (won't error if it already does)
-fs.mkdirSync(uploadDir, { recursive: true });
+// Store the raw upload in memory first — we need the buffer so sharp can resize
+// it before it ever touches disk (this avoids saving huge/oversized originals).
+const storage = multer.memoryStorage();
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    // No req.user for products (unlike avatars) — use a random unique id instead
-    const uniqueName = `pdt-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
-  },
-});
+const ALLOWED_MIMES      = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 
-const fileFilter = (req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-  if (allowed.includes(file.mimetype)) {
+function fileFilter(req, file, cb) {
+  const mimeOk = ALLOWED_MIMES.includes(file.mimetype);
+  const ext    = path.extname(file.originalname).toLowerCase();
+  const extOk  = ALLOWED_EXTENSIONS.includes(ext);
+
+  if (mimeOk && extOk) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPG, PNG, and WEBP images are allowed'));
+    const err = new Error(
+      `"${file.originalname}" is not a valid image. Only JPG, PNG, WebP and GIF files are allowed.`
+    );
+    err.code = 'INVALID_FILE_TYPE';
+    cb(err, false);
   }
-};
+}
 
+// The multer instance itself — used in routes as uploadProductImages.array('images', 8)
 const uploadProductImages = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024, files: 8 }, // 5MB per image, 8 max
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max per file
 });
 
-// Builds the public URL saved on the Product doc, e.g. "/uploads/products/pdt-...jpg"
-const toPublicPath = (filename) => `/uploads/products/${filename}`;
-
-// ---------------------------------------------------------------------------
-// (iii) Server-side resize/optimize safety net — same idea as your avatar
-// upload, just for multiple product images. Runs AFTER multer, BEFORE the
-// controller reads req.files. Re-encodes to JPEG, strips EXIF, caps
-// dimensions — a backstop in case the browser-side Cropper.js step
-// (public/admin/js/productForm.js) was skipped or bypassed.
-// ---------------------------------------------------------------------------
-const MAX_DIMENSION = 1600;
-const JPEG_QUALITY = 82;
-
+// Runs AFTER uploadProductImages in the route chain.
+// Resizes every uploaded file, saves it to disk as a JPEG, and stores the
+// resulting paths on req.body.images so the controller can save them to the product.
 async function resizeProductImages(req, res, next) {
   try {
-    const files = req.files || [];
-    if (!files.length) return next();
+    if (!req.files || req.files.length === 0) {
+      return next(); // no new images uploaded — nothing to do
+    }
+
+    req.processedImages = [];
 
     await Promise.all(
-      files.map(async (file) => {
-        const tmpPath = `${file.path}.tmp`;
-        await sharp(file.path)
-          .rotate() // respect EXIF orientation, then strip it
-          .resize({
-            width: MAX_DIMENSION,
-            height: MAX_DIMENSION,
-            fit: 'inside',
-            withoutEnlargement: true,
-          })
-          .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
-          .toFile(tmpPath);
+      req.files.map(async (file, index) => {
+        const filename = `product-${Date.now()}-${index + 1}.jpeg`;
 
-        fs.unlinkSync(file.path);
-        fs.renameSync(tmpPath, file.path);
+        await sharp(file.buffer)
+          .resize(1000, 1000, { fit: 'inside', withoutEnlargement: true })
+          .toFormat('jpeg')
+          .jpeg({ quality: 88 })
+          .toFile(path.join(uploadDir, filename));
+
+        req.processedImages.push(`/uploads/products/${filename}`);
       })
     );
 
     next();
   } catch (err) {
-    console.error('resizeProductImages error:', err);
-    // Don't hard-fail the upload just because optimization failed — the
-    // original (already client-cropped) file is still usable.
-    next();
+    next(err);
   }
 }
 
-module.exports = { uploadProductImages, toPublicPath, uploadDir, resizeProductImages };
+// uploadDir is exported so the product controller can clean up resized files
+// that were already written to disk if the rest of the submission turns out
+// to be invalid (resizeProductImages saves files BEFORE the controller gets
+// a chance to validate the rest of the form).
+module.exports = { uploadProductImages, resizeProductImages, uploadDir };

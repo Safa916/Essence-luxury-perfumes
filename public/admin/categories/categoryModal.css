@@ -222,3 +222,40 @@
 .btn-delete-confirm:hover {
     background-color: #c93a3e;
 }
+/* ===== Image upload box ===== */
+.image-upload-box {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    background-color: #f2f2f7;
+    border: 1px dashed #d1d1d6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.image-upload-box:hover {
+    border-color: #8e8e93;
+}
+.image-upload-placeholder {
+    font-size: 0.78rem;
+    color: #8E8E93;
+    font-weight: 600;
+    pointer-events: none;
+}
+.image-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+.image-upload-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}

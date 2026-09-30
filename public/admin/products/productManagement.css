@@ -178,6 +178,13 @@ body {
   letter-spacing: 0.3px;
   color: #222;
   cursor: pointer;
+  appearance: none;
+ padding-right: 32px;
+ background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a9a9a' stroke-width='2'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+ background-repeat: no-repeat;
+background-position: right 12px center;
+background-size: 12px;
+
 }
 
 .chevron {

@@ -1,58 +1,104 @@
-// Delete Product confirmation popup (soft delete) + row click-to-view
+/**
+ * public/admin/js/productManagement.js
+ * Handles:
+ *  - Delete product confirmation modal (open → confirm → DELETE /admin/products/:id)
+ *  - Row-click navigation to product detail page
+ */
+(function () {
+  'use strict';
 
-const overlay = document.getElementById('deleteProductOverlay');
-const nameEl = document.getElementById('deleteProductName');
-const refEl = document.getElementById('deleteProductRef');
-const confirmBtn = document.getElementById('confirmDeleteProductBtn');
+  // ── Element refs ────────────────────────────────────────────────────────────
+  const overlay       = document.getElementById('deleteProductOverlay');
+  const productNameEl = document.getElementById('deleteProductName');
+  const productRefEl  = document.getElementById('deleteProductRef');
+  const confirmBtn    = document.getElementById('confirmDeleteProductBtn');
+  const cancelBtn     = document.getElementById('cancelDeleteProductBtn');
+  const closeBtn      = document.getElementById('closeDeleteProductBtn');
 
-let pendingDeleteId = null;
+  let pendingProductId = null;
 
-window.openDeleteProductModal = function (btn) {
-  pendingDeleteId = btn.dataset.id;
-  nameEl.textContent = btn.dataset.name;
-  refEl.textContent = `REFERENCE ID: ${btn.dataset.id}`;
-  overlay.classList.add('open');
-};
+  // ── Open modal ───────────────────────────────────────────────────────────────
+  function openDeleteModal(id, name) {
+    pendingProductId = id;
+    if (productNameEl) productNameEl.textContent = name;
+    if (productRefEl)  productRefEl.textContent  = 'REF: ' + id.slice(-8).toUpperCase();
+    if (overlay)       overlay.classList.add('open');
+  }
 
-window.closeDeleteProductModal = function () {
-  overlay.classList.remove('open');
-  pendingDeleteId = null;
-};
+  // ── Close modal ──────────────────────────────────────────────────────────────
+  function closeDeleteModal() {
+    pendingProductId = null;
+    if (overlay) overlay.classList.remove('open');
+  }
 
-confirmBtn &&
-  confirmBtn.addEventListener('click', async () => {
-    if (!pendingDeleteId) return;
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Deleting…';
-    try {
-      const res = await fetch(`/admin/products/${pendingDeleteId}`, {
-        method: 'DELETE',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      });
-      const data = await res.json();
-      if (data.success) {
-        window.location.reload();
-      } else {
-        alert(data.message || 'Could not delete product');
+  // ── Wire delete buttons ──────────────────────────────────────────────────────
+  document.querySelectorAll('.btn-delete').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation(); // Don't trigger row click
+      openDeleteModal(btn.dataset.id, btn.dataset.name);
+    });
+  });
+
+  // ── Row-click → navigate to product detail ───────────────────────────────────
+  document.querySelectorAll('.row-clickable').forEach(function (row) {
+    row.addEventListener('click', function (e) {
+      // Ignore clicks on action buttons inside the row
+      if (e.target.closest('.actions')) return;
+      if (row.dataset.href) window.location.href = row.dataset.href;
+    });
+    row.style.cursor = 'pointer';
+  });
+
+  // ── Modal close triggers ─────────────────────────────────────────────────────
+  if (closeBtn)  closeBtn.addEventListener('click', closeDeleteModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeDeleteModal);
+  if (overlay) {
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeDeleteModal();
+    });
+  }
+
+  // ── Confirm delete ───────────────────────────────────────────────────────────
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', async function () {
+      if (!pendingProductId) return;
+
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Deleting…';
+
+      try {
+        const res = await fetch('/admin/products/' + pendingProductId, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Remove the row from the table without a full page reload
+          const row = document.querySelector(`.btn-delete[data-id="${pendingProductId}"]`)?.closest('tr');
+          if (row) {
+            row.style.transition = 'opacity 0.3s';
+            row.style.opacity = '0';
+            setTimeout(function () { row.remove(); }, 300);
+          }
+          closeDeleteModal();
+          // Update "Showing X of Y" count if present
+          const showingCount = document.querySelector('.showing-count strong');
+          if (showingCount) {
+            const current = parseInt(showingCount.textContent, 10);
+            if (!isNaN(current) && current > 0) showingCount.textContent = current - 1;
+          }
+        } else {
+          alert(data.message || 'Could not delete product. Please try again.');
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = '🗑 Delete';
+        }
+      } catch (err) {
+        console.error('Delete product error:', err);
+        alert('Server error while deleting product. Please try again.');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '🗑 Delete';
       }
-    } catch (err) {
-      alert('Network error while deleting product');
-    } finally {
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = '🗑 Delete';
-    }
-  });
-
-// Clicking anywhere on a row (except the actions cell) opens the variant/view page
-document.querySelectorAll('tr.row-clickable').forEach((row) => {
-  row.addEventListener('click', () => {
-    const href = row.dataset.href;
-    if (href) window.location.href = href;
-  });
-});
-
-// Bind Delete buttons via JS instead of inline onclick — avoids any
-// browser-extension/security-software interference with inline handlers.
-document.querySelectorAll('.btn-delete').forEach((btn) => {
-  btn.addEventListener('click', () => openDeleteProductModal(btn));
-});
+    });
+  }
+})();

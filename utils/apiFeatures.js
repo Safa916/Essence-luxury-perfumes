@@ -24,7 +24,7 @@ class APIFeatures {
   }
 
   // Sort — defaults to newest first (descending by created_at)
-  sort(defaultSort = '-created_at') {
+  sort(defaultSort = 'created_at') {
     if (this.queryString.sort) {
       const sortBy = this.queryString.sort.split(',').join(' ');
       this.query = this.query.sort(sortBy);

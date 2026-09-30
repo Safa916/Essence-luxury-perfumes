@@ -1,196 +1,397 @@
-// Powers both addProduct.ejs and editProduct.ejs.
-// Handles: file selection -> crop each image (Cropper.js) -> resize to a
-// sane max dimension -> queue as a File -> live previews -> wires the final
-// cropped files back onto the <input type="file" name="images"> via
-// DataTransfer so the existing multipart form submit needs zero changes.
-
+/**
+ * public/admin/js/productForm.js
+ *
+ * Handles the image upload UX for Add Product and Edit Product forms:
+ *  1. "Select Files" / drag-and-drop triggers the hidden <input type="file">
+ *  2. Each selected image is queued and shown one-by-one in the Cropper.js modal
+ *  3. After cropping (or skipping), the cropped canvas blob is converted to a File
+ *     and injected into a fresh <input type="file"> — one per image — so the form
+ *     actually submits real files to the server (multer picks them all up).
+ *  4. Preview thumbnails are rendered in the #imagePreviews grid.
+ *  5. The image-count hint updates live and turns green when >= minImages are ready.
+ *  6. In Edit mode the existing image removal (markImageForRemoval) is also here.
+ *
+ * Usage (in the EJS template):
+ *   <script src="/admin/js/productForm.js" data-mode="add" data-min-images="3"></script>
+ *   <script src="/admin/js/productForm.js" data-mode="edit" data-min-images="3"></script>
+ */
 (function () {
-  const scriptTag = document.currentScript;
-  const MODE = (scriptTag && scriptTag.dataset.mode) || 'add';
-  const MIN_IMAGES = parseInt((scriptTag && scriptTag.dataset.minImages) || '3', 10);
-  const MAX_OUTPUT_DIMENSION = 1200; // client-side resize cap before upload
+  'use strict';
 
-  const imagesInput = document.getElementById('imagesInput');
-  const previewsEl = document.getElementById('imagePreviews');
-  const hintEl = document.getElementById('imageCountHint');
-  const removedImagesInput = document.getElementById('removedImagesInput');
+  // ── Config read from the <script> tag ─────────────────────────────────────
+  const scriptTag  = document.currentScript || document.querySelector('script[data-mode]');
+  const MODE       = scriptTag ? (scriptTag.dataset.mode || 'add') : 'add';
+  const MIN_IMAGES = scriptTag ? (parseInt(scriptTag.dataset.minImages, 10) || 3) : 3;
 
-  let queuedFiles = []; // File[] — already cropped & resized, ready to upload
-  let cropQueue = []; // raw File[] waiting to be cropped, one at a time
-  let removedExisting = [];
+  // ── DOM refs ──────────────────────────────────────────────────────────────
+  const fileInput      = document.getElementById('imagesInput');
+  const previewsGrid   = document.getElementById('imagePreviews');
+  const countHint      = document.getElementById('imageCountHint');
+  const dropzone       = document.querySelector('.dropzone');
 
-  // ---- existing-image removal (edit mode) ------------------------------
-  window.markImageForRemoval = function (btn, url) {
-    const wrap = btn.closest('.existing-image');
-    if (!wrap) return;
-    removedExisting.push(url);
-    if (removedImagesInput) removedImagesInput.value = removedExisting.join(',');
-    wrap.remove();
-    updateHint();
-  };
+  // Cropper modal elements
+  const cropperOverlay  = document.getElementById('cropperOverlay');
+  const cropperImg      = document.getElementById('cropperImage');
+  const cropperCountEl  = document.getElementById('cropperCount');
+  const cropperConfirm  = document.getElementById('cropperConfirmBtn');
+  const cropperSkip     = document.getElementById('cropperSkipBtn');
+  const cropperZoomIn   = document.getElementById('cropperZoomIn');
+  const cropperZoomOut  = document.getElementById('cropperZoomOut');
+  const cropperRotate   = document.getElementById('cropperRotate');
+  const aspectBtns      = document.querySelectorAll('.aspect-btn');
 
-  function existingRemainingCount() {
+  // ── Allowed image types (MIME + extension whitelist) ────────────────────
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let cropper         = null;   // active Cropper.js instance
+  let fileQueue       = [];     // raw File objects waiting to be cropped
+  let queueIndex      = 0;      // which file we're currently showing
+  let croppedFiles    = [];     // final File objects ready for submission
+  let removedImages   = [];     // edit mode: URLs of existing images to delete
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  /**
+   * Returns true if the file passes both MIME type AND extension checks.
+   * Checking both prevents a renamed file (e.g. "virus.exe" renamed to
+   * "photo.jpg") slipping through on the extension alone.
+   */
+  function isValidImageFile(file) {
+    const mimeOk = ALLOWED_MIME_TYPES.includes(file.type);
+    const ext    = ('.' + file.name.split('.').pop()).toLowerCase();
+    const extOk  = ALLOWED_EXTENSIONS.includes(ext);
+    return mimeOk && extOk;
+  }
+
+  /**
+   * Shows a dismissible error banner above the dropzone listing rejected files.
+   * If a banner already exists it is replaced, not duplicated.
+   */
+  function showFileTypeError(rejectedNames) {
+    const aside = document.querySelector('.form-media');
+    if (!aside) return;
+
+    // Remove any existing banner
+    const existing = aside.querySelector('.file-type-error-banner');
+    if (existing) existing.remove();
+
+    const banner = document.createElement('div');
+    banner.className = 'file-type-error-banner';
+    banner.innerHTML = `
+      <span class="file-type-error-icon">⚠</span>
+      <span>
+        <strong>Invalid file type rejected:</strong><br>
+        ${rejectedNames.map(n => `<em>${n}</em>`).join(', ')}<br>
+        <small>Allowed types: JPG, PNG, WebP, GIF</small>
+      </span>
+      <button type="button" class="file-type-error-close" aria-label="Dismiss">✕</button>
+    `;
+    banner.querySelector('.file-type-error-close').addEventListener('click', function () {
+      banner.remove();
+    });
+    // Auto-dismiss after 6 seconds
+    setTimeout(function () { if (banner.parentNode) banner.remove(); }, 6000);
+
+    aside.insertBefore(banner, aside.firstChild);
+  }
+
+  function countNewSlots() {
+    return previewsGrid ? previewsGrid.querySelectorAll('.preview-slot:not(.empty)').length : 0;
+  }
+
+  function existingCount() {
     if (MODE !== 'edit') return 0;
-    const total = window.__EXISTING_IMAGE_COUNT__ || 0;
-    return Math.max(total - removedExisting.length, 0);
+    const existing = document.querySelectorAll('.existing-image:not(.removed)').length;
+    return existing;
   }
 
-  function updateHint() {
-    const total = existingRemainingCount() + queuedFiles.length;
-    if (!hintEl) return;
-    hintEl.textContent =
-      total >= MIN_IMAGES
-        ? `${total} image${total === 1 ? '' : 's'} ready`
-        : `${total} of ${MIN_IMAGES} minimum images selected`;
-    hintEl.classList.toggle('ok', total >= MIN_IMAGES);
-    hintEl.classList.toggle('warn', total < MIN_IMAGES);
+  function totalImageCount() {
+    return existingCount() + countNewSlots();
   }
 
-  // ---- previews ----------------------------------------------------------
-  function renderPreviews() {
-    if (!previewsEl) return;
-    previewsEl.innerHTML = '';
+  function updateCountHint() {
+    if (!countHint) return;
+    const total = totalImageCount();
+    if (total >= MIN_IMAGES) {
+      countHint.textContent = `${total} image${total !== 1 ? 's' : ''} selected ✓`;
+      countHint.classList.add('ok');
+      countHint.classList.remove('warn');
+    } else {
+      countHint.textContent = `${total} of ${MIN_IMAGES} minimum images selected`;
+      countHint.classList.remove('ok', 'warn');
+    }
+  }
 
-    queuedFiles.forEach((file, idx) => {
-      const slot = document.createElement('div');
-      slot.className = 'preview-slot filled';
-      const img = document.createElement('img');
-      img.src = URL.createObjectURL(file);
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'preview-remove';
-      removeBtn.textContent = '✕';
-      removeBtn.onclick = () => {
-        queuedFiles.splice(idx, 1);
-        syncInputFiles();
-        renderPreviews();
-        updateHint();
-      };
-      slot.appendChild(img);
-      slot.appendChild(removeBtn);
-      previewsEl.appendChild(slot);
+  // Replace the empty placeholder slots with real thumbs (add mode only)
+  function initEmptySlots() {
+    if (!previewsGrid || MODE === 'edit') return;
+    // Slots are already in the HTML for add mode — keep them as-is
+  }
+
+  // Add a thumbnail to the previews grid
+  function addPreviewThumb(file, objectUrl) {
+    if (!previewsGrid) return;
+
+    // Fill in the first empty slot if any, otherwise append a new one
+    const emptySlot = previewsGrid.querySelector('.preview-slot.empty');
+    const slot = emptySlot || document.createElement('div');
+
+    if (!emptySlot) {
+      slot.className = 'preview-slot';
+      previewsGrid.appendChild(slot);
+    } else {
+      slot.classList.remove('empty');
+    }
+
+    slot.innerHTML = `
+      <img src="${objectUrl}" alt="preview" style="width:100%;height:100%;object-fit:cover;display:block;">
+      <button type="button" class="preview-remove" title="Remove">✕</button>
+    `;
+
+    // Remove button
+    slot.querySelector('.preview-remove').addEventListener('click', function () {
+      const idx = croppedFiles.indexOf(file);
+      if (idx !== -1) croppedFiles.splice(idx, 1);
+
+      // Also remove the matching hidden file input
+      const inputs = document.querySelectorAll('input[type="file"][data-cropped="true"]');
+      if (inputs[idx]) inputs[idx].remove();
+
+      slot.remove();
+      // Restore an empty placeholder if we dropped below the min
+      if (countNewSlots() < MIN_IMAGES && MODE === 'add') {
+        const empty = document.createElement('div');
+        empty.className = 'preview-slot empty';
+        empty.textContent = '+';
+        previewsGrid.appendChild(empty);
+      }
+      URL.revokeObjectURL(objectUrl);
+      updateCountHint();
     });
 
-    // pad with empty "+" slots up to at least 3 for the add-product look
-    const minSlots = MODE === 'add' ? 3 : 0;
-    for (let i = queuedFiles.length; i < minSlots; i++) {
-      const empty = document.createElement('div');
-      empty.className = 'preview-slot empty';
-      empty.textContent = '+';
-      previewsEl.appendChild(empty);
-    }
+    updateCountHint();
   }
 
-  // Pushes queuedFiles back onto the real <input type="file"> so the normal
-  // multipart form submission just works, no fetch/AJAX rewiring needed.
-  function syncInputFiles() {
+  // Inject the cropped File as a hidden file input so multer picks it up
+  function injectFileInput(file) {
     const dt = new DataTransfer();
-    queuedFiles.forEach((f) => dt.items.add(f));
-    imagesInput.files = dt.files;
+    dt.items.add(file);
+    const inp = document.createElement('input');
+    inp.type  = 'file';
+    inp.name  = 'images';
+    inp.style.display = 'none';
+    inp.dataset.cropped = 'true';
+    inp.files = dt.files;
+    document.querySelector('.product-form').appendChild(inp);
   }
 
-  // ---- Cropper.js flow -----------------------------------------------------
-  const overlay = document.getElementById('cropperOverlay');
-  const cropperImageEl = document.getElementById('cropperImage');
-  const cropperCountEl = document.getElementById('cropperCount');
-  const confirmBtn = document.getElementById('cropperConfirmBtn');
-  const skipBtn = document.getElementById('cropperSkipBtn');
-  const aspectBtns = document.querySelectorAll('.aspect-btn');
-  const zoomInBtn = document.getElementById('cropperZoomIn');
-  const zoomOutBtn = document.getElementById('cropperZoomOut');
-  const rotateBtn = document.getElementById('cropperRotate');
+  // ── Cropper pipeline ──────────────────────────────────────────────────────
 
-  let cropperInstance = null;
-  let cropQueueTotal = 0;
-
-  function openCropperFor(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      cropperImageEl.src = e.target.result;
-      overlay.classList.add('open');
-      if (cropperInstance) cropperInstance.destroy();
-      cropperInstance = new Cropper(cropperImageEl, {
-        aspectRatio: 1,
-        viewMode: 1,
-        autoCropArea: 0.9,
-        background: false,
-        responsive: true,
-      });
-      const remaining = cropQueue.length + 1;
-      cropperCountEl.textContent = `${cropQueueTotal - remaining + 1} of ${cropQueueTotal}`;
-    };
-    reader.readAsDataURL(file);
+  function destroyCropper() {
+    if (cropper) { cropper.destroy(); cropper = null; }
+    if (cropperImg) { cropperImg.src = ''; }
   }
 
-  function closeCropper() {
-    overlay.classList.remove('open');
-    if (cropperInstance) {
-      cropperInstance.destroy();
-      cropperInstance = null;
-    }
+  function closeCropperModal() {
+    destroyCropper();
+    if (cropperOverlay) cropperOverlay.classList.remove('open');
   }
 
   function processNextInQueue() {
-    if (!cropQueue.length) {
-      closeCropper();
-      syncInputFiles();
-      renderPreviews();
-      updateHint();
+    if (queueIndex >= fileQueue.length) {
+      // Done — clear queue
+      fileQueue  = [];
+      queueIndex = 0;
+      closeCropperModal();
+      updateCountHint();
       return;
     }
-    const nextFile = cropQueue.shift();
-    openCropperFor(nextFile);
+
+    const file   = fileQueue[queueIndex];
+    const reader = new FileReader();
+
+    if (cropperCountEl) {
+      cropperCountEl.textContent = `Image ${queueIndex + 1} of ${fileQueue.length}`;
+    }
+
+    reader.onload = function (e) {
+      if (!cropperImg) return;
+
+      // Open the modal first so the image element is visible and has
+      // layout dimensions before Cropper.js tries to measure it.
+      if (cropperOverlay) cropperOverlay.classList.add('open');
+
+      // Destroy any previous Cropper instance before changing the src.
+      destroyCropper();
+
+      // Initialize Cropper.js INSIDE the image onload so that the browser
+      // has fully decoded and painted the image before Cropper measures it.
+      // Using setTimeout or setting src before onload causes a black canvas.
+      cropperImg.onload = function () {
+        if (typeof Cropper === 'undefined') {
+          console.warn('Cropper.js not loaded — skipping crop');
+          finishCurrentImage(null);
+          return;
+        }
+        cropper = new Cropper(cropperImg, {
+          aspectRatio:  1,
+          viewMode:     1,
+          autoCropArea: 0.85,
+          responsive:   true,
+        });
+      };
+
+      cropperImg.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
   }
 
-  aspectBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      aspectBtns.forEach((b) => b.classList.remove('active'));
+  function finishCurrentImage(canvasOrNull) {
+    const file = fileQueue[queueIndex];
+    queueIndex++;
+
+    function proceed(blob, filename) {
+      const croppedFile = new File([blob], filename, { type: 'image/jpeg' });
+      croppedFiles.push(croppedFile);
+      injectFileInput(croppedFile);
+      const url = URL.createObjectURL(croppedFile);
+      addPreviewThumb(croppedFile, url);
+      processNextInQueue();
+    }
+
+    if (canvasOrNull) {
+      // Get the cropped image as a Blob at 88% JPEG quality
+      canvasOrNull.toBlob(function (blob) {
+        proceed(blob, file.name.replace(/\.[^.]+$/, '') + '-cropped.jpg');
+      }, 'image/jpeg', 0.88);
+    } else {
+      // Skip — use original file as-is
+      const url = URL.createObjectURL(file);
+      croppedFiles.push(file);
+      injectFileInput(file);
+      addPreviewThumb(file, url);
+      processNextInQueue();
+    }
+  }
+
+  // ── Cropper buttons ───────────────────────────────────────────────────────
+
+  if (cropperConfirm) {
+    cropperConfirm.addEventListener('click', function () {
+      if (!cropper) { finishCurrentImage(null); return; }
+      const canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200 });
+      finishCurrentImage(canvas);
+    });
+  }
+
+  if (cropperSkip) {
+    cropperSkip.addEventListener('click', function () {
+      finishCurrentImage(null);
+    });
+  }
+
+  if (cropperZoomIn)  cropperZoomIn.addEventListener('click',  function () { if (cropper) cropper.zoom(0.1); });
+  if (cropperZoomOut) cropperZoomOut.addEventListener('click', function () { if (cropper) cropper.zoom(-0.1); });
+  if (cropperRotate)  cropperRotate.addEventListener('click',  function () { if (cropper) cropper.rotate(90); });
+
+  aspectBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      aspectBtns.forEach(function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
-      const ratio = parseFloat(btn.dataset.ratio);
-      if (cropperInstance) cropperInstance.setAspectRatio(ratio || NaN);
+      if (cropper) {
+        const ratio = parseFloat(btn.dataset.ratio);
+        cropper.setAspectRatio(ratio === 0 ? NaN : ratio);
+      }
     });
   });
 
-  zoomInBtn && zoomInBtn.addEventListener('click', () => cropperInstance && cropperInstance.zoom(0.1));
-  zoomOutBtn && zoomOutBtn.addEventListener('click', () => cropperInstance && cropperInstance.zoom(-0.1));
-  rotateBtn && rotateBtn.addEventListener('click', () => cropperInstance && cropperInstance.rotate(90));
+  // ── File input change ─────────────────────────────────────────────────────
 
-  skipBtn &&
-    skipBtn.addEventListener('click', () => {
-      processNextInQueue();
-    });
+  if (fileInput) {
+    fileInput.addEventListener('change', function () {
+      const allFiles     = Array.from(fileInput.files);
+      const validFiles   = [];
+      const rejectedNames = [];
 
-  confirmBtn &&
-    confirmBtn.addEventListener('click', () => {
-      if (!cropperInstance) return;
-      const canvas = cropperInstance.getCroppedCanvas({
-        width: MAX_OUTPUT_DIMENSION,
-        height: MAX_OUTPUT_DIMENSION,
-        imageSmoothingQuality: 'high',
+      allFiles.forEach(function (f) {
+        if (isValidImageFile(f)) {
+          validFiles.push(f);
+        } else {
+          rejectedNames.push(f.name);
+        }
       });
-      canvas.toBlob(
-        (blob) => {
-          const croppedFile = new File([blob], `crop-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          queuedFiles.push(croppedFile);
-          processNextInQueue();
-        },
-        'image/jpeg',
-        0.9
-      );
-    });
 
-  // ---- kick off: user selects files -> crop queue --------------------------
-  imagesInput &&
-    imagesInput.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'));
-      if (!files.length) return;
-      cropQueue = files.slice();
-      cropQueueTotal = files.length;
+      // Reset the native input so the same file can be re-selected after removal
+      fileInput.value = '';
+
+      if (rejectedNames.length) {
+        showFileTypeError(rejectedNames);
+      }
+
+      if (!validFiles.length) return;
+
+      fileQueue  = validFiles;
+      queueIndex = 0;
       processNextInQueue();
-      // clear the raw selection; the DataTransfer swap happens after cropping
-      imagesInput.value = '';
     });
+  }
 
-  updateHint();
-  renderPreviews();
+  // ── Drag & drop on the dropzone ───────────────────────────────────────────
+  if (dropzone) {
+    dropzone.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      dropzone.style.borderColor = '#111';
+    });
+    dropzone.addEventListener('dragleave', function () {
+      dropzone.style.borderColor = '';
+    });
+    dropzone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      dropzone.style.borderColor = '';
+      const allFiles      = Array.from(e.dataTransfer.files);
+      const validFiles    = [];
+      const rejectedNames = [];
+
+      allFiles.forEach(function (f) {
+        if (isValidImageFile(f)) {
+          validFiles.push(f);
+        } else {
+          rejectedNames.push(f.name);
+        }
+      });
+
+      if (rejectedNames.length) {
+        showFileTypeError(rejectedNames);
+      }
+
+      if (!validFiles.length) return;
+      fileQueue  = validFiles;
+      queueIndex = 0;
+      processNextInQueue();
+    });
+  }
+
+  // ── Edit mode: mark existing image for removal ────────────────────────────
+  // Called from the inline onclick="markImageForRemoval(this, url)" in editProduct.ejs
+  window.markImageForRemoval = function (btn, imageUrl) {
+    const container = btn.closest('.existing-image');
+    if (!container) return;
+    container.classList.add('removed');
+    container.style.opacity = '0.3';
+    btn.disabled = true;
+
+    if (!removedImages.includes(imageUrl)) removedImages.push(imageUrl);
+
+    const inp = document.getElementById('removedImagesInput');
+    if (inp) inp.value = removedImages.join(',');
+
+    updateCountHint();
+  };
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  initEmptySlots();
+  updateCountHint();
 })();

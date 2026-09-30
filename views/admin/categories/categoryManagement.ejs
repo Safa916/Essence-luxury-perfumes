@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Categories — Essence Admin</title>
-     <link rel="stylesheet" href="/admin/category/categoryManagement.css">
+    <link rel="stylesheet" href="/admin/categories/categoryManagement.css">
     <link rel="stylesheet" href="/admin/partials/sidebar.css" />
-    <link rel="stylesheet" href="/admin/category/categoryModal.css" /> 
+    <link rel="stylesheet" href="/admin/categories/categoryModal.css" /> 
 
-   </head>
+</head>
 <body>
 
-    <%- include('../partials/sidebar', { activePage: 'categories' }) %>
+    <%- include('../partials/sidebar', { activePage: 'category' }) %>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -68,18 +68,14 @@
                 <h3 class="table-title">All Categories</h3>
 
                 <form action="/admin/categories" method="GET" class="table-search-wrapper">
+                   <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="11" cy="11" r="7"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+</svg>
                     <input type="text" name="search" class="table-search-input" placeholder="Search by name..." value="<%= search %>">
-                    <div class="search-actions">
-                        <% if (search) { %>
-                            <a href="/admin/categories" class="clear-search-link" title="Clear search">✕</a>
-                        <% } %>
-                        <button type="submit" class="search-submit-btn" title="Search">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="7"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                    </div>
+                    <% if (search) { %>
+                        <a href="/admin/categories" class="clear-search-link">CLEAR &times;</a>
+                    <% } %>
                 </form>
             </div>
 
@@ -111,7 +107,7 @@
                                     <span class="status-badge <%= cat.is_active ? 'active' : 'inactive' %>">
                                         <%= cat.is_active ? 'Active' : 'Inactive' %>
                                     </span>
-                                    <form action="/admin/categories/<%= cat._id %>/status" method="POST" class="toggle-form">
+                                    <form action="/admin/categories/<%= cat._id %>/status" method="POST" class="toggle-form" data-name="<%= cat.name %>" data-active="<%= cat.is_active %>">
                                         <input type="hidden" name="_method" value="PATCH">
                                         <button type="submit" class="toggle-switch <%= cat.is_active ? 'is-on' : '' %>" aria-label="Toggle status">
                                             <span class="toggle-knob"></span>
@@ -299,6 +295,28 @@
         </div>
     </div>
 
+    <!-- ===== INACTIVATE CONFIRMATION MODAL ===== -->
+    <div class="modal-overlay" id="inactivateModalOverlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Deactivate Category</h2>
+                <button type="button" class="modal-close" data-close="inactivateModalOverlay">✕</button>
+            </div>
+            <div class="delete-warning">
+                <span class="warning-icon">⚠</span>
+                <span class="warning-label">Products Will Be Hidden</span>
+            </div>
+            <p class="delete-message">
+                Are you sure you want to deactivate <strong id="inactivateCategoryName"></strong>?
+                All products in this category will be hidden from the user-facing store until the category is reactivated.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" data-close="inactivateModalOverlay">Cancel</button>
+                <button type="button" class="btn-delete-confirm" id="confirmInactivateBtn">Deactivate</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function openModal(id) { document.getElementById(id).classList.add('open'); }
         function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -336,6 +354,30 @@
                 document.getElementById('deleteCategoryName').textContent = `"${btn.dataset.name}"`;
                 openModal('deleteModalOverlay');
             });
+        });
+
+        // Intercept toggle-switch: show confirm modal when deactivating an active category
+        let _pendingToggleForm = null;
+        document.querySelectorAll('.toggle-form').forEach((form) => {
+            form.addEventListener('submit', function (e) {
+                const isCurrentlyActive = form.dataset.active === 'true';
+                if (isCurrentlyActive) {
+                    // About to deactivate — show confirmation first
+                    e.preventDefault();
+                    _pendingToggleForm = form;
+                    document.getElementById('inactivateCategoryName').textContent = `"${form.dataset.name}"`;
+                    openModal('inactivateModalOverlay');
+                }
+                // If currently inactive → activating: allow the form to submit normally
+            });
+        });
+
+        document.getElementById('confirmInactivateBtn').addEventListener('click', function () {
+            closeModal('inactivateModalOverlay');
+            if (_pendingToggleForm) {
+                _pendingToggleForm.submit();
+                _pendingToggleForm = null;
+            }
         });
 
         // Reopen a modal automatically if the server redirected back with a validation error

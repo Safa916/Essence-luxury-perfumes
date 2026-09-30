@@ -131,9 +131,19 @@ body {
     color: #1c1c1e;
 }
 
+
 .table-search-wrapper {
     position: relative;
     width: 260px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.table-search-wrapper svg {
+    flex-shrink: 0;
+    color: #AEAEB2;
+    pointer-events: none;
 }
 .table-search-input {
     width: 100%;
