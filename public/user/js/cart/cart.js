@@ -81,4 +81,4 @@
       console.log('Proceed to checkout clicked');
     });
   }
-})();
+})();

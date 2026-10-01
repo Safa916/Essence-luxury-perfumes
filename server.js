@@ -40,7 +40,6 @@ app.use(methodOverride('_method'));
 
 app.use(cookieParser());
 
-
 connectDB();
 const PORT = process.env.PORT || 3002;
 
