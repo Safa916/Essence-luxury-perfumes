@@ -1,0 +1,271 @@
+/* ==========================================================
+   Order Success Page
+   Theme taken from the product page: blush cream, espresso
+   brown, and antique gold accents.
+   ========================================================== */
+
+:root {
+  --bg:            #fff6f4;   /* page background (blush cream) */
+  --surface:       #ffffff;   /* cards */
+  --surface-muted: #f6efed;   /* summary panel, image placeholder */
+  --border:        #eadfdb;
+  --text:          #2b211d;   /* primary text */
+  --text-muted:    #7a6c66;   /* secondary text */
+  --text-faint:    #a39690;   /* eyebrows / labels */
+  --accent:        #6b4e16;   /* antique gold-brown (stars, links) */
+  --dark:          #54433b;   /* espresso brown */
+  --dark-hover:    #3f322c;
+
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.success-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 72px 24px 96px;
+}
+
+/* ---------- Header ---------- */
+.success-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.success-icon {
+  width: 54px;
+  height: 38px;
+  margin: 0 auto 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.success-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.success-subtitle {
+  margin: 14px 0 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ---------- Layout ---------- */
+.success-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ---------- Items ---------- */
+.items-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.item-card {
+  display: flex;
+  gap: 24px;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.item-image {
+  flex: 0 0 160px;
+  height: 160px;
+  background: var(--surface-muted);
+  overflow: hidden;
+}
+
+.item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.item-name {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.35rem;
+  color: var(--text);
+}
+
+.item-desc {
+  margin: 0 0 18px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.item-meta {
+  margin: 0;
+  display: flex;
+  gap: 18px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ---------- Summary ---------- */
+.summary-panel {
+  padding: 28px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+}
+
+.summary-list { margin: 0; }
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-row dt {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.summary-row dd {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: right;
+  color: var(--text);
+}
+
+.summary-row dd.summary-total {
+  font-size: 1.15rem;
+  color: var(--accent);
+}
+
+.summary-note {
+  margin: 28px 0;
+  font-size: 0.7rem;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.help-box {
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.help-box .eyebrow { margin-bottom: 10px; }
+
+.help-text {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.help-link {
+  font-size: 0.75rem;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.help-link:hover { color: var(--dark); }
+
+/* ---------- Buttons ---------- */
+.success-actions {
+  margin-top: 56px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  padding: 14px 32px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid var(--dark);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--dark);
+  color: #fff;
+}
+
+.btn-primary:hover { background: var(--dark-hover); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--dark);
+}
+
+.btn-ghost:hover {
+  background: var(--dark);
+  color: #fff;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .success-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 520px) {
+  .success-page { padding: 48px 16px 64px; }
+  .item-card { flex-direction: column; }
+  .item-image { flex-basis: auto; width: 100%; height: 220px; }
+  .btn { width: 100%; text-align: center; }
+}
