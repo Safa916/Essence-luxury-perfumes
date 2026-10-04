@@ -4,48 +4,51 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Order Placed Successfully | Essence</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
- <link rel="stylesheet" href="/user/checkout/order-success.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/checkout/order-success.css">
 </head>
 <body>
 
-  <%
-    // Expected data from your route (fallbacks shown for quick preview)
-    const o = (typeof order !== 'undefined' && order) ? order : {};
-    const orderId  = o.id || '#perfume-45821';
-    const total    = o.total != null ? o.total : 4500;
-    const payment  = o.paymentMethod || 'Razorpay / UPI';
-    const delivery = o.estimatedDelivery || '3-5 Business Days';
-    const items    = o.items && o.items.length ? o.items : [{
-      image: '', brand: 'Dior', name: 'Sauvage Elixir',
-      description: 'Professional Grade / Firm Ground', qty: 1, size: '100ML'
-    }];
-    const supportEmail = o.supportEmail || 'support@essence.com';
-    const inr = (n) => '₹' + Number(n).toLocaleString('en-IN');
-  %>
+<%
+  const o          = (typeof order !== 'undefined' && order) ? order : {};
+  const orderId    = o.id || 'ESS-XXXXXXXX-XXXX';
+  const total      = o.total != null ? o.total : 0;
+  const payment    = o.paymentMethod || 'Cash on Delivery';
+  const delivery   = o.estimatedDelivery || '3–5 Business Days';
+  const items      = (o.items && o.items.length) ? o.items : [];
+  const supportEmail = o.supportEmail || 'support@essence.com';
+  const inr = (n) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+%>
 
   <main class="success-page">
 
     <!-- Header -->
     <header class="success-header">
       <div class="success-icon" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
       </div>
-      <h1 class="success-title">Order Placed Successfully</h1>
-      <p class="success-subtitle">Thank you for your purchase</p>
+      <p class="success-eyebrow">Order Confirmed</p>
+      <h1 class="success-title">Thank You for Your Order!</h1>
+      <p class="success-subtitle">
+        Your fragrance is on its way. Order reference: <strong><%= orderId %></strong>
+      </p>
     </header>
 
-    <!-- Content -->
+    <!-- Content grid -->
     <section class="success-grid">
 
-      <!-- Items -->
+      <!-- Items panel -->
       <div class="items-panel">
-        <% items.forEach(function (item) { %>
+        <p class="panel-label">Items Ordered</p>
+        <% if (items.length === 0) { %>
+          <p style="color:var(--ink-soft);font-size:0.85rem;">No items found.</p>
+        <% } %>
+        <% items.forEach(function(item) { %>
           <article class="item-card">
             <div class="item-image">
               <% if (item.image) { %>
@@ -53,31 +56,29 @@
               <% } %>
             </div>
             <div class="item-info">
-              <p class="eyebrow"><%= item.brand || 'Essence' %></p>
               <h2 class="item-name"><%= item.name %></h2>
-              <p class="item-desc"><%= item.description || '' %></p>
               <p class="item-meta">
+                <% if (item.size) { %><span>Size: <%= item.size %></span><% } %>
                 <span>Qty: <%= String(item.qty).padStart(2, '0') %></span>
-                <span>Size: <%= item.size %></span>
               </p>
             </div>
           </article>
-        <% }) %>
+        <% }); %>
       </div>
 
-      <!-- Summary -->
+      <!-- Summary panel -->
       <aside class="summary-panel">
         <dl class="summary-list">
           <div class="summary-row">
             <dt>Order ID</dt>
-            <dd><%= orderId %></dd>
+            <dd class="order-id-val"><%= orderId %></dd>
           </div>
           <div class="summary-row">
-            <dt>Total Amount</dt>
+            <dt>Total Paid</dt>
             <dd class="summary-total"><%= inr(total) %></dd>
           </div>
           <div class="summary-row">
-            <dt>Payment Method</dt>
+            <dt>Payment</dt>
             <dd><%= payment %></dd>
           </div>
           <div class="summary-row">
@@ -86,22 +87,30 @@
           </div>
         </dl>
 
-        <p class="summary-note">
-          A confirmation email has been sent to your registered address with tracking details.
-        </p>
-
-        <div class="help-box">
-          <p class="eyebrow">Need help?</p>
-          <p class="help-text">Contact our support team</p>
-          <a class="help-link" href="mailto:<%= supportEmail %>"><%= supportEmail %></a>
+        <!-- Illustration / note -->
+        <div class="delivery-illustration" aria-hidden="true">
+          <svg viewBox="0 0 80 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="80" height="40">
+            <rect x="2" y="12" width="46" height="22" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M48 18h10l8 8v8H48z" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="16" cy="36" r="4" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="56" cy="36" r="4" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6 6h20M6 10h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <p>On its way to you</p>
         </div>
+
+        <p class="summary-note">
+          You will be notified when your order is shipped.<br>
+          For queries, contact <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a>
+        </p>
       </aside>
 
     </section>
 
+    <!-- Actions -->
     <div class="success-actions">
-      <a href="/orders" class="btn btn-primary">View My Orders</a>
-      <a href="/" class="btn btn-ghost">Continue Shopping</a>
+      <a href="/orders" class="btn btn-dark">View My Orders</a>
+      <a href="/shop" class="btn btn-outline">Continue Shopping</a>
     </div>
 
   </main>

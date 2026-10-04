@@ -36,7 +36,7 @@ const orderSchema = new mongoose.Schema(
     },
     order_status: {
       type: String,
-      enum: ['placed', 'processing', 'shipped', 'delivered', 'cancelled'],
+      enum: ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
       default: 'placed',
     },
     items: [
@@ -106,6 +106,16 @@ const orderSchema = new mongoose.Schema(
     internal_notes: {
       type: String,
       default: null,
+    },
+    cancel_reason: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    return_reason: {
+      type: String,
+      default: null,
+      trim: true,
     },
   },
   { timestamps: { createdAt: 'placed_at', updatedAt: 'updated_at' } }

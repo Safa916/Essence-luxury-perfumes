@@ -65,34 +65,186 @@
 
 .edit-link:hover { opacity: 1; border-bottom-color: var(--gold); }
 
-/* ===== Address card ===== */
+/* ===== Address list — selectable radio cards ===== */
 
-.address-card {
+.address-empty {
+  padding: 1.5rem;
   border: 1px solid var(--line);
-  padding: 1.5rem 1.75rem;
-  background: var(--white);
-}
-
-.field-label {
-  font-size: 0.6rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  text-align: center;
+  font-size: 0.85rem;
   color: var(--ink-soft);
-  font-weight: 500;
-  margin: 0 0 0.4rem;
 }
 
-.field-value {
-  font-size: 0.9rem;
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.address-radio-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.2rem 1.4rem;
+  border: 1px solid var(--line);
+  background: var(--white);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.address-radio-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.addr-radio-dot {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 50%;
+  margin-top: 3px;
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+
+.addr-radio-dot::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--gold);
+  transform: scale(0);
+  transition: transform 0.2s ease;
+}
+
+.address-radio-card.is-selected {
+  border-color: var(--ink);
+  background: #faf7f2;
+}
+
+.address-radio-card.is-selected .addr-radio-dot {
+  border-color: var(--gold);
+}
+
+.address-radio-card.is-selected .addr-radio-dot::after {
+  transform: scale(1);
+}
+
+.addr-body { flex: 1; min-width: 0; }
+
+.addr-top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.addr-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--ink);
-  font-weight: 400;
-  line-height: 1.7;
-  margin: 0 0 1.4rem;
 }
 
-.field-value:last-child { margin-bottom: 0; }
+.addr-type-badge,
+.addr-default-badge {
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+}
 
-.address-card .btn-sm { padding: 0.6rem 1.2rem; }
+.addr-default-badge {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.addr-line {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.2rem;
+  line-height: 1.5;
+}
+
+.addr-phone { font-weight: 500; color: var(--ink); }
+
+.addr-edit-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.addr-edit-link:hover { border-bottom-color: var(--gold); }
+
+/* ===== Summary thumb quantity badge ===== */
+
+.summary-thumb { position: relative; }
+
+.summary-qty-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 0.6rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+/* ===== Free shipping note ===== */
+
+.free-shipping-note {
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: center;
+  margin: 0.6rem 0 0;
+}
+
+.free-tag { color: var(--gold); font-weight: 600; }
+
+/* ===== Coming soon payment tag ===== */
+
+.coming-soon-tag {
+  display: inline-block;
+  font-size: 0.48rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--line);
+  color: var(--ink-soft);
+  padding: 2px 6px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+.pay-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-purchase:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 
 /* ===== Payment options ===== */
 

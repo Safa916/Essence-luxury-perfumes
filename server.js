@@ -18,7 +18,8 @@ const shopRoutes = require('./routes/user/shopRoutes');
   const categoryRoutes = require('./routes/user/categoryRoutes');
   const productRoutes = require('./routes/user/productRoutes');
   const cartRoutes = require('./routes/user/cartRoutes');  
-const wishlistRoutes = require('./routes/user/wishlistRoutes');
+const wishlistRoutes  = require('./routes/user/wishlistRoutes');
+const checkoutRoutes  = require('./routes/user/checkoutRoutes');
 
 
 
@@ -54,8 +55,9 @@ app.use('/admin', adminRoutes);
 app.use('/shop', shopRoutes);
 app.use('/categories',categoryRoutes);
 app.use('/product', productRoutes);
-app.use('/cart', cartRoutes);  
+app.use('/cart', cartRoutes);
 app.use('/wishlist', wishlistRoutes);
+app.use('/checkout', checkoutRoutes);
 
 
 

@@ -104,9 +104,15 @@
             <span id="cartSubtotal">₹<%= subtotal.toLocaleString('en-IN') %></span>
           </div>
           <p class="summary-note">Complimentary delivery on all orders</p>
-          <button type="button" class="btn btn-dark checkout-btn" id="checkoutBtn" <%= hasUnavailable ? 'disabled' : '' %>>
-            Proceed to Checkout
-          </button>
+          <% if (hasUnavailable) { %>
+            <button type="button" class="btn btn-dark checkout-btn" id="checkoutBtn" disabled>
+              Proceed to Checkout
+            </button>
+          <% } else { %>
+            <a href="/checkout" class="btn btn-dark checkout-btn" id="checkoutBtn">
+              Proceed to Checkout
+            </a>
+          <% } %>
         </aside>
       </div>
     <% } %>
