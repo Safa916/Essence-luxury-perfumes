@@ -108,6 +108,23 @@
           Buy Now
         </button>
 
+        <!-- Wishlist toggle -->
+        <button
+          type="button"
+          class="btn btn-outline wishlist-detail-btn <%= isWishlisted ? 'is-wishlisted' : '' %>"
+          id="wishlistDetailBtn"
+          data-product-id="<%= product._id %>"
+          aria-label="<%= isWishlisted ? 'Remove from wishlist' : 'Add to wishlist' %>"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15"
+               fill="<%= isWishlisted ? 'currentColor' : 'none' %>"
+               stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          <span id="wishlistDetailLabel"><%= isWishlisted ? 'Wishlisted' : 'Add to Wishlist' %></span>
+        </button>
+
         <p class="delivery-note">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="14" height="10" rx="1"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>
           Complimentary Delivery
@@ -192,6 +209,7 @@
     <img id="lightboxImage" src="" alt="">
   </div>
 
+  <script>window.IS_LOGGED_IN = <%= user ? 'true' : 'false' %>;</script>
   <script src="/user/js/product/productDetails.js"></script>
 
 <script src="/user/js/product/addToCart.js"></script>

@@ -260,6 +260,41 @@
   cursor: not-allowed;
 }
 
+/* ===== Wishlist toggle button (product detail) ===== */
+
+.wishlist-detail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  margin-bottom: 0.85rem;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.wishlist-detail-btn:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.wishlist-detail-btn.is-wishlisted {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.wishlist-detail-btn.is-wishlisted svg {
+  fill: var(--gold);
+  stroke: var(--gold);
+}
+
 .delivery-note {
   display: flex;
   align-items: center;

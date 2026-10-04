@@ -130,4 +130,79 @@
       console.log('Buy now clicked');
     });
   }
+
+  // ===== Wishlist toggle on product detail page =====
+  const wishlistDetailBtn = document.getElementById('wishlistDetailBtn');
+  const wishlistDetailLabel = document.getElementById('wishlistDetailLabel');
+
+  if (wishlistDetailBtn) {
+    wishlistDetailBtn.addEventListener('click', async () => {
+      // Redirect guests to login
+      if (typeof window.IS_LOGGED_IN !== 'undefined' && !window.IS_LOGGED_IN) {
+        window.location.href = '/auth/login';
+        return;
+      }
+
+      const productId = wishlistDetailBtn.dataset.productId;
+      const isWishlisted = wishlistDetailBtn.classList.contains('is-wishlisted');
+      const svg = wishlistDetailBtn.querySelector('svg');
+
+      // Optimistic UI flip
+      if (isWishlisted) {
+        wishlistDetailBtn.classList.remove('is-wishlisted');
+        if (svg) svg.setAttribute('fill', 'none');
+        wishlistDetailBtn.setAttribute('aria-label', 'Add to wishlist');
+        if (wishlistDetailLabel) wishlistDetailLabel.textContent = 'Add to Wishlist';
+      } else {
+        wishlistDetailBtn.classList.add('is-wishlisted');
+        if (svg) svg.setAttribute('fill', 'currentColor');
+        wishlistDetailBtn.setAttribute('aria-label', 'Remove from wishlist');
+        if (wishlistDetailLabel) wishlistDetailLabel.textContent = 'Wishlisted';
+      }
+
+      try {
+        let res, data;
+        if (isWishlisted) {
+          res = await fetch(`/wishlist/remove-by-product/${productId}`, { method: 'DELETE' });
+          data = await res.json();
+        } else {
+          res = await fetch('/wishlist/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_id: productId }),
+          });
+          data = await res.json();
+          if (data.redirect) { window.location.href = data.redirect; return; }
+        }
+
+        if (!data.success && !data.alreadyExists) {
+          // Revert on failure
+          if (isWishlisted) {
+            wishlistDetailBtn.classList.add('is-wishlisted');
+            if (svg) svg.setAttribute('fill', 'currentColor');
+            wishlistDetailBtn.setAttribute('aria-label', 'Remove from wishlist');
+            if (wishlistDetailLabel) wishlistDetailLabel.textContent = 'Wishlisted';
+          } else {
+            wishlistDetailBtn.classList.remove('is-wishlisted');
+            if (svg) svg.setAttribute('fill', 'none');
+            wishlistDetailBtn.setAttribute('aria-label', 'Add to wishlist');
+            if (wishlistDetailLabel) wishlistDetailLabel.textContent = 'Add to Wishlist';
+          }
+          alert(data.message || 'Could not update wishlist.');
+        }
+      } catch (err) {
+        console.error('wishlist toggle error:', err);
+        // Revert on network error
+        if (isWishlisted) {
+          wishlistDetailBtn.classList.add('is-wishlisted');
+          if (svg) svg.setAttribute('fill', 'currentColor');
+          if (wishlistDetailLabel) wishlistDetailLabel.textContent = 'Wishlisted';
+        } else {
+          wishlistDetailBtn.classList.remove('is-wishlisted');
+          if (svg) svg.setAttribute('fill', 'none');
+          if (wishlistDetailLabel) wishlistDetailLabel.textContent = 'Add to Wishlist';
+        }
+      }
+    });
+  }
 })();

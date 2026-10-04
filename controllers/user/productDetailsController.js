@@ -1,6 +1,7 @@
 const Product = require('../../models/product');
 const Variant = require('../../models/variant');
 const Review = require('../../models/review');
+const WishlistItem = require('../../models/wishlistItems');
 
 function formatRelativeTime(date) {
   const now = new Date();
@@ -106,6 +107,11 @@ exports.renderProductDetails = async (req, res) => {
           .lean()
       : [];
 
+    // Check if this product is in the current user's wishlist
+    const isWishlisted = req.user
+      ? !!(await WishlistItem.findOne({ user_id: req.user._id, product_id: product._id }).lean())
+      : false;
+
     res.render('user/product/productDetails', {
       user: req.user,
       product,
@@ -115,6 +121,7 @@ exports.renderProductDetails = async (req, res) => {
       avgRating,
       totalReviews,
       relatedProducts,
+      isWishlisted,
     });
   } catch (err) {
     console.error('renderProductDetails error:', err);
