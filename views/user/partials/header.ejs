@@ -33,8 +33,11 @@
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20.5s-7.5-4.6-10-9.3C.5 7.8 2.4 4.5 5.8 4c2-.3 3.9.6 5.2 2.4C12.3 4.6 14.2 3.7 16.2 4c3.4.5 5.3 3.8 3.8 7.2-2.5 4.7-10 9.3-10 9.3z"/></svg>
       </a>
 
-      <a href="/cart" class="icon-btn" aria-label="Bag">
+      <a href="/cart" class="icon-btn cart-btn" aria-label="Bag" style="position: relative;">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <% if (typeof cartCount !== 'undefined' && cartCount > 0) { %>
+          <span class="cart-badge"><%= cartCount > 99 ? '99+' : cartCount %></span>
+        <% } %>
       </a>
 
       <% if (typeof user !== 'undefined' && user) { %>
@@ -104,5 +107,22 @@
     document.addEventListener('click', function (e) {
       if (!wrapper.contains(e.target)) closeSearch();
     });
+
+    // Global helper to update cart badge dynamically from AJAX calls
+    window.updateCartBadge = function(count) {
+      const cartBtn = document.querySelector('.cart-btn');
+      if (!cartBtn) return;
+      let badge = cartBtn.querySelector('.cart-badge');
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'cart-badge';
+          cartBtn.appendChild(badge);
+        }
+        badge.textContent = count > 99 ? '99+' : count;
+      } else if (badge) {
+        badge.remove();
+      }
+    };
   })();
 </script>

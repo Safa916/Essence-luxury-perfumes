@@ -59,5 +59,5 @@ const addressSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
 
-const address = mongoose.model('address', addressSchema);
+const address = mongoose.models.address || mongoose.model('address', addressSchema);
 module.exports = address;

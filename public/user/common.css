@@ -573,3 +573,21 @@ img { display: block; max-width: 100%; }
   .account-main { padding: 2rem 1.25rem 3rem; }
   .page-title { font-size: 2.1rem; }
 }
+
+/* Cart Badge */
+.cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  background-color: var(--gold);
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--paper);
+}

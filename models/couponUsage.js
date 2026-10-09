@@ -26,5 +26,5 @@ const couponUsageSchema = new mongoose.Schema(
   // matches your diagram's "used_at" field name exactly
 );
 
-const couponUsage = mongoose.model('couponUsage', couponUsageSchema);
+const couponUsage = mongoose.models.couponUsage || mongoose.model('couponUsage', couponUsageSchema);
 module.exports = couponUsage;

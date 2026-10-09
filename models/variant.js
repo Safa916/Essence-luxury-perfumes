@@ -84,5 +84,5 @@ variantSchema.set('toJSON', {
   },
 });
 
-const variant = mongoose.model('variant', variantSchema);
+const variant = mongoose.models.variant || mongoose.model('variant', variantSchema);
 module.exports = variant;

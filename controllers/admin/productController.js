@@ -36,14 +36,8 @@ function deleteUploadedImages(publicPaths) {
   });
 }
 
-// Full server-side validation, matching the client-side checks in
-// addProduct.ejs field-for-field. Returns an object keyed by field name —
-// {} means valid. This is the source of truth; the browser-side JS is only
-// there for instant feedback, this is what actually protects the database.
-//
-// NOTE: product.price / product.stock are NOT validated here anymore —
-// they are derived from the variant fields in createProduct(), not taken
-// as separate admin input, so there's nothing to validate independently.
+
+
 function validateProductInput(data, imageCount) {
   const errors = {};
 
@@ -127,9 +121,7 @@ exports.renderProductManagement = async (req, res) => {
 const { page, limit } = features.pagination;
 const totalPages = Math.max(Math.ceil(totalProducts / limit), 1);
 
-// Get variant counts split by active/inactive for this page of products
-// total_count = all non-deleted variants (tells us if variants exist at all)
-// active_count = only is_active:true variants (tells us if any are sellable)
+
 const variantCounts = await Variant.aggregate([
   { $match: { product_id: { $in: products.map((p) => p._id) }, deleted_at: null } },
   {
@@ -187,8 +179,7 @@ exports.renderAddProduct = async (req, res) => {
 // ---------------------------------------------------------------------------
 exports.createProduct = async (req, res) => {
   try {
-    // resizeProductImages resizes files and stores paths on req.processedImages
-    // (not req.body.images, to avoid multipart field-name collisions).
+   
     const uploadedImages = req.processedImages || [];
 
     const errors = validateProductInput(req.body, uploadedImages.length);
@@ -233,10 +224,6 @@ exports.createProduct = async (req, res) => {
       is_limited_edition:
         limited_edition === 'active' || limited_edition === 'on' || limited_edition === 'true',
     });
-
-    // Create the required first variant alongside the product. If this
-    // fails, roll back the product so we never end up with an orphan
-    // product that has zero variants.
     try {
       const sku2 = await nextVariantSku(product);
       await Variant.create({
@@ -264,9 +251,7 @@ exports.createProduct = async (req, res) => {
       Brand ? Brand.find().lean() : [],
     ]);
 
-    // Surface multer file-type / size errors as a form-level image error
-    // instead of a blank error page, so the admin can correct and resubmit.
-    let errors;
+       let errors;
     if (err.code === 'INVALID_FILE_TYPE') {
       errors = { images: err.message };
     } else if (err.code === 'LIMIT_FILE_SIZE') {
@@ -301,12 +286,6 @@ exports.renderEditProduct = async (req, res) => {
 };
 
 // ---------------------------------------------------------------------------
-// PUT /admin/products/:id
-// price/stock are intentionally not accepted from this form — they're
-// derived from the product's variants via recalcProductStock/
-// recalcProductPrice in variantController.js, kept in sync automatically
-// whenever a variant is added, edited, or deleted.
-// ---------------------------------------------------------------------------
 exports.updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -320,7 +299,7 @@ exports.updateProduct = async (req, res) => {
       brand_id,
       category_id,
       status,
-      removed_images, // comma separated list of existing image URLs to drop
+      removed_images, 
     } = req.body;
 
     let images = [...product.images];
@@ -340,10 +319,6 @@ exports.updateProduct = async (req, res) => {
       images.push(...req.processedImages);
     }
 
-    // price/stock are no longer editable here — they're derived from the
-    // product's variants (recalcProductStock/recalcProductPrice, run by
-    // variantController.js on every variant add/edit/delete), so there's
-    // nothing to validate independently.
     const errors = {};
     if (!name || !name.trim()) errors.name = 'Product name is required.';
     if (!sku || !sku.trim()) errors.sku = 'SKU is required.';
@@ -431,8 +406,6 @@ exports.renderProductDetail = async (req, res) => {
       deleted_at: null,
     });
 
-    // Stock Health — computed from the aggregate stock field (kept in sync
-    // with variant totals). Thresholds are a starting point — tune freely.
     const stock = product.stock || 0;
     let stockHealth = 'optimal';
     if (stock === 0) stockHealth = 'sold-out';
@@ -471,9 +444,7 @@ exports.renderVariantManager = async (req, res) => {
       Variant.countDocuments({ product_id: product._id, deleted_at: null }),
     ]);
 
-    // Decimal128 doesn't come through .lean() as a plain number, so convert
-    // it for the view (matches the toJSON transform used by the JSON API).
-    const variants = variantsRaw.map((v) => ({
+       const variants = variantsRaw.map((v) => ({
       ...v,
       price: v.price != null ? parseFloat(v.price.toString()) : 0,
     }));

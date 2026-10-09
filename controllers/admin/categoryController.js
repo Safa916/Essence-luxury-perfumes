@@ -33,6 +33,8 @@ function deleteBannerFile(bannerUrl) {
   fs.unlink(filePath, () => {});
 }
 
+const INVALID_NAME_MSG = 'Category name must contain at least one letter or number (a-z, 0-9).';
+
 // ===== LIST =====
 exports.listCategories = async (req, res) => {
   try {
@@ -113,6 +115,17 @@ exports.createCategory = async (req, res) => {
     }
 
     const slug = slugify(name);
+
+    // NEW: names made only of symbols/non-English letters produce an empty slug
+    if (!slug) {
+      if (bannerFile) fs.unlink(bannerFile.path, () => {});
+      return res.redirect(
+        `/admin/categories?openModal=add&formError=${encodeURIComponent(
+          INVALID_NAME_MSG
+        )}&enteredName=${encodeURIComponent(name)}`
+      );
+    }
+
     const bannerUrl = bannerFile ? toPublicPath(bannerFile.filename) : null;
 
     // Check across ALL categories (including soft-deleted) since slug is unique at the DB level
@@ -191,6 +204,17 @@ exports.updateCategory = async (req, res) => {
     }
 
     const slug = slugify(name);
+
+   
+    if (!slug) {
+      if (bannerFile) fs.unlink(bannerFile.path, () => {});
+      return res.redirect(
+        `/admin/categories?openModal=edit&editId=${id}&formError=${encodeURIComponent(
+          INVALID_NAME_MSG
+        )}&enteredName=${encodeURIComponent(name)}`
+      );
+    }
+
     const duplicate = await Category.findOne({
       slug,
       is_deleted: false,
@@ -205,8 +229,6 @@ exports.updateCategory = async (req, res) => {
       );
     }
 
-    // A soft-deleted category might still hold this slug at the DB level.
-    // If so, permanently free it up so this update doesn't hit the unique constraint.
     const deletedHolder = await Category.findOne({
       slug,
       is_deleted: true,
@@ -221,8 +243,6 @@ exports.updateCategory = async (req, res) => {
     category.slug = slug;
     category.is_active = is_active === 'on' || is_active === 'true';
 
-    // Only touch the banner if a new file was actually uploaded — otherwise
-    // keep whatever banner_url the category already had.
     if (bannerFile) {
       deleteBannerFile(category.banner_url);
       category.banner_url = toPublicPath(bannerFile.filename);
@@ -272,9 +292,7 @@ exports.deleteCategory = async (req, res) => {
       return res.redirect('/admin/categories');
     }
 
-    // Soft delete only — banner file is intentionally left on disk in case
-    // the category is restored later (see the "existing.is_deleted" branch
-    // in createCategory, which reuses a soft-deleted doc's slug).
+    
     await Category.findByIdAndUpdate(id, { is_deleted: true });
     res.redirect('/admin/categories');
   } catch (err) {

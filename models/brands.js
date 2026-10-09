@@ -31,5 +31,5 @@ const brandSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: false } } // diagram only shows created_at
 );
 
-const brands = mongoose.model('brands', brandSchema);
+const brands = mongoose.models.brands || mongoose.model('brands', brandSchema);
 module.exports = brands;

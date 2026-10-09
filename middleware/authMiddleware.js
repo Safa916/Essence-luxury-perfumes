@@ -42,8 +42,13 @@ exports.protect = async (req, res, next) => {
   }
 };
 
+const Cart = require('../models/cart');
+
 exports.checkUser = async (req, res, next) => {
   const token = req.cookies.token;
+
+  res.locals.cartCount = 0; // Default
+  res.locals.user = null;
 
   if (!token) {
     req.user = null;
@@ -61,6 +66,13 @@ exports.checkUser = async (req, res, next) => {
     }
 
     req.user = user;
+    res.locals.user = user;
+    
+    // Fetch cart count
+    const cart = await Cart.findOne({ user_id: user._id }).lean();
+    if (cart && cart.items) {
+      res.locals.cartCount = cart.items.length;
+    }
   } catch (err) {
     req.user = null;
   }
@@ -71,6 +83,9 @@ exports.checkUser = async (req, res, next) => {
 // @desc    Require a logged-in user (cookie-based) — redirect to login if not authenticated
 exports.requireAuth = async (req, res, next) => {
   const token = req.cookies.token;
+
+  res.locals.cartCount = 0; // Default
+  res.locals.user = null;
 
   if (!token) {
     return res.redirect('/auth/login');
@@ -85,6 +100,13 @@ exports.requireAuth = async (req, res, next) => {
     }
 
     req.user = user;
+    res.locals.user = user;
+    
+    // Fetch cart count
+    const cart = await Cart.findOne({ user_id: user._id }).lean();
+    if (cart && cart.items) {
+      res.locals.cartCount = cart.items.length;
+    }
     next();
   } catch (error) {
     return res.redirect('/auth/login');

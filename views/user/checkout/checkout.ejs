@@ -39,13 +39,13 @@
               <span class="step-badge">01</span>
               <h2 class="co-title">Shipping Address</h2>
             </div>
-            <a href="/profile/addresses/new" class="edit-link">+ Add New</a>
+            <a href="/address/new?returnTo=/checkout" class="edit-link">+ Add New</a>
           </div>
 
           <% if (_addresses.length === 0) { %>
             <div class="address-empty">
               <p>You have no saved addresses.</p>
-              <a href="/profile/addresses/new" class="btn btn-dark btn-sm">Add Address</a>
+              <a href="/address/new?returnTo=/checkout" class="btn btn-dark btn-sm">Add Address</a>
             </div>
           <% } else { %>
             <div class="address-list" id="addressList">
@@ -70,7 +70,7 @@
                     <p class="addr-line"><%= addr.address_line1 %><% if (addr.address_line2) { %>, <%= addr.address_line2 %><% } %></p>
                     <p class="addr-line"><%= addr.city %>, <%= addr.state %> — <%= addr.pincode %></p>
                     <p class="addr-line"><%= addr.country || 'India' %> · <span class="addr-phone"><%= addr.phone_number %></span></p>
-                    <a href="/profile/addresses/<%= addr._id %>/edit" class="addr-edit-link">Edit</a>
+                    <a href="/address/<%= addr._id %>/edit?returnTo=/checkout" class="addr-edit-link">Edit</a>
                   </div>
                 </label>
               <% }); %>
@@ -153,7 +153,7 @@
           </div>
           <div class="totals-row">
             <dt>Shipping</dt>
-            <dd><%= _shipping === 0 ? '<span class="free-tag">Free</span>' : fmt(_shipping) %></dd>
+            <dd><% if (_shipping === 0) { %><span class="free-tag">Free</span><% } else { %><%= fmt(_shipping) %><% } %></dd>
           </div>
         </dl>
 

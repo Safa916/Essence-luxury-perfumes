@@ -35,4 +35,5 @@ const uploadCategoryImage = multer({
 // Builds the public URL saved on the Category doc, e.g. "/uploads/categories/cat-...jpg"
 const toPublicPath = (filename) => `/uploads/categories/${filename}`;
 
+
 module.exports = { uploadCategoryImage, toPublicPath, uploadDir };

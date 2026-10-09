@@ -54,5 +54,5 @@ const walletTransactionSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
 
-const walletTransaction = mongoose.model('walletTransaction', walletTransactionSchema);
+const walletTransaction = mongoose.models.walletTransaction || mongoose.model('walletTransaction', walletTransactionSchema);
 module.exports = walletTransaction;

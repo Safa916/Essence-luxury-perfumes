@@ -58,5 +58,5 @@ const homepageSettingsSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
 
-const homepageSettings = mongoose.model('homepageSettings', homepageSettingsSchema);
+const homepageSettings = mongoose.models.homepageSettings || mongoose.model('homepageSettings', homepageSettingsSchema);
 module.exports = homepageSettings;

@@ -4,7 +4,7 @@ const returnSchema = new mongoose.Schema(
   {
     order_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Order',
+      ref: 'order',
       required: [true, 'Order id is required'],
     },
     order_item_id: {
@@ -53,5 +53,5 @@ const returnSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
 
-const Return = mongoose.model('Return', returnSchema);
+const Return = mongoose.models.Return || mongoose.model('Return', returnSchema);
 module.exports = Return;

@@ -46,6 +46,7 @@ exports.addToCart = async (req, res) => {
     }
     const userId = req.user._id;
     const { product_id, variant_id } = req.body;
+    const buyNow = req.body.buy_now === true || req.body.buy_now === 'true';
     let quantity = parseInt(req.body.quantity, 10) || 1;
 
     if (!mongoose.Types.ObjectId.isValid(product_id) || !mongoose.Types.ObjectId.isValid(variant_id)) {
@@ -75,7 +76,15 @@ exports.addToCart = async (req, res) => {
     const cart = await getOrCreateCart(userId);
     const unitPrice = toNumber(variant.price);
 
-    let existingItem = await CartItem.findOne({
+    if (buyNow) {
+      await CartItem.deleteMany({ cart_id: cart._id });
+      cart.items = [];
+      cart.subtotal = 0;
+      cart.applied_coupon = { code: null, discount_value: null };
+      await cart.save();
+    }
+
+    let existingItem = buyNow ? null : await CartItem.findOne({
       cart_id: cart._id,
       product_id: product._id,
       variant_id: variant._id,
@@ -106,6 +115,16 @@ exports.addToCart = async (req, res) => {
 
     const subtotal = await recalcCartSubtotal(cart._id);
     const itemCount = await CartItem.countDocuments({ cart_id: cart._id });
+
+    if (buyNow) {
+      return res.json({
+        success: true,
+        message: 'Proceeding to checkout',
+        redirect: '/checkout',
+        itemCount,
+        subtotal,
+      });
+    }
 
     res.json({ success: true, message: 'Added to your bag', itemCount, subtotal });
   } catch (err) {

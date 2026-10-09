@@ -80,5 +80,5 @@ const offerSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
 
-const offer = mongoose.model('offer', offerSchema);
+const offer = mongoose.models.offer || mongoose.model('offer', offerSchema);
 module.exports = offer;

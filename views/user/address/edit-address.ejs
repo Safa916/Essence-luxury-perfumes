@@ -12,16 +12,17 @@
 <body>
 
   <% var address = typeof address !== 'undefined' && address ? address : {
-    id: 'addr_1',
+    id: 'new',
     type: 'home',
-    fullName: 'Safa',
-    line1: '124 Performance Way',
-    line2: 'Studio 4B',
-    city: 'palakkad',
-    pincode: '679501',
-    phone: '+91 8330857937'
+    fullName: '',
+    line1: '',
+    line2: '',
+    city: '',
+    pincode: '',
+    phone: ''
   }; %>
   <% var errors = typeof errors !== 'undefined' ? errors : {}; %>
+  <% var returnTo = typeof returnTo !== 'undefined' ? returnTo : '/address'; %>
 
   <!-- ===== Dimmed page backdrop (page this modal sits over) ===== -->
   <div class="page-backdrop" aria-hidden="true">
@@ -45,14 +46,20 @@
 
       <span class="modal-corner" aria-hidden="true"></span>
 
-      <button type="button" class="modal-close" aria-label="Close" onclick="window.location.href='/address'">&times;</button>
+      <!-- Close (x) goes back to where the user came from -->
+      <button type="button" class="modal-close" aria-label="Close" onclick="window.location.href='<%= returnTo %>'">&times;</button>
 
       <h1 class="modal-title" id="edit-address-title"><%= address.id === 'new' ? 'New Address' : 'Edit Address' %></h1>
 
-      
-
+      <!-- Shows the "3 addresses limit" error -->
+      <% if (errors.limit) { %>
+        <p class="field-error"><%= errors.limit %></p>
+      <% } %>
 
       <form action="<%= address.id === 'new' ? '/address/new' : '/address/' + address.id + '/edit' %>" method="POST" class="address-form">
+
+        <!-- Remembers where to go after Save -->
+        <input type="hidden" name="returnTo" value="<%= returnTo %>">
 
         <!-- Address type -->
         <div class="form-group">
@@ -122,24 +129,18 @@
 
         <!-- Actions -->
         <div class="form-actions">
-          
-
-
-
-
           <button type="submit" class="btn-update">
-  <%= address.id === 'new' ? 'Add Address' : 'Update Address' %> <span class="arrow">&rarr;</span>
-</button>
+            <%= address.id === 'new' ? 'Add Address' : 'Update Address' %> <span class="arrow">&rarr;</span>
+          </button>
 
-
-          <a href="/address" class="btn-cancel">Cancel</a>
+          <!-- Cancel goes back to where the user came from -->
+          <a href="<%= returnTo %>" class="btn-cancel">Cancel</a>
         </div>
 
       </form>
 
     </div>
   </div>
-
 
 </body>
 </html>

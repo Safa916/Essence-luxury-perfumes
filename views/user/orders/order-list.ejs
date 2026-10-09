@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Orders | Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/orders/order-list.css">
+</head>
+<body>
+
+  <%
+  
+    const list          = (typeof orders !== 'undefined' && orders) ? orders : [];
+    const _activeStatus = (typeof activeStatus !== 'undefined' && activeStatus) ? activeStatus : 'all';
+    const _searchTerm   = (typeof search !== 'undefined' && search) ? search : '';
+    const _page         = (typeof currentPage !== 'undefined') ? Number(currentPage) : 1;
+    const _pages        = (typeof totalPages !== 'undefined') ? Number(totalPages) : 1;
+
+    const inr = (n) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const tabs = [
+      { key: 'all',              label: 'All' },
+      { key: 'placed',           label: 'Placed' },
+      { key: 'processing',       label: 'Processing' },
+      { key: 'shipped',          label: 'Shipped' },
+      { key: 'out_for_delivery', label: 'Out for Delivery' },
+      { key: 'delivered',        label: 'Delivered' },
+      { key: 'cancelled',        label: 'Cancelled' },
+      { key: 'returned',         label: 'Returned' },
+    ];
+
+    const buildUrl = (p, s) => {
+      const q = new URLSearchParams();
+      if (s && s !== 'all') q.set('status', s);
+      if (_searchTerm) q.set('search', _searchTerm);
+      if (p && p > 1) q.set('page', p);
+      const str = q.toString();
+      return '/orders' + (str ? '?' + str : '');
+    };
+
+    const formatDate = (d) => {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+  %>
+
+  <%- include('../partials/header', { activePage: 'orders', user: typeof user !== 'undefined' ? user : null }) %>
+
+  <div class="account-layout">
+
+    <%- include('../partials/account-sidebar', { activePage: 'orders' }) %>
+
+    <main class="account-main orders-main">
+
+      <header class="orders-head">
+        <p class="eyebrow">Your purchases</p>
+        <h1 class="page-title">My Orders</h1>
+        <p class="orders-sub">Track, manage and return your recent purchases.</p>
+      </header>
+
+      <!-- Search + filter tabs -->
+      <div class="orders-toolbar">
+        <form class="orders-search" action="/orders" method="GET">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+          <input
+            type="text"
+            name="search"
+            id="orderSearch"
+            value="<%= _searchTerm %>"
+            placeholder="Search by order ID or product name..."
+            autocomplete="off"
+          >
+          <% if (_activeStatus !== 'all') { %>
+            <input type="hidden" name="status" value="<%= _activeStatus %>">
+          <% } %>
+          <% if (_searchTerm) { %>
+            <a href="/orders<%= _activeStatus !== 'all' ? '?status=' + _activeStatus : '' %>" class="search-clear" title="Clear search">✕</a>
+          <% } %>
+        </form>
+
+        <nav class="orders-tabs" aria-label="Filter by status">
+          <% tabs.forEach(function (t) { %>
+            <a href="<%= buildUrl(1, t.key) %>"
+               class="<%= _activeStatus === t.key ? 'active' : '' %>"
+               aria-current="<%= _activeStatus === t.key ? 'page' : '' %>">
+              <%= t.label %>
+            </a>
+          <% }); %>
+        </nav>
+      </div>
+
+      <!-- Orders List -->
+      <section class="orders-list">
+
+        <% if (list.length === 0) { %>
+          <div class="orders-empty">
+            <div class="orders-empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 64 64" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.2">
+                <rect x="8" y="16" width="48" height="40" rx="2"/>
+                <path d="M22 16v-4a10 10 0 0 1 20 0v4"/>
+                <line x1="24" y1="34" x2="40" y2="34"/>
+                <line x1="24" y1="42" x2="34" y2="42"/>
+              </svg>
+            </div>
+            <p class="orders-empty-title">No orders found</p>
+            <p class="orders-empty-sub">
+              <% if (_searchTerm) { %>
+                No orders match "<strong><%= _searchTerm %></strong>". <a href="/orders">Clear search</a>
+              <% } else if (_activeStatus !== 'all') { %>
+                You have no <%= _activeStatus %> orders. <a href="/orders">View all orders</a>
+              <% } else { %>
+                You haven't placed any orders yet.
+              <% } %>
+            </p>
+            <% if (!_searchTerm && _activeStatus === 'all') { %>
+              <a href="/shop" class="btn btn-dark">Start Shopping</a>
+            <% } %>
+          </div>
+
+        <% } else { %>
+
+          <% list.forEach(function (o) {
+               (o.items || []).forEach(function(it, index) {
+                 const st = it.status || 'placed';
+          %>
+            <article class="order-card" data-status="<%= st %>">
+
+              <!-- Product thumbnail -->
+              <div class="order-image">
+                <% if (it.image) { %>
+                  <img src="<%= it.image %>" alt="<%= it.name %>">
+                <% } else { %>
+                  <div class="order-image-placeholder" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.2">
+                      <rect x="3" y="3" width="18" height="18" rx="1"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                <% } %>
+              </div>
+
+              <!-- Order info -->
+              <div class="order-info">
+                <p class="order-id"><%= o.order_number %><% if (o.items.length > 1) { %> <span style="color:#888; font-size:0.9em;">(Item <%= index + 1 %> of <%= o.items.length %>)</span><% } %></p>
+                <h2 class="order-name"><%= it.name %></h2>
+                <p class="order-meta">
+                  <% if (it.size) { %><%= it.size %> · <% } %>
+                  Qty: <%= it.qty %>
+                </p>
+                <p class="order-date">Placed on <%= formatDate(o.placed_at) %></p>
+              </div>
+
+              <!-- Status badge -->
+              <div class="order-status-col">
+                <p class="order-col-label">Status</p>
+                <span class="status-badge status-<%= st %>">
+                  <span class="status-dot"></span>
+                  <%= it.status_label %>
+                </span>
+              </div>
+
+              <!-- Amount -->
+              <div class="order-amount-col">
+                <p class="order-col-label">Total</p>
+                <p class="order-total"><%= inr(it.price * it.qty) %></p>
+              </div>
+
+              <!-- Action -->
+              <div class="order-action">
+                <a href="/orders/<%= o._id %>?itemId=<%= it._id %>" class="btn btn-dark btn-sm">View Details</a>
+              </div>
+
+            </article>
+          <%   }); 
+             }); %>
+
+        <% } %>
+      </section>
+
+      <!-- Pagination -->
+      <% if (_pages > 1) { %>
+        <nav class="pagination" aria-label="Order pages">
+          <% if (_page > 1) { %>
+            <a href="<%= buildUrl(_page - 1, _activeStatus) %>" class="page-btn" aria-label="Previous">‹</a>
+          <% } %>
+          <% for (let i = 1; i <= _pages; i++) { %>
+            <a href="<%= buildUrl(i, _activeStatus) %>"
+               class="page-btn <%= i === _page ? 'active' : '' %>"
+               aria-current="<%= i === _page ? 'page' : '' %>">
+              <%= i %>
+            </a>
+          <% } %>
+          <% if (_page < _pages) { %>
+            <a href="<%= buildUrl(_page + 1, _activeStatus) %>" class="page-btn" aria-label="Next">›</a>
+          <% } %>
+        </nav>
+      <% } %>
+
+    </main>
+  </div>
+
+  <%- include('../partials/footer') %>
+  <%- include('../partials/logout-modal') %>
+
+</body>
+</html>

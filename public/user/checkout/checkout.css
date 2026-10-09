@@ -3,6 +3,13 @@
    Relies on variables/buttons from common.css
    ============================================= */
 
+/* ── Boost text contrast for this page ── */
+.checkout,
+.order-summary {
+  --ink-soft : #3d3b36;   /* was #6B675E — darkened for legibility */
+  --ink-faint: #5c5a55;   /* was #A6A296 — darkened for legibility */
+}
+
 .checkout {
   max-width: var(--container);
   margin: 0 auto;
@@ -144,7 +151,7 @@
 }
 
 .addr-name {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--ink);
@@ -166,10 +173,10 @@
 }
 
 .addr-line {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--ink-soft);
   margin: 0 0 0.2rem;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .addr-phone { font-weight: 500; color: var(--ink); }
@@ -312,15 +319,15 @@
 }
 
 .pay-name {
-  font-size: 0.62rem;
-  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-soft);
-  font-weight: 500;
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .pay-desc {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: var(--ink);
   font-weight: 400;
 }
@@ -532,9 +539,10 @@
   justify-content: space-between;
   align-items: baseline;
   margin-bottom: 0.75rem;
-  font-size: 0.58rem;
-  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--ink);
 }
 
 .totals-row:last-child { margin-bottom: 0; }

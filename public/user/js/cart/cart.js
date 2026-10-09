@@ -49,6 +49,9 @@
 
         row.remove();
         if (cartSubtotalEl) cartSubtotalEl.textContent = formatINR(data.subtotal);
+        if (window.updateCartBadge && data.itemCount !== undefined) {
+          window.updateCartBadge(data.itemCount);
+        }
 
         const currentPage = parseInt(cartItemsWrapper.dataset.currentPage, 10) || 1;
         const totalPages  = parseInt(cartItemsWrapper.dataset.totalPages, 10) || 1;

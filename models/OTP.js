@@ -39,5 +39,5 @@ const otpSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: false } } // your diagram only shows created_at, no updated_at
 );
 
-const OTP = mongoose.model('OTP', otpSchema);
+const OTP = mongoose.models.OTP || mongoose.model('OTP', otpSchema);
 module.exports = OTP;

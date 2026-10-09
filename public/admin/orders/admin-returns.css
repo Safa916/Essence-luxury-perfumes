@@ -1,0 +1,235 @@
+/* ==========================================================
+   Admin Returns — admin-returns.css
+   Uses Space Grotesk + sidebar.css layout
+   ========================================================== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: 'Space Grotesk', sans-serif; background: #f8f8f8; color: #111; }
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2.5rem 3rem;
+  background: #f4f4f4; /* light gray bg matching screenshot */
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2.5rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+  color: #111;
+}
+
+.page-desc {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 4px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-export:hover { background: #333; }
+
+/* ── Flash ───────────────────────────────────────────────── */
+.flash-alert {
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.flash-success { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+.flash-error { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+
+/* ── Card ────────────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #f4f4f4;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  width: 300px;
+}
+.search-box svg {
+  color: #888;
+  margin-right: 0.5rem;
+}
+.search-box input {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: #111;
+  width: 100%;
+  outline: none;
+}
+.search-box input::placeholder { color: #aaa; }
+
+/* ── Table ───────────────────────────────────────────────── */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.returns-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.returns-table th {
+  text-align: left;
+  padding: 1rem 2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #888;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.returns-table td {
+  padding: 1.25rem 2rem;
+  font-size: 0.85rem;
+  color: #444;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.returns-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cell-id .text-danger {
+  color: #d93025; /* Reddish like screenshot */
+  font-weight: 600;
+}
+
+.cell-customer .cust-name {
+  font-weight: 600;
+  color: #222;
+}
+
+/* ── Badges ──────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.badge-requested { background: #fef08a; color: #854d0e; } /* Pending */
+.badge-approved { background: #bbf7d0; color: #166534; }
+.badge-refunded { background: #e5e7eb; color: #374151; }
+.badge-rejected { background: #fecaca; color: #991b1b; }
+
+/* ── Actions ─────────────────────────────────────────────── */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+.btn-action {
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-action:hover { opacity: 0.8; }
+.btn-approve { background: #111; color: #fff; }
+.btn-reject { background: #fee2e2; color: #991b1b; }
+.text-muted { color: #aaa; }
+
+/* ── Pagination ──────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #f0f0f0;
+}
+.pagination-info {
+  font-size: 0.8rem;
+  color: #666;
+}
+.pagination-controls {
+  display: flex;
+  gap: 0.25rem;
+}
+.page-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #111;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.page-link:hover { border-color: #111; }
+.page-link.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem !important;
+  color: #888;
+}

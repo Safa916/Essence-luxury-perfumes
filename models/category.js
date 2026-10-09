@@ -48,5 +48,5 @@ categorySchema.pre(/^find/, function () {
   }
 });
 
-const category = mongoose.model('category', categorySchema);
+const category = mongoose.models.category || mongoose.model('category', categorySchema);
 module.exports = category;

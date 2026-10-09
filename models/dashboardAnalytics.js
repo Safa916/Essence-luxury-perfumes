@@ -87,5 +87,5 @@ const dashboardAnalyticsSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
 
-const dashboardAnalytics = mongoose.model('dashboardAnalytics', dashboardAnalyticsSchema);
+const dashboardAnalytics = mongoose.models.dashboardAnalytics || mongoose.model('dashboardAnalytics', dashboardAnalyticsSchema);
 module.exports = dashboardAnalytics;

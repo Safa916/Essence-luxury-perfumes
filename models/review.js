@@ -50,5 +50,5 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
 
-const review = mongoose.model('review', reviewSchema);
+const review = mongoose.models.review || mongoose.model('review', reviewSchema);
 module.exports = review;

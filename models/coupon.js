@@ -44,5 +44,5 @@ const couponSchema = new mongoose.Schema(
   { timestamps: false } // your diagram shows no created_at/updated_at for this collection
 );
 
-const coupon = mongoose.model('coupon', couponSchema);
+const coupon = mongoose.models.coupon || mongoose.model('coupon', couponSchema);
 module.exports = coupon;

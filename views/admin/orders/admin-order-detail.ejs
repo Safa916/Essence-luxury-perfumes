@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Order <%= order.orderId %> | Essence Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/partials/sidebar.css">
+  <link rel="stylesheet" href="/admin/orders/admin-order-detail.css">
+</head>
+<body>
+
+  <%- include('../partials/sidebar', { activePage: 'orders' }) %>
+
+  <main class="main-content aod-page">
+
+    <%
+      const o = order || {};
+      const statusColors = {
+        placed: '#6366f1', processing: '#f59e0b', shipped: '#3b82f6',
+        out_for_delivery: '#8b5cf6', delivered: '#10b981',
+        cancelled: '#ef4444', returned: '#f97316'
+      };
+      const sc = statusColors[o.status] || '#6b7280';
+
+      const hasFlash = typeof flash !== 'undefined' && flash;
+    %>
+
+    <!-- Flash banner -->
+    <% if (hasFlash === 'status_updated') { %>
+      <div class="aod-flash aod-flash--success" id="aodFlash">✓ Order status updated successfully.</div>
+    <% } else if (hasFlash === 'item_status_updated') { %>
+      <div class="aod-flash aod-flash--success" id="aodFlash">✓ Item status updated successfully.</div>
+    <% } else if (hasFlash === 'invalid_status') { %>
+      <div class="aod-flash aod-flash--error" id="aodFlash">✗ Invalid status transition.</div>
+    <% } %>
+
+    <!-- Top bar: back + search -->
+    <header class="aod-topbar">
+      <a href="/admin/orders" class="aod-back">← Orders</a>
+      <form class="aod-search" action="/admin/orders" method="GET">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+        <input type="text" name="search" placeholder="Search orders, SKU, customers...">
+      </form>
+    </header>
+
+    <!-- Order header -->
+    <section class="aod-header">
+      <div class="aod-header-left">
+        <div class="aod-status-row">
+          <% if (o.isMixed) { %>
+            <span class="aod-badge" style="background:#6b728020;color:#374151;border:1px solid #6b728040">MIXED STATUS</span>
+            <span class="aod-placed-date"><%= o.statusBreakdown %></span>
+          <% } else { %>
+            <span class="aod-badge" style="background:<%= sc %>20;color:<%= sc %>;border:1px solid <%= sc %>40">
+              <%= (o.status || 'placed').replace(/_/g,' ').toUpperCase() %>
+            </span>
+          <% } %>
+          <span class="aod-placed-date">Placed on <%= o.dateStr %></span>
+        </div>
+        <h1 class="aod-order-num">ORDER #<%= o.orderId %></h1>
+      </div>
+
+      <!-- Update Status button -->
+      <% if (o.nextStatuses && o.nextStatuses.length) { %>
+        <button type="button" class="aod-update-btn" id="openStatusModal">
+          Update All Items
+        </button>
+      <% } %>
+    </section>
+
+    <div class="aod-body">
+
+      <!-- LEFT COLUMN -->
+      <div class="aod-left">
+
+        <!-- Info strip -->
+        <div class="aod-info-strip">
+          <div class="aod-info-cell">
+            <p class="aod-info-label">Customer</p>
+            <p class="aod-info-value"><%= o.customer && o.customer.name %></p>
+            <% if (o.customer && o.customer.email) { %>
+              <p class="aod-info-sub"><%= o.customer.email %></p>
+            <% } %>
+          </div>
+          <div class="aod-info-cell">
+            <p class="aod-info-label">Payment Method</p>
+            <p class="aod-info-value"><%= (o.paymentMethod || 'COD').toUpperCase() %></p>
+          </div>
+          <div class="aod-info-cell">
+            <p class="aod-info-label">Order Date</p>
+            <p class="aod-info-value"><%= o.dateStr %></p>
+          </div>
+          <div class="aod-info-cell">
+            <p class="aod-info-label">Total Amount</p>
+            <p class="aod-info-value aod-total"><%= o.total %></p>
+            <% if (o.hasAdjustments && o.originalTotal) { %>
+              <p class="aod-info-sub aod-info-sub--struck">Was <%= o.originalTotal %></p>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Order items -->
+        <div class="aod-items-card">
+          <h2 class="aod-section-title">Order Items (<%= String(o.items ? o.items.length : 0).padStart(2,'0') %>)</h2>
+          <% (o.items || []).forEach(function(item) { %>
+            <div class="aod-item<%= item.cancelled ? ' aod-item--cancelled' : '' %>" id="item-<%= item._id %>">
+              <div class="aod-item-img">
+                <% if (item.image) { %>
+                  <img src="<%= item.image %>" alt="<%= item.name %>">
+                <% } else { %>
+                  <div class="aod-item-img-placeholder">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.2">
+                      <rect x="3" y="3" width="18" height="18" rx="1"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                <% } %>
+              </div>
+              <div class="aod-item-info">
+                <p class="aod-item-label">PRODUCT</p>
+                <h3 class="aod-item-name"><%= item.name %></h3>
+                <% if (item.size) { %><p class="aod-item-meta">Size: <%= item.size %></p><% } %>
+              </div>
+              <div class="aod-item-qty">
+                <p class="aod-item-label">QTY & PRICE</p>
+                <p class="aod-item-qty-val"><%= String(item.qty).padStart(2,'0') %> × ₹<%= Number(item.price).toLocaleString('en-IN') %></p>
+              </div>
+              <div class="aod-item-sub">
+                <p class="aod-item-label">SUBTOTAL</p>
+                <% if (item.cancelled) { %>
+                  <p class="aod-item-total aod-item-total--excluded">Excluded</p>
+                  <p class="aod-item-excluded-note">Not billed</p>
+                <% } else { %>
+                  <p class="aod-item-total">₹<%= Number(item.total).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></p>
+                <% } %>
+              </div>
+
+              <% const orderReturned = o.orderStatusRaw === 'returned'; %>
+              <% const itemTerminal = ['cancelled', 'delivered'].includes(item.item_status); %>
+              <div class="aod-item-status-col">
+                <p class="aod-item-label">ITEM STATUS</p>
+                <span class="aod-item-badge aod-item-badge--<%= orderReturned ? 'returned' : item.item_status %>">
+                  <%= orderReturned ? 'Returned' : item.item_status_label %>
+                </span>
+                <% if (!orderReturned && !itemTerminal && item.next_statuses && item.next_statuses.length) { %>
+                  <form method="POST"
+                        action="/admin/orders/<%= o._id %>/items/<%= item._id %>/status"
+                        class="aod-item-status-form">
+                    <select name="status" class="aod-item-select"
+                            onchange="this.form.submit()" title="Update item status">
+                      <option value="" disabled selected>Move to…</option>
+                      <% item.next_statuses.forEach(function(ns) { %>
+                        <option value="<%= ns %>">
+                          <%= ns.replace(/_/g,' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); }) %>
+                        </option>
+                      <% }); %>
+                    </select>
+                  </form>
+                <% } %>
+              </div>
+
+            </div>
+          <% }); %>
+
+          <!-- Totals row -->
+          <div class="aod-totals">
+            <% if (o.hasAdjustments) { %>
+              <p class="aod-totals-note">Totals exclude cancelled items.</p>
+            <% } %>
+            <div class="aod-totals-row"><span>Subtotal</span><span><%= o.subtotal %></span></div>
+            <div class="aod-totals-row"><span>Shipping</span><span><%= o.shipping %></span></div>
+            <div class="aod-totals-row"><span>Tax (GST)</span><span><%= o.tax %></span></div>
+            <% if (o.discount) { %>
+              <div class="aod-totals-row"><span>Discount</span><span>− <%= o.discount %></span></div>
+            <% } %>
+            <div class="aod-totals-total"><span>TOTAL</span><span><%= o.total %></span></div>
+          </div>
+        </div>
+
+        <!-- Internal Notes (static UI, admin-only) -->
+        <div class="aod-notes-card">
+          <div class="aod-notes-header">
+            <h3 class="aod-section-title">Internal Notes</h3>
+            <button type="button" class="aod-notes-edit-btn" aria-label="Edit notes">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+          </div>
+          <textarea class="aod-notes-ta" id="adminNotes" placeholder="Add a private note for staff..."></textarea>
+          <div class="aod-notes-footer">
+            <button type="button" class="aod-save-note-btn">Save Note</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="aod-right">
+
+        <!-- Shipping address card (dark) -->
+        <div class="aod-address-card">
+          <p class="aod-card-label">Shipping Address</p>
+          <h3 class="aod-address-name"><%= o.address && o.address.name %></h3>
+          <% if (o.address) { %>
+            <p class="aod-address-text">
+              <%= o.address.line1 %><% if (o.address.line2) { %>, <%= o.address.line2 %><% } %><br>
+              <%= o.address.city %>, <%= o.address.state %> – <%= o.address.pincode %><br>
+              <%= o.address.country %>
+            </p>
+            <% if (o.address.phone) { %>
+              <p class="aod-address-phone">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.48 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                +91 <%= o.address.phone %>
+              </p>
+            <% } %>
+          <% } %>
+        </div>
+
+        <!-- Payment details -->
+        <div class="aod-pay-card">
+          <p class="aod-card-label">Payment Details</p>
+          <div class="aod-pay-row">
+            <div>
+              <p class="aod-pay-sub">Method</p>
+              <p class="aod-pay-val"><%= o.paymentMethod %></p>
+            </div>
+            <div>
+              <p class="aod-pay-sub">Status</p>
+              <p class="aod-pay-status <%= o.paymentStatus === 'paid' ? 'is-paid' : '' %>">
+                ● <%= (o.paymentStatus || 'pending').toUpperCase() %>
+              </p>
+            </div>
+          </div>
+          <div class="aod-pay-row">
+            <div>
+              <p class="aod-pay-sub">Amount Paid</p>
+              <p class="aod-pay-val"><%= o.total %></p>
+            </div>
+            <div>
+              <p class="aod-pay-sub">Date</p>
+              <p class="aod-pay-val"><%= o.dateStr %></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logistics Timeline -->
+        <div class="aod-timeline-card">
+          <p class="aod-card-label">Logistics Timeline</p>
+          <ul class="aod-timeline">
+            <% (o.timeline || []).forEach(function(step) { %>
+              <li class="aod-tl-item <%= step.done ? 'done' : '' %> <%= step.current ? 'current' : '' %>">
+                <span class="aod-tl-dot"></span>
+                <span class="aod-tl-label"><%= step.label.toUpperCase() %></span>
+              </li>
+            <% }); %>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Update Status Modal ────────────────────────────────────────────────── -->
+  <% if (o.nextStatuses && o.nextStatuses.length) { %>
+  <dialog id="statusModal" class="aod-modal">
+    <div class="aod-modal-inner">
+      <div class="aod-modal-head">
+        <div>
+          <h2 class="aod-modal-title">Update All Active Items</h2>
+          <p class="aod-modal-sub">Order #<%= o.orderId %> • applies to every item not yet delivered or cancelled</p>
+        </div>
+        <button type="button" class="aod-modal-close" onclick="document.getElementById('statusModal').close()">✕</button>
+      </div>
+
+      <form method="POST" action="/admin/orders/<%= o._id %>/status" id="statusForm">
+        <div class="aod-field">
+          <label class="aod-field-label" for="statusSelect">Current Status</label>
+          <select name="status" id="statusSelect" class="aod-select" required>
+            <% o.nextStatuses.forEach(function(ns) { %>
+              <option value="<%= ns %>"><%= ns.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) %></option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div class="aod-field">
+          <label class="aod-field-label" for="trackingInput">Tracking Number</label>
+          <div class="aod-tracking-wrap">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+            </svg>
+            <input type="text" id="trackingInput" name="tracking_number" class="aod-tracking-input"
+              placeholder="e.g. TRK-98420-PRECISION">
+          </div>
+        </div>
+
+        <div class="aod-field">
+          <label class="aod-field-label" for="internalNotes">Internal Notes</label>
+          <textarea id="internalNotes" name="internal_notes" class="aod-modal-notes"
+            rows="4" placeholder="Add internal note for this status change..."></textarea>
+        </div>
+
+        <div class="aod-notify-row">
+          <input type="checkbox" id="notifyCustomer" name="notify_customer" value="1" checked class="aod-checkbox">
+          <label for="notifyCustomer" class="aod-notify-label">Notify customer of status change via email</label>
+        </div>
+
+        <div class="aod-modal-actions">
+          <button type="button" class="aod-modal-cancel" onclick="document.getElementById('statusModal').close()">
+            Cancel
+          </button>
+          <button type="submit" class="aod-modal-submit">
+            Update Status
+          </button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+  <% } %>
+
+  <script>
+    // Open status modal
+    const openBtn = document.getElementById('openStatusModal');
+    const modal   = document.getElementById('statusModal');
+    if (openBtn && modal) {
+      openBtn.addEventListener('click', () => modal.showModal());
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+    }
+
+    if (window.location.hash) {
+      const el = document.querySelector(window.location.hash);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Auto-dismiss flash
+    const flash = document.getElementById('aodFlash');
+    if (flash) {
+      history.replaceState(null, '', window.location.pathname);
+      setTimeout(() => {
+        flash.style.transition = 'opacity 0.4s';
+        flash.style.opacity = '0';
+        setTimeout(() => flash.remove(), 420);
+      }, 3500);
+    }
+  </script>
+
+</body>
+</html>

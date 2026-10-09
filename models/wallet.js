@@ -16,5 +16,5 @@ const walletSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
 
-const wallet = mongoose.model('wallet', walletSchema);
+const wallet = mongoose.models.wallet || mongoose.model('wallet', walletSchema);
 module.exports = wallet;

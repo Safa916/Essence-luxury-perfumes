@@ -43,14 +43,15 @@ const orderSchema = new mongoose.Schema(
       {
         product_id: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'Product',
+          ref: 'product',   // matches mongoose.model('product', ...)
         },
         variant_id: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'Variant',
+          ref: 'variant',   // matches mongoose.model('variant', ...)
         },
         product_name: String, // snapshot at time of order
         size: String,
+        image: { type: String, default: '' }, // first product image URL — snapshot
         quantity: {
           type: Number,
           required: true,
@@ -59,6 +60,11 @@ const orderSchema = new mongoose.Schema(
         price_at_purchase: {
           type: mongoose.Schema.Types.Decimal128,
           required: true,
+        },
+        item_status: {
+          type: String,
+          enum: ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
+          default: 'placed',
         },
       },
     ],
@@ -121,5 +127,5 @@ const orderSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'placed_at', updatedAt: 'updated_at' } }
 );
 
-const order = mongoose.model('order', orderSchema);
+const order = mongoose.models.order || mongoose.model('order', orderSchema);
 module.exports = order;

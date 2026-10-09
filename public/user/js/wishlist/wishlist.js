@@ -400,6 +400,9 @@
 
         // Show success toast then remove card
         showToast('Added to your bag successfully!', 'success');
+        if (window.updateCartBadge && cartData.itemCount !== undefined) {
+          window.updateCartBadge(cartData.itemCount);
+        }
         card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
         card.style.opacity = '0';
         card.style.transform = 'scale(0.95)';

@@ -26,5 +26,5 @@ const cartSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
 
-const cart = mongoose.model('cart', cartSchema);
+const cart = mongoose.models.cart || mongoose.model('cart', cartSchema);
 module.exports = cart;

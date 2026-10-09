@@ -9,10 +9,7 @@ const toDecimal = (val) => mongoose.Types.Decimal128.fromString(String(Number(va
 async function nextVariantSku(product) {
   const shortId = product._id.toString().slice(-6).toUpperCase();
 
-  // countDocuments includes ALL documents by default (no pre-find hook on Variant model),
-  // so this naturally counts soft-deleted variants too — giving us a monotonically
-  // increasing sequence that never reuses a SKU suffix even after deletions.
-  const count = await Variant.countDocuments({ product_id: product._id });
+   const count = await Variant.countDocuments({ product_id: product._id });
 
   const seq = String(count + 1).padStart(3, '0');
   return `V-${shortId}-${seq}`;
@@ -218,22 +215,16 @@ exports.deleteVariant = async (req, res) => {
   }
 };
 
-// Recompute the product's aggregate stock (Product.stock) from its live
-// (non-deleted) variants' `quantity` field.
 async function recalcProductStock(productId) {
   // Only count ACTIVE, non-deleted variants — a deactivated variant must NOT
   // contribute to the product's aggregate stock (matches recalcProductPrice logic).
   const variants = await Variant.find({ product_id: productId, is_active: true, deleted_at: null }).lean();
   const total = variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
   await Product.findByIdAndUpdate(productId, { stock: total });
-}
 
-// Recompute the product's listed price (Product.price) from its live
-// (non-deleted, active) variants — uses the lowest variant price, matching
-// the common "starting from ₹X" pattern for products with multiple
-// variants. If a product has no active variants, price is left untouched
-// rather than zeroed out, since a variant-less product shouldn't be
-// purchasable anyway (see the "no active variants" warning on Edit).
+
+
+}
 async function recalcProductPrice(productId) {
   const variants = await Variant.find({ product_id: productId, is_active: true, deleted_at: null }).lean();
   if (!variants.length) return;
@@ -243,14 +234,6 @@ async function recalcProductPrice(productId) {
   }, null);
   await Product.findByIdAndUpdate(productId, { price: lowest });
 }
-
-// nextVariantSku is used by productController.js when creating a product's
-// required first variant (POST /admin/products/add) — it has to be exported
-// here, not just used internally, or that require() returns undefined and
-// calling it throws "nextVariantSku is not a function".
-// recalcProductStock is exported too since productController's createProduct
-// could reasonably call it instead of deriving stock manually — kept
-// available for that if you want to consolidate the two code paths later.
 module.exports.nextVariantSku = nextVariantSku;
 module.exports.recalcProductStock = recalcProductStock;
 module.exports.recalcProductPrice = recalcProductPrice;

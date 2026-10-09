@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Order Details | Essence</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/orders/order-detail.css">
+</head>
+<body>
+
+  <%
+    const o    = (typeof order !== 'undefined' && order) ? order : {};
+    const st   = o.status || 'placed';
+    const addr = o.address || {};
+
+    const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const dateStr = o.createdAt
+      ? new Date(o.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+      : '—';
+
+    const stepIndex        = typeof o.stepIndex !== 'undefined' ? o.stepIndex : 0;
+    const isCancelled       = o.isCancelled       || false;
+    const isReturned        = o.isReturned         || false;
+    const isReturnRequested = o.isReturnRequested  || false;
+    const canCancel         = o.canCancel          || false;
+    const canReturn         = o.canReturn          || false;
+    const steps       = ['Order Placed', 'Shipped', 'Delivered'];
+    const progress    = [0, 50, 100][stepIndex] || 0;
+  %>
+
+  <%- include('../partials/header', { activePage: 'orders' }) %>
+
+  <div class="account-layout">
+
+    <%- include('../partials/account-sidebar', { activePage: 'orders' }) %>
+
+    <main class="account-main detail-main">
+
+      <!-- Title + Download Invoice button -->
+      <header class="detail-head">
+        <a href="/orders" class="back-link">← Back to orders</a>
+        <div class="detail-head-row">
+          <div>
+            <h1 class="page-title">Order Details</h1>
+            <p class="detail-ref">Reference #<%= o.orderId %></p>
+          </div>
+          <!-- Invoice button: show for active orders (not cancelled) -->
+          <% if (!isCancelled) { %>
+            <a href="/orders/<%= o._id %>/invoice"
+               class="btn-invoice"
+               id="invoiceBtn"
+               target="_blank">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download Invoice
+            </a>
+          <% } %>
+        </div>
+      </header>
+
+      <!-- Flash banners (auto-dismiss in 4s + URL cleaned so refresh won't re-show) -->
+      <% if (typeof query !== 'undefined' && query && query.cancelled) { %>
+        <div class="detail-flash detail-flash--success js-flash" role="alert">
+          ✦ Your order has been successfully cancelled.
+        </div>
+      <% } %>
+      <% if (typeof query !== 'undefined' && query && query.returned) { %>
+        <div class="detail-flash detail-flash--success js-flash" role="alert">
+          ✦ Return request submitted. Our team will process it within 2–3 business days.
+        </div>
+      <% } %>
+      <% if (typeof query !== 'undefined' && query && query.error === 'not_cancellable') { %>
+        <div class="detail-flash detail-flash--error js-flash" role="alert">
+          This order can no longer be cancelled (status: <%= o.status_label %>).
+        </div>
+      <% } %>
+
+      <!-- Timeline / status banners -->
+      <% if (isCancelled) { %>
+        <div class="cancel-banner">
+          <span class="status-dot"></span>
+          <span>This order was cancelled.<% if (o.cancel_reason) { %> Reason: <em><%= o.cancel_reason %></em><% } %></span>
+        </div>
+      <% } else if (isReturned) { %>
+        <div class="cancel-banner cancel-banner--returned">
+          <span class="status-dot"></span>
+          <span>This order has been returned.</span>
+        </div>
+      <% } else { %>
+        <% if (isReturnRequested) { %>
+          <div class="return-request-banner">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 12l4-4m-4 4 4 4"/></svg>
+            Return request submitted — awaiting admin approval.
+          </div>
+        <% } %>
+        <ol class="timeline" style="--progress: <%= progress %>%;">
+          <% steps.forEach(function (label, i) { %>
+            <li class="tl-step <%= i <= stepIndex ? 'done' : '' %> <%= i === stepIndex ? 'current' : '' %>">
+              <span class="tl-dot">
+                <% if (i <= stepIndex) { %>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <% } %>
+              </span>
+              <span class="tl-label"><%= label %></span>
+            </li>
+          <% }) %>
+        </ol>
+      <% } %>
+
+      <div class="detail-grid">
+
+        <!-- LEFT: items -->
+        <section class="shipment">
+          <h2 class="section-title">Items In Shipment</h2>
+
+          <% (o.items || []).forEach(function (it) { %>
+            <article class="ship-item">
+              <div class="ship-image">
+                <% if (it.image) { %>
+                  <img src="<%= it.image %>" alt="<%= it.name %>">
+                <% } else { %>
+                  <div class="ship-image-placeholder" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.2">
+                      <rect x="3" y="3" width="18" height="18" rx="1"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                <% } %>
+              </div>
+
+              <div class="ship-info">
+                <div class="ship-top">
+                  <h3 class="ship-name"><%= it.name %></h3>
+                  <span class="ship-price"><%= inr(it.total || it.price) %></span>
+                </div>
+                <p class="ship-meta">
+                  <% if (it.size) { %><span>Size: <%= it.size %></span><% } %>
+                  <span>Qty: <%= it.quantity %></span>
+                  <span class="unit-price"><%= inr(it.price) %> each</span>
+                </p>
+
+                <div class="ship-actions">
+                  <% 
+                     const itemSt = it.item_status || 'placed';
+                     const itemCanCancel = ['placed', 'processing'].includes(itemSt);
+                     const itemReturnStatus = typeof o.returnMap !== 'undefined' ? (o.returnMap[it._id] || o.returnMap['ALL']) : null;
+                     const itemIsReturnRequested = itemReturnStatus === 'requested';
+                     const itemIsReturnRejected = itemReturnStatus === 'rejected';
+                     const itemIsReturnProcessed = itemReturnStatus === 'refunded' || itemReturnStatus === 'approved';
+                     const itemCanReturn = itemSt === 'delivered' && !itemReturnStatus;
+                  %>
+                  <% if (itemCanReturn) { %>
+                    <a href="/orders/<%= o._id %>/return?itemId=<%= it._id %>" class="btn btn-small">Return Item</a>
+                  <% } else if (itemSt === 'returned' || itemSt === 'cancelled' || itemIsReturnProcessed) { %>
+                    <span class="btn btn-small is-disabled" aria-disabled="true" title="<%= (itemSt === 'returned' || itemIsReturnProcessed) ? 'Return completed' : 'Order was cancelled' %>">
+                      <%= (itemSt === 'returned' || itemIsReturnProcessed) ? 'Returned' : 'Cancelled' %>
+                    </span>
+                  <% } else if (itemIsReturnRequested) { %>
+                     <span class="btn btn-small is-disabled return-requested-btn" aria-disabled="true" title="Return request is pending">
+                      Return Requested
+                    </span>
+                  <% } else if (itemIsReturnRejected) { %>
+                     <span class="btn btn-small is-disabled" aria-disabled="true" title="Return request was rejected">
+                      Return Rejected
+                    </span>
+                  <% } else { %>
+                    <span class="btn btn-small is-disabled" aria-disabled="true" title="Available after delivery">
+                      Return Item
+                    </span>
+                  <% } %>
+                  <% if (itemCanCancel) { %>
+                    <form method="POST" action="/orders/<%= o._id %>/cancel?itemId=<%= it._id %>" style="display:inline-block;">
+                      <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Are you sure you want to cancel this item? This action cannot be undone.')">
+                        Cancel Item
+                      </button>
+                    </form>
+                  <% } %>
+                </div>
+              </div>
+            </article>
+          <% }); %>
+        </section>
+
+        <!-- RIGHT: info cards -->
+        <aside class="detail-side">
+
+          <div class="info-card ship-to">
+            <p class="card-label">Ship To</p>
+            <p class="ship-to-name"><%= addr.fullName %></p>
+            <p class="ship-to-text">
+              <%= addr.line1 %><br>
+              <% if (addr.line2) { %><%= addr.line2 %><br><% } %>
+              <%= addr.state %> <%= addr.pincode %>
+            </p>
+          </div>
+
+          <div class="info-card pay-card">
+            <p class="card-label">Payment &amp; Date</p>
+            <div class="kv"><span>Method</span><strong><%= o.paymentMethod %></strong></div>
+            <div class="kv"><span>Order Date</span><strong><%= dateStr %></strong></div>
+          </div>
+
+          <div class="info-card summary-card">
+            <p class="card-label">Summary</p>
+            <div class="kv"><span>Subtotal</span><strong><%= inr(o.subtotal) %></strong></div>
+            <div class="kv"><span>Shipping</span><strong><%= o.shipping ? inr(o.shipping) : 'Free' %></strong></div>
+            <div class="kv"><span>Tax (GST)</span><strong><%= inr(o.tax) %></strong></div>
+            <% if (o.discount) { %>
+              <div class="kv"><span>Discount</span><strong>− <%= inr(o.discount) %></strong></div>
+            <% } %>
+            <div class="summary-total">
+              <span>Total</span>
+              <strong><%= inr(o.total) %></strong>
+            </div>
+          </div>
+
+        </aside>
+      </div>
+
+    </main>
+  </div>
+
+  <%- include('../partials/footer') %>
+  <%- include('../partials/logout-modal') %>
+
+  <!-- ── Cancel Order Modal ─────────────────────────────────────────────── -->
+  <% if (canCancel) { %>
+  <dialog id="cancelModal" class="cancel-modal">
+    <div class="cancel-modal-inner">
+      <h2 class="cancel-modal-title">Cancel this order?</h2>
+      <p class="cancel-modal-sub">This action cannot be undone. Your stock will be restored immediately.</p>
+
+      <form method="POST" action="/orders/<%= o._id %>/cancel">
+        <div class="cancel-reason-field">
+          <label for="cancelReasonInput" class="cancel-reason-label">Reason <span class="optional">(optional)</span></label>
+          <textarea
+            id="cancelReasonInput"
+            name="cancel_reason"
+            class="cancel-reason-textarea"
+            rows="3"
+            maxlength="300"
+            placeholder="e.g. Changed my mind, ordered wrong size..."
+          ></textarea>
+        </div>
+
+        <div class="cancel-modal-actions">
+          <button type="button" class="btn btn-outline-modal"
+            onclick="document.getElementById('cancelModal').close()">
+            Keep Order
+          </button>
+          <button type="submit" class="btn btn-danger-modal">Yes, Cancel Order</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+  <% } %>
+
+  <script>
+    // ── Auto-dismiss flash banners + clean URL so refresh won't re-show ──────
+    const flashes = document.querySelectorAll('.js-flash');
+    if (flashes.length) {
+      // Clean query params from URL immediately (prevents re-show on refresh)
+      history.replaceState(null, '', window.location.pathname);
+
+      // Fade out after 4 seconds
+      setTimeout(function() {
+        flashes.forEach(function(el) {
+          el.style.transition = 'opacity 0.5s ease';
+          el.style.opacity = '0';
+          setTimeout(function() { el.remove(); }, 520);
+        });
+      }, 4000);
+    }
+
+    // ── Cancel modal backdrop close ───────────────────────────────────────────
+    const cancelModal = document.getElementById('cancelModal');
+    if (cancelModal) {
+      cancelModal.addEventListener('click', function(e) {
+        if (e.target === cancelModal) cancelModal.close();
+      });
+    }
+
+    // ── Return success dialog auto-open ──────────────────────────────────────
+    const returnSuccessModal = document.getElementById('returnSuccessModal');
+    if (returnSuccessModal) {
+      returnSuccessModal.showModal();
+      returnSuccessModal.addEventListener('click', function(e) {
+        if (e.target === returnSuccessModal) returnSuccessModal.close();
+      });
+    }
+  </script>
+
+  <!-- ── Return Success Modal ──────────────────────────────────────────── -->
+  <% if (typeof query !== 'undefined' && query && query.returned) { %>
+  <dialog id="returnSuccessModal" class="return-success-modal">
+    <div class="return-success-inner">
+      <div class="return-success-icon">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+      </div>
+      <h2 class="return-success-title">Return Request<br>Received</h2>
+      <p class="return-success-body">
+        Your return has been successfully placed. Our team will process
+        the request and pick up the item within <strong>2–3 business days</strong>.
+      </p>
+      <p class="return-success-body">
+        Your refund will be credited to your original payment method within <strong>7 days</strong>.
+      </p>
+      <a href="/orders" class="return-success-btn">Back to Orders</a>
+    </div>
+  </dialog>
+  <% } %>
+
+</body>
+</html>

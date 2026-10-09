@@ -116,18 +116,4 @@
     });
   });
 
-  // ===== Add to bag (stub — wired up fully in the Cart Management phase) =====
-  if (addToBagBtn) {
-    addToBagBtn.addEventListener('click', () => {
-      if (addToBagBtn.disabled) return;
-      console.log('Add to cart:', addToBagBtn.dataset.productId);
-    });
-  }
-
-  if (buyNowBtn) {
-    buyNowBtn.addEventListener('click', () => {
-      if (buyNowBtn.disabled) return;
-      console.log('Buy now clicked');
-    });
-  }
 })();

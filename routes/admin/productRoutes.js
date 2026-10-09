@@ -8,8 +8,7 @@ const { uploadProductImages, resizeProductImages } = require('../../middleware/u
 // and requireAdminAuth is already applied there.
 
 // Product Management table
-router.get('/productss',productController.getProductss)
-router.get('/productts',productController.getProductts)
+
 
 router.get('/', productController.renderProductManagement);
 
@@ -38,6 +37,7 @@ router.get('/:id', productController.renderProductDetail);
 
 // Variant Manager (reached via the "View Variants" button on the Core Specs page)
 router.get('/:id/variants', productController.renderVariantManager);
+
 
 
 module.exports = router;

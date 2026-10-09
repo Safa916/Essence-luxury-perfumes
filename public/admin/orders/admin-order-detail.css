@@ -1,0 +1,700 @@
+/* ==========================================================
+   Admin Order Detail  —  admin-order-detail.css
+   Uses Space Grotesk + sidebar.css layout
+   ========================================================== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: 'Space Grotesk', sans-serif; background: #f8f8f8; color: #111; }
+
+.aod-page {
+  padding: 0 2rem 3rem;
+  max-width: 1200px;
+}
+
+/* ── Flash banner ─────────────────────────────────────────── */
+.aod-flash {
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-left: 3px solid;
+}
+.aod-flash--success { background: #d1fae5; border-color: #10b981; color: #065f46; }
+.aod-flash--error   { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+/* ── Top bar ──────────────────────────────────────────────── */
+.aod-topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 0 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
+  margin-bottom: 1.5rem;
+}
+
+.aod-back {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #555;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.aod-back:hover { color: #111; }
+
+.aod-search {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  max-width: 400px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  padding: 0.5rem 0.85rem;
+}
+.aod-search svg { color: #999; flex-shrink: 0; }
+.aod-search input {
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  width: 100%;
+  color: #111;
+  background: transparent;
+}
+.aod-search input::placeholder { color: #aaa; }
+
+/* ── Order header ─────────────────────────────────────────── */
+.aod-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+  gap: 1rem;
+}
+
+.aod-status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.aod-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 0.28rem 0.75rem;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.aod-placed-date {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.aod-order-num {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.aod-update-btn {
+  flex-shrink: 0;
+  padding: 0.7rem 1.4rem;
+  background: #111;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  align-self: center;
+}
+.aod-update-btn:hover { opacity: 0.82; }
+
+/* ── Body layout ──────────────────────────────────────────── */
+.aod-body {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* ── Info strip ───────────────────────────────────────────── */
+.aod-info-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  margin-bottom: 1.25rem;
+}
+
+.aod-info-cell {
+  padding: 1.1rem 1.25rem;
+  border-right: 1px solid #e5e5e5;
+}
+.aod-info-cell:last-child { border-right: none; }
+
+.aod-info-label {
+  font-size: 0.63rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 0.35rem;
+  font-weight: 500;
+}
+
+.aod-info-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.3;
+}
+
+.aod-info-value.aod-total { color: #111; }
+
+.aod-info-sub {
+  font-size: 0.72rem;
+  color: #888;
+  margin-top: 0.2rem;
+}
+
+/* ── Items card ───────────────────────────────────────────── */
+.aod-items-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.aod-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #111;
+  margin-bottom: 1.25rem;
+}
+
+.aod-item {
+  display: grid;
+  grid-template-columns: 90px 1fr 160px 130px 150px;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.aod-item:last-of-type { border-bottom: none; }
+
+.aod-item-img {
+  width: 100px;
+  height: 100px;
+  background: #f5f5f5;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.aod-item-img img { width: 100%; height: 100%; object-fit: contain; }
+
+.aod-item-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+}
+
+.aod-item-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+.aod-item-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 0.2rem;
+}
+
+.aod-item-meta { font-size: 0.74rem; color: #777; margin-top: 0.15rem; }
+
+.aod-item-qty-val {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.aod-item-total {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+}
+
+/* Totals */
+.aod-totals {
+  border-top: 1px solid #e5e5e5;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+.aod-totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+.aod-totals-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+/* ── Notes card ───────────────────────────────────────────── */
+.aod-notes-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  padding: 1.25rem 1.5rem;
+}
+
+.aod-notes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.aod-notes-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+.aod-notes-edit-btn:hover { color: #111; }
+
+.aod-notes-ta {
+  width: 100%;
+  min-height: 90px;
+  padding: 0.75rem 1rem;
+  background: #f8f8f8;
+  border: 1px solid #e5e5e5;
+  font-family: inherit;
+  font-size: 0.82rem;
+  color: #333;
+  resize: vertical;
+  outline: none;
+}
+.aod-notes-ta::placeholder { color: #aaa; }
+.aod-notes-ta:focus { border-color: #111; }
+
+.aod-notes-footer { text-align: right; margin-top: 0.75rem; }
+
+.aod-save-note-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  cursor: pointer;
+  color: #111;
+}
+
+/* ── Right column cards ───────────────────────────────────── */
+.aod-card-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+/* Address card (dark) */
+.aod-address-card {
+  background: #1a1a1a;
+  color: #fff;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.aod-address-card .aod-card-label { color: #888; }
+
+.aod-address-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.aod-address-text {
+  font-size: 0.78rem;
+  color: #bbb;
+  line-height: 1.65;
+  margin-bottom: 0.75rem;
+}
+
+.aod-address-phone {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.76rem;
+  color: #aaa;
+}
+
+/* Payment details */
+.aod-pay-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.aod-pay-row {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.9rem;
+}
+.aod-pay-row:last-child { margin-bottom: 0; }
+
+.aod-pay-sub {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.aod-pay-val {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.aod-pay-status {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #aaa;
+}
+.aod-pay-status.is-paid { color: #10b981; }
+
+/* Logistics timeline */
+.aod-timeline-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  padding: 1.25rem;
+}
+
+.aod-timeline {
+  list-style: none;
+  position: relative;
+}
+
+.aod-tl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding-bottom: 1.1rem;
+  position: relative;
+}
+
+.aod-tl-item:last-child { padding-bottom: 0; }
+
+.aod-tl-item::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 18px;
+  width: 2px;
+  height: calc(100% - 10px);
+  background: #e5e5e5;
+}
+.aod-tl-item:last-child::before { display: none; }
+
+.aod-tl-dot {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  background: #e0e0e0;
+  margin-top: 1px;
+  position: relative;
+  z-index: 1;
+}
+
+.aod-tl-item.done .aod-tl-dot { background: #10b981; }
+.aod-tl-item.current .aod-tl-dot { background: #111; }
+
+.aod-tl-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #888;
+  line-height: 1.4;
+}
+
+.aod-tl-item.done .aod-tl-label    { color: #111; }
+.aod-tl-item.current .aod-tl-label { color: #111; }
+
+/* ── Status Update Modal ──────────────────────────────────── */
+.aod-modal {
+  padding: 0;
+  border: none;
+  max-width: 480px;
+  width: 92%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.28);
+  /* Force true center — native <dialog> defaults to top-left */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+.aod-modal::backdrop {
+  background: rgba(20,20,20,0.6);
+  backdrop-filter: blur(3px);
+}
+
+.aod-modal-inner { padding: 2rem; }
+
+.aod-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.aod-modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.aod-modal-sub { font-size: 0.76rem; color: #888; margin-top: 0.2rem; }
+
+.aod-modal-close {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #888;
+  line-height: 1;
+}
+.aod-modal-close:hover { color: #111; }
+
+.aod-field { margin-bottom: 1.25rem; }
+
+.aod-field-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #444;
+  margin-bottom: 0.5rem;
+}
+
+.aod-select {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+  font-family: inherit;
+  font-size: 0.86rem;
+  color: #111;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  cursor: pointer;
+}
+.aod-select:focus { border-color: #111; }
+
+/* Tracking number row */
+.aod-tracking-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+}
+.aod-tracking-wrap svg { color: #888; flex-shrink: 0; }
+.aod-tracking-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.86rem;
+  color: #111;
+  width: 100%;
+}
+.aod-tracking-input::placeholder { color: #bbb; }
+
+/* Internal notes in modal */
+.aod-modal-notes {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+  font-family: inherit;
+  font-size: 0.82rem;
+  color: #333;
+  resize: vertical;
+  outline: none;
+}
+.aod-modal-notes::placeholder { color: #bbb; }
+.aod-modal-notes:focus { border-color: #111; }
+
+/* Notify checkbox row */
+.aod-notify-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid #eee;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.aod-checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: #111;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.aod-notify-label {
+  font-size: 0.8rem;
+  color: #333;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+
+.aod-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #eee;
+}
+
+.aod-modal-cancel {
+  padding: 0.7rem 1.5rem;
+  background: transparent;
+  border: 1px solid #ddd;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.2s;
+}
+.aod-modal-cancel:hover { background: #f5f5f5; }
+
+.aod-modal-submit {
+  padding: 0.7rem 1.5rem;
+  background: #111;
+  color: #fff;
+  border: 1px solid #111;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.aod-modal-submit:hover { opacity: 0.82; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .aod-body { grid-template-columns: 1fr; }
+  .aod-info-strip { grid-template-columns: repeat(2, 1fr); }
+  .aod-item { grid-template-columns: 80px 1fr; grid-template-rows: auto auto; }
+  .aod-item-qty, .aod-item-sub { grid-column: 2; }
+}
+
+/* ── Per-item status column ───────────────────────────────── */
+.aod-item-status-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+/* Status badges per item */
+.aod-item-badge {
+  display: inline-block;
+  padding: 0.22rem 0.65rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.aod-item-badge--placed           { background: #ede9fe; color: #6d28d9; }
+.aod-item-badge--processing       { background: #fef3c7; color: #92400e; }
+.aod-item-badge--shipped          { background: #dbeafe; color: #1d4ed8; }
+.aod-item-badge--out_for_delivery { background: #ede9fe; color: #7c3aed; }
+.aod-item-badge--delivered        { background: #d1fae5; color: #065f46; }
+.aod-item-badge--cancelled        { background: #fee2e2; color: #991b1b; }
+.aod-item-badge--returned         { background: #ffedd5; color: #9a3412; }
+
+/* Inline status update select */
+.aod-item-status-form { margin-top: 0.15rem; }
+.aod-item-select {
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #111;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E") no-repeat right 0.5rem center;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0.3rem 1.6rem 0.3rem 0.55rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  max-width: 140px;
+}
+.aod-item-select:focus { outline: none; border-color: #6366f1; }
+
+/* Responsive: stack on small screens */
+@media (max-width: 900px) {
+  .aod-item {
+    grid-template-columns: 70px 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  .aod-item-qty  { grid-column: 2; }
+  .aod-item-sub  { grid-column: 2; }
+  .aod-item-status-col { grid-column: 2; }
+}

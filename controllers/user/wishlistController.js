@@ -100,8 +100,8 @@ exports.removeFromWishlist = async (req, res) => {
 };
 
 // DELETE /wishlist/remove-by-product/:productId
-// Used by the shop grid's heart toggle, which only knows the product id,
-// not a specific wishlist_item_id.
+
+
 exports.removeFromWishlistByProduct = async (req, res) => {
   try {
     await WishlistItem.deleteMany({
@@ -110,7 +110,7 @@ exports.removeFromWishlistByProduct = async (req, res) => {
     });
     res.json({ success: true });
   } catch (err) {
-    console.error('removeFromWishlistByProduct error:', err);
+     console.error('removeFromWishlistByProduct error:', err);
     res.status(500).json({ success: false, message: 'Could not remove item.' });
   }
 };

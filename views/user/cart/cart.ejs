@@ -21,7 +21,10 @@
     <% if (!items.length && totalItems === 0) { %>
       <div class="cart-empty">
         <p>Your bag is empty.</p>
-        <a href="/shop" class="btn btn-dark">Explore Fragrances</a>
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+          <a href="/shop" class="btn btn-dark">Explore Fragrances</a>
+          <a href="/orders" class="btn btn-outline" style="border: 1px solid #111; color: #111;">My Orders</a>
+        </div>
       </div>
     <% } else { %>
 
@@ -113,6 +116,7 @@
               Proceed to Checkout
             </a>
           <% } %>
+          <a href="/orders" class="btn btn-outline" style="display: block; text-align: center; margin-top: 1rem; border: 1px solid #111; color: #111; text-decoration: none;">View My Orders</a>
         </aside>
       </div>
     <% } %>

@@ -10,8 +10,8 @@
   --surface-muted: #f6efed;   /* summary panel, image placeholder */
   --border:        #eadfdb;
   --text:          #2b211d;   /* primary text */
-  --text-muted:    #7a6c66;   /* secondary text */
-  --text-faint:    #a39690;   /* eyebrows / labels */
+  --text-muted:    #4a3f3a;   /* secondary text — darkened for legibility */
+  --text-faint:    #6b5f59;   /* eyebrows / labels — darkened for legibility */
   --accent:        #6b4e16;   /* antique gold-brown (stars, links) */
   --dark:          #54433b;   /* espresso brown */
   --dark-hover:    #3f322c;

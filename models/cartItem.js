@@ -37,5 +37,5 @@ const cartItemSchema = new mongoose.Schema(
   // note: your diagram uses "added_at" instead of the usual "created_at" — matched exactly
 );
 
-const cartItem = mongoose.model('cartItem', cartItemSchema);
+const cartItem = mongoose.models.cartItem || mongoose.model('cartItem', cartItemSchema);
 module.exports = cartItem;

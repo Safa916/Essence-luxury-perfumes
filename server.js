@@ -20,6 +20,7 @@ const shopRoutes = require('./routes/user/shopRoutes');
   const cartRoutes = require('./routes/user/cartRoutes');  
 const wishlistRoutes  = require('./routes/user/wishlistRoutes');
 const checkoutRoutes  = require('./routes/user/checkoutRoutes');
+const orderRoutes     = require('./routes/user/orderRoutes');
 
 
 
@@ -58,6 +59,7 @@ app.use('/product', productRoutes);
 app.use('/cart', cartRoutes);
 app.use('/wishlist', wishlistRoutes);
 app.use('/checkout', checkoutRoutes);
+app.use('/orders', orderRoutes);
 
 
 

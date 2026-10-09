@@ -1,5 +1,8 @@
-const Address = require('../../models/Address');
+const Address = require('../../models/address');
 const { isValidName } = require('../../utils/validators');
+
+// Helper: only allow known paths to return to (prevents open-redirect abuse)
+const getSafeReturnTo = (value) => (value === '/checkout' ? '/checkout' : '/address');
 
 // Helper: format one address doc into what myAddresses.ejs expects
 const formatAddressForList = (addr) => ({
@@ -43,8 +46,8 @@ const validateAddressInput = (data) => {
   return errors;
 };
 
-  // List all addresses for the logged-in user
-    //  GET /address
+// List all addresses for the logged-in user
+// GET /address
 exports.listAddresses = async (req, res) => {
   try {
     const addresses = await Address.find({ user_id: req.user._id }).sort({ is_default: -1, created_at: -1 });
@@ -57,10 +60,11 @@ exports.listAddresses = async (req, res) => {
 };
 
 // Show the "Add New Address" form
-//  GET /address/new
+// GET /address/new
 exports.getNewAddressForm = (req, res) => {
   res.render('user/address/edit-address', {
     address: { id: 'new', type: 'home', fullName: '', line1: '', line2: '', city: '', pincode: '', phone: '' },
+    returnTo: getSafeReturnTo(req.query.returnTo),
   });
 };
 
@@ -82,6 +86,7 @@ exports.getEditAddressForm = async (req, res) => {
         pincode: addr.pincode,
         phone: addr.phone_number,
       },
+      returnTo: getSafeReturnTo(req.query.returnTo),
     });
   } catch (error) {
     console.error('Get edit address form error:', error.message);
@@ -89,11 +94,10 @@ exports.getEditAddressForm = async (req, res) => {
   }
 };
 
-//     Show the "Delete Address" confirmation page
-//   GET /address/:id/delete
+// Show the "Delete Address" confirmation page
+// GET /address/:id/delete
 exports.getDeleteConfirmation = async (req, res) => {
   try {
-    
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
@@ -120,17 +124,15 @@ exports.getDeleteConfirmation = async (req, res) => {
   }
 };
 
-
-
- exports.setDefaultAddress = async (req, res) => {
+exports.setDefaultAddress = async (req, res) => {
   try {
     await Address.updateMany(
       { user_id: req.user._id },
-      { is_default: false }        // clears default on EVERY address for this user
+      { is_default: false } // clears default on EVERY address for this user
     );
     await Address.findOneAndUpdate(
       { _id: req.params.id, user_id: req.user._id },
-      { is_default: true }         // sets only the clicked one to true
+      { is_default: true } // sets only the clicked one to true
     );
     res.redirect('/address');
   } catch (error) {
@@ -138,28 +140,31 @@ exports.getDeleteConfirmation = async (req, res) => {
     res.status(500).send('Server error setting default address');
   }
 };
+
 // @desc    Create a new address
 // @route   POST /address/new
 exports.createAddress = async (req, res) => {
   try {
     const { type, fullName, line1, line2, city, pincode, phone } = req.body;
+    const returnTo = getSafeReturnTo(req.body.returnTo);
 
-    
     const errors = validateAddressInput(req.body);
     if (Object.keys(errors).length > 0) {
       return res.render('user/address/edit-address', {
         address: { id: 'new', type, fullName, line1, line2, city, pincode, phone },
         errors,
+        returnTo,
       });
     }
-    const addressCount= await Address.countDocuments({user_id:req.user._id})
-    if (addressCount>=3){
-       return res.render('user/address/edit-address', {
-        address: { id: 'new', type, fullName, line1, line2, city, pincode, phone },
-       errors:{limit:"You can only save up to 3 addresses."}
-       
-    })}
 
+    const addressCount = await Address.countDocuments({ user_id: req.user._id });
+    if (addressCount >= 3) {
+      return res.render('user/address/edit-address', {
+        address: { id: 'new', type, fullName, line1, line2, city, pincode, phone },
+        errors: { limit: 'You can only save up to 3 addresses.' },
+        returnTo,
+      });
+    }
 
     await Address.create({
       user_id: req.user._id,
@@ -172,7 +177,7 @@ exports.createAddress = async (req, res) => {
       address_type: type,
     });
 
-    res.redirect('/address');
+    res.redirect(returnTo);
   } catch (error) {
     console.error('Create address error:', error.message);
     res.status(500).send('Server error creating address');
@@ -184,12 +189,14 @@ exports.createAddress = async (req, res) => {
 exports.updateAddress = async (req, res) => {
   try {
     const { type, fullName, line1, line2, city, pincode, phone } = req.body;
+    const returnTo = getSafeReturnTo(req.body.returnTo);
 
     const errors = validateAddressInput(req.body);
     if (Object.keys(errors).length > 0) {
       return res.render('user/address/edit-address', {
         address: { id: req.params.id, type, fullName, line1, line2, city, pincode, phone },
         errors,
+        returnTo,
       });
     }
 
@@ -206,7 +213,7 @@ exports.updateAddress = async (req, res) => {
       }
     );
 
-    res.redirect('/address');
+    res.redirect(returnTo);
   } catch (error) {
     console.error('Update address error:', error.message);
     res.status(500).send('Server error updating address');

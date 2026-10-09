@@ -21,5 +21,5 @@ const wishlistItemSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'added_at', updatedAt: false } }
 );
 
-const wishlistItem = mongoose.model('wishlistItem', wishlistItemSchema);
+const wishlistItem = mongoose.models.wishlistItem || mongoose.model('wishlistItem', wishlistItemSchema);
 module.exports = wishlistItem;

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orders | Essence Admin</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/admin/partials/sidebar.css">
+  <link rel="stylesheet" href="/admin/orders/admin-orders.css">
+</head>
+<body>
+
+  <%
+    const list         = (typeof orders !== 'undefined' && orders) ? orders : [];
+    const st           = (typeof stats !== 'undefined' && stats) ? stats : { pendingShipments: 0, ordersToday: 0, activeReturns: 0 };
+    const statusFilter = (typeof status !== 'undefined' && status) ? status : 'all';
+    const dateRange    = (typeof range !== 'undefined' && range) ? range : '30';
+    const searchTerm   = (typeof search !== 'undefined' && search) ? search : '';
+    const page         = (typeof currentPage !== 'undefined') ? Number(currentPage) : 1;
+    const pages        = (typeof totalPages !== 'undefined') ? Number(totalPages) : 1;
+    const totalOrders  = (typeof total !== 'undefined') ? Number(total) : list.length;
+    const perPage      = (typeof limit !== 'undefined') ? Number(limit) : 10;
+
+    const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 });
+    const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { month: 'short', day: '2-digit', year: 'numeric' });
+    const initials = (n) => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+    // Which statuses an admin can move an order to next
+    const nextStatuses = {
+      placed          : ['processing', 'cancelled'],
+      processing      : ['shipped', 'cancelled'],
+      shipped         : ['out_for_delivery', 'delivered'],
+      out_for_delivery: ['delivered'],
+    };
+
+    const buildUrl = (p) => {
+      const q = new URLSearchParams();
+      if (statusFilter !== 'all') q.set('status', statusFilter);
+      if (dateRange !== '30') q.set('range', dateRange);
+      if (searchTerm) q.set('search', searchTerm);
+      if (p > 1) q.set('page', p);
+      const s = q.toString();
+      return '/admin/orders' + (s ? '?' + s : '');
+    };
+
+    // page numbers with "…" for long lists
+    const pageItems = [];
+    if (pages <= 5) { for (let i = 1; i <= pages; i++) pageItems.push(i); }
+    else { pageItems.push(1, 2, 3, '…', pages); }
+
+    const from = list.length ? (page - 1) * perPage + 1 : 0;
+    const to   = (page - 1) * perPage + list.length;
+  %>
+
+  <%- include('../partials/sidebar', { activePage: 'orders' }) %>
+
+  <main class="main-content orders-page">
+
+    <!-- Top bar -->
+    <header class="orders-top">
+      <h1 class="orders-heading">Orders</h1>
+      <form class="orders-search" action="/admin/orders" method="GET">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+        <input type="text" name="search" value="<%= searchTerm %>" placeholder="Search orders...">
+        <% if (statusFilter !== 'all') { %><input type="hidden" name="status" value="<%= statusFilter %>"><% } %>
+        <% if (dateRange !== '30') { %><input type="hidden" name="range" value="<%= dateRange %>"><% } %>
+      </form>
+    </header>
+
+    <!-- Stat cards -->
+    <section class="stat-grid">
+      <article class="stat-card">
+        <p class="stat-label">Pending Shipments</p>
+        <p class="stat-value"><%= st.pendingShipments %></p>
+        <p class="stat-note stat-up">↗ <%= st.pendingNote || '+12% vs yesterday' %></p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">Total Orders Today</p>
+        <p class="stat-value"><%= st.ordersToday %></p>
+        <p class="stat-note">→ <%= st.todayNote || 'Consistent performance' %></p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">Active Returns</p>
+        <p class="stat-value"><%= st.activeReturns %></p>
+        <p class="stat-note stat-down">↘ <%= st.returnsNote || '-4% improvement' %></p>
+      </article>
+    </section>
+
+    <!-- Filters -->
+    <form class="filters" action="/admin/orders" method="GET">
+      <% if (searchTerm) { %><input type="hidden" name="search" value="<%= searchTerm %>"><% } %>
+
+      <label class="filter">
+        <span>Status:</span>
+        <select name="status" onchange="this.form.submit()">
+          <% ['all','pending','processing','shipped','delivered','cancelled','returned'].forEach(function (s) { %>
+            <option value="<%= s %>" <%= statusFilter === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
+          <% }) %>
+        </select>
+      </label>
+
+      <label class="filter">
+        <span>Date:</span>
+        <select name="range" onchange="this.form.submit()">
+          <option value="7"   <%= dateRange === '7'   ? 'selected' : '' %>>Last 7 days</option>
+          <option value="30"  <%= dateRange === '30'  ? 'selected' : '' %>>Last 30 days</option>
+          <option value="90"  <%= dateRange === '90'  ? 'selected' : '' %>>Last 90 days</option>
+          <option value="all" <%= dateRange === 'all' ? 'selected' : '' %>>All time</option>
+        </select>
+      </label>
+    </form>
+
+     
+
+
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (list.length === 0) { %>
+            <tr><td colspan="7" class="empty-row">No orders found</td></tr>
+          <% } %>
+
+          <% list.forEach(function (o) {
+               const cust = o.customer || {};
+               const items = o.items || [];
+               
+               items.forEach(function(it, index) {
+                 const s = (it.item_status || 'placed').toLowerCase();
+                 const options = nextStatuses[s] || [];
+          %>
+            <tr>
+              <td class="cell-id">
+                <a href="/admin/orders/<%= o._id %>?itemId=<%= it._id %>">#<%= o.orderId %></a>
+                <% if (items.length > 1) { %><br><span style="font-size: 0.75em; color: #888;">(Item <%= index + 1 %> of <%= items.length %>)</span><% } %>
+              </td>
+              <td class="cell-date"><%= fmtDate(o.createdAt) %></td>
+
+              <td>
+                <div class="customer">
+                  <% if (cust.avatar) { %>
+                    <img src="<%= cust.avatar %>" alt="" class="avatar">
+                  <% } else { %>
+                    <span class="avatar avatar-initials"><%= initials(cust.name) %></span>
+                  <% } %>
+                  <span class="customer-name"><%= cust.name %></span>
+                </div>
+              </td>
+
+              <td>
+                <div class="items" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span class="thumb" style="width: 32px; height: 32px; border-radius: 4px; overflow: hidden; display: inline-block; flex-shrink: 0;">
+                    <% if (it.image) { %><img src="<%= it.image %>" alt="" style="width: 100%; height: 100%; object-fit: cover;"><% } %>
+                  </span>
+                  <span style="font-size: 0.8em; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;" title="<%= it.product_name %>"><%= it.product_name %></span>
+                </div>
+              </td>
+
+              <td>
+                <div class="status-cell">
+                  <span class="badge badge-<%= s %>"><%= s %></span>
+
+                  <% if (options.length) { %>
+                    <div class="pop-wrap">
+                      <button type="button" class="link-update" data-menu-toggle>Update</button>
+                      <div class="pop">
+                        <form method="POST" action="/admin/orders/<%= o._id %>/items/<%= it._id %>/status">
+                          <p class="pop-title">Move to</p>
+                          <% options.forEach(function (opt) { %>
+                            <button type="submit" name="status" value="<%= opt %>" class="pop-item"><%= opt.charAt(0).toUpperCase() + opt.slice(1) %></button>
+                          <% }) %>
+                        </form>
+                      </div>
+                    </div>
+                  <% } %>
+                </div>
+              </td>
+
+              <td class="cell-total"><%= inr(it.price * it.quantity) %></td>
+
+              <td class="cell-actions">
+                <div class="pop-wrap">
+                  <button type="button" class="kebab" data-menu-toggle aria-label="Actions">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+                  </button>
+                  <div class="pop pop-right">
+                    <a href="/admin/orders/<%= o._id %>?itemId=<%= it._id %>" class="pop-item">View details</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          <%   });
+             }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer: count + pagination -->
+    <footer class="table-foot">
+      <p class="showing">Showing <%= from %>-<%= to %> of <%= totalOrders.toLocaleString('en-IN') %> orders</p>
+
+      <% if (pages > 1) { %>
+        <nav class="pagination">
+          <% pageItems.forEach(function (p) { %>
+            <% if (p === '…') { %>
+              <span class="dots">…</span>
+            <% } else { %>
+              <a href="<%= buildUrl(p) %>" class="<%= p === page ? 'active' : '' %>"><%= String(p).padStart(2, '0') %></a>
+            <% } %>
+          <% }) %>
+          <% if (page < pages) { %><a href="<%= buildUrl(page + 1) %>">›</a><% } %>
+        </nav>
+      <% } %>
+    </footer>
+
+  </main>
+
+  <script>
+    // Open / close the small "Update" and "⋮" menus
+    document.addEventListener('click', function (e) {
+      var toggle = e.target.closest('[data-menu-toggle]');
+      document.querySelectorAll('.pop.open').forEach(function (p) {
+        if (!toggle || p !== toggle.nextElementSibling) p.classList.remove('open');
+      });
+      if (toggle) {
+        e.preventDefault();
+        toggle.nextElementSibling.classList.toggle('open');
+      }
+    });
+  </script>
+
+  
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Returns | Essence Admin</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/admin/partials/sidebar.css">
+  <link rel="stylesheet" href="/admin/orders/admin-returns.css">
+</head>
+<body>
+
+  <div class="layout">
+    <%- include('../partials/sidebar', { activePage: 'returns' }) %>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div class="header-titles">
+          <h1 class="page-title">ORDER RETURNS</h1>
+          <p class="page-desc">Manage customer return requests and refund approvals.</p>
+        </div>
+        <button class="btn-export">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          EXPORT REPORTS
+        </button>
+      </header>
+
+      <% if (typeof query !== 'undefined' && query && query.flash === 'approved') { %>
+        <div class="flash-alert flash-success">Return request approved successfully. Wallet refunded.</div>
+      <% } else if (typeof query !== 'undefined' && query && query.flash === 'rejected') { %>
+        <div class="flash-alert flash-error">Return request rejected.</div>
+      <% } %>
+
+      <div class="card returns-registry">
+        <div class="card-header">
+          <h2 class="card-title">Return Requests Registry</h2>
+          <form class="search-box" method="GET" action="/admin/returns">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" name="search" placeholder="Search by Order ID or customer..." value="<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>">
+            <% if (statusFilter !== 'all') { %><input type="hidden" name="status" value="<%= statusFilter %>"><% } %>
+          </form>
+        </div>
+
+        <div class="table-responsive">
+          <table class="returns-table">
+            <thead>
+              <tr>
+                <th>RETURN / ORDER ID</th>
+                <th>CUSTOMER NAME</th>
+                <th>RETURN DATE</th>
+                <th>REASON</th>
+                <th>STATUS</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (returns.length === 0) { %>
+                <tr>
+                  <td colspan="6" class="empty-state">No return requests found.</td>
+                </tr>
+              <% } else { %>
+                <% returns.forEach(r => { 
+                   const d = new Date(r.createdAt);
+                   const formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                %>
+                  <tr>
+                    <td class="cell-id">
+                      <span class="text-danger" title="Return ID">#<%= r.returnId || 'N/A' %></span>
+                      <br>
+                      <small class="text-muted" style="font-size: 0.75rem;" title="Order ID">Order: #<%= r.order.id %></small>
+                    </td>
+                    <td class="cell-customer">
+                      <span class="cust-name"><%= r.customer.name %></span>
+                    </td>
+                    <td class="cell-date"><%= formattedDate %></td>
+                    <td class="cell-reason"><%= r.reason %></td>
+                    <td class="cell-status">
+                      <span class="badge badge-<%= r.status %>">
+                        <%= r.status === 'requested' ? 'PENDING' : (r.status === 'refunded' ? 'APPROVED' : r.status.toUpperCase()) %>
+                      </span>
+                    </td>
+                    <td class="cell-actions">
+                      <% if (r.status === 'requested') { %>
+                        <div class="action-buttons">
+                          <form action="/admin/returns/<%= r._id %>/approve" method="POST" style="display:inline;">
+                            <button type="submit" class="btn-action btn-approve" title="Approve & Refund">Approve</button>
+                          </form>
+                          <form action="/admin/returns/<%= r._id %>/reject" method="POST" style="display:inline;">
+                            <button type="submit" class="btn-action btn-reject" title="Reject">Reject</button>
+                          </form>
+                        </div>
+                      <% } else { %>
+                        <span class="text-muted">—</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <% if (totalPages > 1) { %>
+          <div class="pagination">
+            <span class="pagination-info">Showing <%= ((currentPage - 1) * 10) + 1 %>–<%= Math.min(currentPage * 10, total) %> of <%= total %> returns</span>
+            <div class="pagination-controls">
+              <% if (currentPage > 1) { %>
+                <a href="/admin/returns?page=<%= currentPage - 1 %>&status=<%= statusFilter %>" class="page-link">&lt;</a>
+              <% } %>
+              
+              <% for(let i = 1; i <= totalPages; i++) { %>
+                <a href="/admin/returns?page=<%= i %>&status=<%= statusFilter %>" class="page-link <%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+              <% } %>
+
+              <% if (currentPage < totalPages) { %>
+                <a href="/admin/returns?page=<%= currentPage + 1 %>&status=<%= statusFilter %>" class="page-link">&gt;</a>
+              <% } %>
+            </div>
+          </div>
+        <% } %>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- SweetAlert2 for nice popups -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.querySelectorAll('.btn-approve').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const form = this.closest('form');
+        Swal.fire({
+          title: 'Approve Return?',
+          text: "This will approve the return and automatically refund the amount to the customer's wallet.",
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#111',
+          cancelButtonColor: '#aaa',
+          confirmButtonText: 'Yes, approve it!'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            form.submit();
+          }
+        });
+      });
+    });
+
+    document.querySelectorAll('.btn-reject').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const form = this.closest('form');
+        Swal.fire({
+          title: 'Reject Return?',
+          text: "Are you sure you want to reject this return request?",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d93025',
+          cancelButtonColor: '#aaa',
+          confirmButtonText: 'Yes, reject it!'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            form.submit();
+          }
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -143,8 +143,10 @@ exports.placeOrder = async (req, res) => {
       variant_id        : i.variant_id._id,
       product_name      : i.product_id.name,
       size              : i.variant_id.size_ml ? `${i.variant_id.size_ml}ML` : '',
+      image             : (i.product_id.images && i.product_id.images[0]) || '',
       quantity          : i.quantity,
       price_at_purchase : toNum(i.unit_price),
+      item_status       : 'placed',
     }));
 
     // 5. Pricing
@@ -193,10 +195,16 @@ exports.placeOrder = async (req, res) => {
 
     if (!order) throw new Error('Could not generate a unique order number');
 
-    // 7. Decrement variant stock for each item
+    // 7. Decrement variant.quantity AND product.stock for each item
+    const Product = require('../../models/product');
     for (const i of validItems) {
+      // decrement the variant's own quantity
       await Variant.findByIdAndUpdate(i.variant_id._id, {
         $inc: { quantity: -i.quantity },
+      });
+      // keep product.stock aggregate in sync (what admin list shows)
+      await Product.findByIdAndUpdate(i.product_id._id, {
+        $inc: { stock: -i.quantity },
       });
     }
 
