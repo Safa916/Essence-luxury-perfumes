@@ -9,27 +9,7 @@ function toNum(d) {
 }
 
 
-exports.getProductBuyers = async (req, res) => {
-  try {
-    const { productId } = req.params;
 
-    const userIds = await Order.distinct('user_id', { 'items.product_id': productId });
-    const users = await User.find({ _id: { $in: userIds } }).select('name email');
-
-    res.json(users);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-  exports.returnedOrders= async(req,res)=>{
-    try{
-      const Order =await Order.find({order_status:"returned"})
-      res.json(order)
-    }catch{
-      console.erro
-    }
-  }
 
 
 // ─── GET /admin/orders ────────────────────────────────────────────────────────
