@@ -25,7 +25,7 @@ exports.listOrders = async (req, res) => {
       dateFilter.placed_at = { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) };
     }
     // Status filter
-    const statusFilter = (status && status !== 'all') ? { order_status: status } : {};
+    const statusFilter = (status && status !== 'all') ? { 'items.item_status': status } : {};
 
     // Search: by order_number or customer name (join via user)
     let searchFilter = {};

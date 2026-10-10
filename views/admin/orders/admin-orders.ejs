@@ -143,6 +143,7 @@
                
                items.forEach(function(it, index) {
                  const s = (it.item_status || 'placed').toLowerCase();
+                 if (statusFilter !== 'all' && s !== statusFilter) return;
                  const options = nextStatuses[s] || [];
           %>
             <tr>

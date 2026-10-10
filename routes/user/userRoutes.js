@@ -1,6 +1,19 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const { protect,checkUser } = require('../../middleware/authMiddleware');
+
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, 
+  message: 'Too many OTP requests, please try again after 15 minutes'
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, 
+  message: 'Too many login attempts, please try again after 15 minutes'
+});
 
 
 
@@ -70,9 +83,9 @@ router.get('/reset-success', (req, res) => {
 
 // API routes — handle form submissions
 router.post('/signup', registerUser);
-router.post('/verify-otp', verifyOTP);
-router.post('/resend-otp', resendOTP);
-router.post('/login', loginUser);
+router.post('/verify-otp', otpLimiter, verifyOTP);
+router.post('/resend-otp', otpLimiter, resendOTP);
+router.post('/login', loginLimiter, loginUser);
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-reset-code', verifyResetCode);
 router.post('/reset-password', resetPassword);
