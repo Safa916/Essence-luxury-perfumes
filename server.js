@@ -21,6 +21,7 @@ const shopRoutes = require('./routes/user/shopRoutes');
 const wishlistRoutes  = require('./routes/user/wishlistRoutes');
 const checkoutRoutes  = require('./routes/user/checkoutRoutes');
 const orderRoutes     = require('./routes/user/orderRoutes');
+const couponRoutes    = require('./routes/user/couponRoutes');
 
 
 
@@ -60,6 +61,7 @@ app.use('/cart', cartRoutes);
 app.use('/wishlist', wishlistRoutes);
 app.use('/checkout', checkoutRoutes);
 app.use('/orders', orderRoutes);
+app.use('/coupon', couponRoutes);
 
 
 
