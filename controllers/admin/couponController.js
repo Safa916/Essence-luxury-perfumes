@@ -58,11 +58,33 @@ exports.createCoupon = async (req, res) => {
     const { code, description, discount_type, discount_value,
             min_order_value, max_discount_amount, valid_until, is_active } = req.body;
 
+    // ── Server-side validation ──────────────────────────────────────────────
+    const cleanCode = (code || '').trim().toUpperCase();
+    const cleanDesc = (description || '').trim();
+    const dv        = parseFloat(discount_value);
+
+    if (!cleanCode || !/^[A-Z0-9_-]+$/.test(cleanCode)) {
+      return res.redirect('/admin/coupons?error=invalid_code&open=add');
+    }
+    if (!cleanDesc) {
+      return res.redirect('/admin/coupons?error=invalid_desc&open=add');
+    }
+    if (!discount_value || isNaN(dv) || dv <= 0) {
+      return res.redirect('/admin/coupons?error=invalid_value&open=add');
+    }
+    if (discount_type === 'percentage' && dv > 100) {
+      return res.redirect('/admin/coupons?error=invalid_value&open=add');
+    }
+    if (valid_until && new Date(valid_until) < new Date(new Date().toDateString())) {
+      return res.redirect('/admin/coupons?error=invalid_date&open=add');
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     await Coupon.create({
-      code               : (code || '').trim().toUpperCase(),
-      description        : (description || '').trim(),
+      code               : cleanCode,
+      description        : cleanDesc,
       discount_type,
-      discount_value     : parseFloat(discount_value),
+      discount_value     : dv,
       min_order_value    : parseFloat(min_order_value) || 0,
       max_discount_amount: max_discount_amount ? parseFloat(max_discount_amount) : null,
       valid_until        : valid_until || null,

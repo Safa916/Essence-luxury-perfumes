@@ -149,6 +149,15 @@
       text-transform:uppercase;
     }
     .btn-save:hover { background:#333; }
+
+    /* Inline validation */
+    .field-error {
+      font-size:0.72rem; color:#dc2626; margin-top:0.3rem; display:none;
+    }
+    .input-error {
+      border-color:#dc2626 !important;
+      background:#fff8f8 !important;
+    }
   </style>
 </head>
 <body>
@@ -303,18 +312,24 @@
   <!-- ── Add Coupon Modal ──────────────────────────────────────────────────── -->
   <div class="modal-overlay" id="addModal">
     <div class="modal">
-      <button class="modal-close" onclick="closeAddModal()">✕</button>
+      <button type="button" class="modal-close" onclick="closeAddModal()">✕</button>
       <h2 class="modal-title">Add New Coupon</h2>
-      <form method="POST" action="/admin/coupons">
+      <form id="addCouponForm" method="POST" action="/admin/coupons" novalidate>
 
         <div class="form-row">
           <div class="form-group">
             <label>Code *</label>
-            <input type="text" name="code" required placeholder="e.g. SAVE20" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+            <input
+              type="text" id="f-code" name="code"
+              placeholder="e.g. SAVE20"
+              autocomplete="off" spellcheck="false"
+              oninput="this.value=this.value.toUpperCase(); clearErr('err-code')"
+            >
+            <span class="field-error" id="err-code">Coupon code is required (letters &amp; numbers only).</span>
           </div>
           <div class="form-group">
             <label>Discount Type *</label>
-            <select name="discount_type" required id="addDiscType" onchange="toggleMaxDisc('add')">
+            <select name="discount_type" id="addDiscType" onchange="toggleMaxDisc('add')">
               <option value="percentage">Percentage (%)</option>
               <option value="fixed">Fixed Amount (₹)</option>
             </select>
@@ -323,30 +338,41 @@
 
         <div class="form-group">
           <label>Description *</label>
-          <input type="text" name="description" required placeholder="e.g. Summer sale 20% off">
+          <input
+            type="text" id="f-desc" name="description"
+            placeholder="e.g. Summer sale 20% off"
+            oninput="clearErr('err-desc')"
+          >
+          <span class="field-error" id="err-desc">Description is required.</span>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>Discount Value *</label>
-            <input type="number" name="discount_value" required min="0.01" step="0.01" placeholder="20">
+            <input
+              type="number" id="f-disc-val" name="discount_value"
+              min="0.01" step="0.01" placeholder="20"
+              oninput="clearErr('err-disc-val')"
+            >
             <p class="form-hint">Enter % for percentage, or ₹ amount for fixed.</p>
+            <span class="field-error" id="err-disc-val">Enter a valid discount value greater than 0.</span>
           </div>
           <div class="form-group">
-            <label>Min Order Value (₹)</label>
+            <label>Min Order Value (₹) <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
             <input type="number" name="min_order_value" min="0" step="0.01" placeholder="0">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group" id="addMaxDiscGroup">
-            <label>Max Discount Cap (₹)</label>
+            <label>Max Discount Cap (₹) <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
             <input type="number" name="max_discount_amount" min="0" step="0.01" placeholder="Leave blank for no cap">
             <p class="form-hint">Only applies to percentage discounts.</p>
           </div>
           <div class="form-group">
-            <label>Valid Until</label>
-            <input type="date" name="valid_until">
+            <label>Valid Until <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
+            <input type="date" id="f-valid" name="valid_until" oninput="clearErr('err-valid')">
+            <span class="field-error" id="err-valid">Expiry date must be in the future.</span>
           </div>
         </div>
 
@@ -360,16 +386,20 @@
 
         <div class="modal-actions">
           <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-          <button type="submit" class="btn-save">Create Coupon</button>
+          <button type="button" class="btn-save" onclick="submitAddCoupon()">Create Coupon</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Delete confirmation uses essConfirm (loaded via header) -->
   <script>
     function openAddModal()  { document.getElementById('addModal').classList.add('open'); }
-    function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('open');
+      // Clear all errors when closing
+      document.querySelectorAll('#addCouponForm .field-error').forEach(function(el) { el.style.display = 'none'; });
+      document.querySelectorAll('#addCouponForm .input-error').forEach(function(el) { el.classList.remove('input-error'); });
+    }
 
     // Close on backdrop click
     document.getElementById('addModal').addEventListener('click', function(e) {
@@ -381,6 +411,85 @@
       const type  = document.getElementById(prefix + 'DiscType').value;
       const group = document.getElementById(prefix + 'MaxDiscGroup');
       if (group) group.style.display = type === 'fixed' ? 'none' : '';
+    }
+
+    // Helper to clear a single field error
+    function clearErr(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+      // Remove red border from adjacent input
+      const input = el && el.previousElementSibling;
+      if (input) input.classList.remove('input-error');
+    }
+
+    // Helper to show a single field error
+    function showErr(inputId, errId, msg) {
+      const input = document.getElementById(inputId);
+      const err   = document.getElementById(errId);
+      if (input) input.classList.add('input-error');
+      if (err)   { if (msg) err.textContent = msg; err.style.display = 'block'; }
+      return false;
+    }
+
+    // Validate and submit the Add Coupon form
+    function submitAddCoupon() {
+      let valid = true;
+
+      // Code — required, alphanumeric
+      const code = document.getElementById('f-code');
+      if (!code.value.trim() || !/^[A-Z0-9_-]+$/i.test(code.value.trim())) {
+        showErr('f-code', 'err-code',
+          code.value.trim() === ''
+            ? 'Coupon code is required.'
+            : 'Only letters, numbers, hyphens and underscores are allowed.'
+        );
+        valid = false;
+      } else {
+        clearErr('err-code');
+      }
+
+      // Description — required
+      const desc = document.getElementById('f-desc');
+      if (!desc.value.trim()) {
+        showErr('f-desc', 'err-desc', 'Description is required.');
+        valid = false;
+      } else {
+        clearErr('err-desc');
+      }
+
+      // Discount value — required, > 0
+      const discVal = document.getElementById('f-disc-val');
+      const dv = parseFloat(discVal.value);
+      if (!discVal.value || isNaN(dv) || dv <= 0) {
+        showErr('f-disc-val', 'err-disc-val', 'Enter a valid discount value greater than 0.');
+        valid = false;
+      } else {
+        // Extra: percentage must be ≤ 100
+        const discType = document.getElementById('addDiscType').value;
+        if (discType === 'percentage' && dv > 100) {
+          showErr('f-disc-val', 'err-disc-val', 'Percentage discount cannot exceed 100%.');
+          valid = false;
+        } else {
+          clearErr('err-disc-val');
+        }
+      }
+
+      // Valid Until — if filled, must be in the future
+      const validUntil = document.getElementById('f-valid');
+      if (validUntil.value) {
+        const chosen = new Date(validUntil.value);
+        const today  = new Date(); today.setHours(0,0,0,0);
+        if (chosen < today) {
+          showErr('f-valid', 'err-valid', 'Expiry date must be today or in the future.');
+          valid = false;
+        } else {
+          clearErr('err-valid');
+        }
+      }
+
+      if (valid) {
+        document.getElementById('addCouponForm').submit();
+      }
     }
 
     // Delete coupon
@@ -398,7 +507,6 @@
       .catch(() => alert('Server error.'));
     }
 
-    // Open modal if redirected back with error (validation failed)
     <% if (locals.query && locals.query.open === 'add') { %>
       openAddModal();
     <% } %>
