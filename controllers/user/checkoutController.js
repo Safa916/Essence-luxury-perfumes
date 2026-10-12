@@ -1,10 +1,12 @@
-const mongoose = require('mongoose');
-const Address  = require('../../models/address');
-const Cart     = require('../../models/cart');
-const CartItem = require('../../models/cartItem');
-const Product  = require('../../models/product');
-const Variant  = require('../../models/variant');
-const Order    = require('../../models/order');
+const mongoose    = require('mongoose');
+const Address     = require('../../models/address');
+const Cart        = require('../../models/cart');
+const CartItem    = require('../../models/cartItem');
+const Product     = require('../../models/product');
+const Variant     = require('../../models/variant');
+const Order       = require('../../models/order');
+const Coupon      = require('../../models/coupon');
+const CouponUsage = require('../../models/couponUsage');
 
 // ─── constants ───────────────────────────────────────────────────────────────
 const GST_RATE        = 0.18;          // 18 % GST on subtotal
@@ -195,10 +197,22 @@ exports.placeOrder = async (req, res) => {
     if (!order) throw new Error('Could not generate a unique order number');
 
     // 8. Decrement stock for each item
-    const Product = require('../../models/product');
     for (const i of validItems) {
       await Variant.findByIdAndUpdate(i.variant_id._id, { $inc: { quantity: -i.quantity } });
       await Product.findByIdAndUpdate(i.product_id._id, { $inc: { stock:    -i.quantity } });
+    }
+
+    // 9. Record coupon usage so admin dashboard shows correct count
+    if (coupon && coupon.code) {
+      const couponDoc = await Coupon.findOne({ code: coupon.code }).lean();
+      if (couponDoc) {
+        await CouponUsage.create({
+          coupon_id       : couponDoc._id,
+          user_id         : userId,
+          order_id        : order._id,
+          discount_applied: discount,
+        });
+      }
     }
 
     // 9. Clear the cart
