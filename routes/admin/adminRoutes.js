@@ -5,6 +5,7 @@ const { getLoginPage, postLogin, logout, getDashboard } = require('../../control
 const { getUsersPage, toggleBlockUser, getActiveUsers } = require('../../controllers/admin/userManagementController');
 const { listOrders, renderOrderDetail, updateOrderStatus, updateItemStatus, getProductBuyers } = require('../../controllers/admin/orderController');
 const { listReturns, approveReturn, rejectReturn } = require('../../controllers/admin/returnController');
+const { listCoupons, createCoupon, renderEditCoupon, updateCoupon, deleteCoupon, toggleCoupon } = require('../../controllers/admin/couponController');
 const { requireAdminAuth, redirectIfAdminLoggedIn } = require('../../middleware/adminAuth');
 
 const categoryRoutes = require('./categoryRoutes');
@@ -46,5 +47,13 @@ router.use('/products', requireAdminAuth, productRoutes);
  
 // Variant Manager
 router.use('/variants', requireAdminAuth, variantRoutes);
+
+// Coupon management
+router.get('/coupons',              requireAdminAuth, listCoupons);
+router.post('/coupons',             requireAdminAuth, createCoupon);
+router.get('/coupons/:id/edit',     requireAdminAuth, renderEditCoupon);
+router.post('/coupons/:id/edit',    requireAdminAuth, updateCoupon);
+router.delete('/coupons/:id',       requireAdminAuth, deleteCoupon);
+router.post('/coupons/:id/toggle',  requireAdminAuth, toggleCoupon);
 
 module.exports = router;
