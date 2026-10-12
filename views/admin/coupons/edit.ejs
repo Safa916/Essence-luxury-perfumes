@@ -11,7 +11,6 @@
       background:#fff; border:1px solid #f0f0f0;
       max-width:620px; padding:2rem;
     }
-    .edit-title { font-size:1.25rem; font-weight:700; margin:0 0 1.75rem; }
     .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
     .form-group { margin-bottom:1.1rem; }
     .form-group label {
@@ -45,6 +44,15 @@
       text-transform:uppercase; cursor:pointer; text-decoration:none; color:#374151;
     }
     .btn-back:hover { border-color:#111; color:#111; }
+
+    /* Inline validation */
+    .field-error {
+      font-size:0.72rem; color:#dc2626; margin-top:0.3rem; display:none;
+    }
+    .input-error {
+      border-color:#dc2626 !important;
+      background:#fff8f8 !important;
+    }
   </style>
 </head>
 <body>
@@ -63,34 +71,45 @@
         <p class="code-display"><%= coupon.code %></p>
         <p class="code-note">Coupon code cannot be changed after creation.</p>
 
-        <form method="POST" action="/admin/coupons/<%= coupon._id %>/edit">
+        <form id="editForm" method="POST" action="/admin/coupons/<%= coupon._id %>/edit" novalidate>
 
           <div class="form-group">
             <label>Description *</label>
-            <input type="text" name="description" required value="<%= coupon.description %>">
+            <input
+              type="text" id="e-desc" name="description"
+              value="<%= coupon.description %>"
+              oninput="clearErr('e-err-desc')"
+            >
+            <span class="field-error" id="e-err-desc">Description is required.</span>
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>Discount Type *</label>
-              <select name="discount_type" required id="editDiscType" onchange="toggleMaxDisc()">
+              <select name="discount_type" id="editDiscType" onchange="toggleMaxDisc()">
                 <option value="percentage" <%= coupon.discount_type === 'percentage' ? 'selected' : '' %>>Percentage (%)</option>
                 <option value="fixed"      <%= coupon.discount_type === 'fixed'      ? 'selected' : '' %>>Fixed Amount (₹)</option>
               </select>
             </div>
             <div class="form-group">
               <label>Discount Value *</label>
-              <input type="number" name="discount_value" required min="0.01" step="0.01" value="<%= coupon.discount_value %>">
+              <input
+                type="number" id="e-disc-val" name="discount_value"
+                min="0.01" step="0.01"
+                value="<%= coupon.discount_value %>"
+                oninput="clearErr('e-err-disc')"
+              >
+              <span class="field-error" id="e-err-disc">Enter a valid value greater than 0.</span>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label>Min Order Value (₹)</label>
+              <label>Min Order Value (₹) <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
               <input type="number" name="min_order_value" min="0" step="0.01" value="<%= coupon.min_order_value || '' %>">
             </div>
             <div class="form-group" id="editMaxDiscGroup" style="<%= coupon.discount_type === 'fixed' ? 'display:none;' : '' %>">
-              <label>Max Discount Cap (₹)</label>
+              <label>Max Discount Cap (₹) <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
               <input type="number" name="max_discount_amount" min="0" step="0.01" value="<%= coupon.max_discount_amount || '' %>">
               <p class="form-hint">Only for percentage discounts.</p>
             </div>
@@ -98,13 +117,18 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label>Valid Until</label>
-              <input type="date" name="valid_until" value="<%= coupon.valid_until || '' %>">
+              <label>Valid Until <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
+              <input
+                type="date" id="e-valid" name="valid_until"
+                value="<%= coupon.valid_until || '' %>"
+                oninput="clearErr('e-err-valid')"
+              >
+              <span class="field-error" id="e-err-valid">Expiry date must be today or in the future.</span>
             </div>
             <div class="form-group">
               <label>Status</label>
               <select name="is_active">
-                <option value="true"  <%= coupon.is_active ? 'selected' : '' %>>Active</option>
+                <option value="true"  <%= coupon.is_active  ? 'selected' : '' %>>Active</option>
                 <option value="false" <%= !coupon.is_active ? 'selected' : '' %>>Inactive</option>
               </select>
             </div>
@@ -112,7 +136,7 @@
 
           <div class="form-actions">
             <a href="/admin/coupons" class="btn-back">Cancel</a>
-            <button type="submit" class="btn-save">Save Changes</button>
+            <button type="button" class="btn-save" onclick="submitEditForm()">Save Changes</button>
           </div>
 
         </form>
@@ -126,6 +150,68 @@
       const type  = document.getElementById('editDiscType').value;
       const group = document.getElementById('editMaxDiscGroup');
       if (group) group.style.display = type === 'fixed' ? 'none' : '';
+    }
+
+    function clearErr(errId) {
+      const err = document.getElementById(errId);
+      if (err) err.style.display = 'none';
+      // Remove red border from the sibling input/select above the error span
+      const prev = err && err.previousElementSibling;
+      if (prev) prev.classList.remove('input-error');
+    }
+
+    function showErr(inputId, errId, msg) {
+      const input = document.getElementById(inputId);
+      const err   = document.getElementById(errId);
+      if (input) input.classList.add('input-error');
+      if (err)   { if (msg) err.textContent = msg; err.style.display = 'block'; }
+    }
+
+    function submitEditForm() {
+      let valid = true;
+
+      // Description — required
+      const desc = document.getElementById('e-desc');
+      if (!desc.value.trim()) {
+        showErr('e-desc', 'e-err-desc', 'Description is required.');
+        valid = false;
+      } else {
+        clearErr('e-err-desc');
+      }
+
+      // Discount value — required, > 0
+      const discInput = document.getElementById('e-disc-val');
+      const dv = parseFloat(discInput.value);
+      if (!discInput.value || isNaN(dv) || dv <= 0) {
+        showErr('e-disc-val', 'e-err-disc', 'Enter a valid discount value greater than 0.');
+        valid = false;
+      } else {
+        const discType = document.getElementById('editDiscType').value;
+        if (discType === 'percentage' && dv > 100) {
+          showErr('e-disc-val', 'e-err-disc', 'Percentage discount cannot exceed 100%.');
+          valid = false;
+        } else {
+          clearErr('e-err-disc');
+        }
+      }
+
+      // Valid Until — if filled, must not be in the past
+      const validUntil = document.getElementById('e-valid');
+      if (validUntil.value) {
+        const chosen = new Date(validUntil.value);
+        const today  = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (chosen < today) {
+          showErr('e-valid', 'e-err-valid', 'Expiry date must be today or in the future.');
+          valid = false;
+        } else {
+          clearErr('e-err-valid');
+        }
+      }
+
+      if (valid) {
+        document.getElementById('editForm').submit();
+      }
     }
   </script>
 </body>
