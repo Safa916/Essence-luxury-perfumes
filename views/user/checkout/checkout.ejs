@@ -112,6 +112,54 @@
           </div>
         </section>
 
+        <!-- 03 Coupon -->
+        <section class="co-section" id="co-coupon-section">
+          <div class="co-heading">
+            <div class="co-heading-left">
+              <span class="step-badge">03</span>
+              <h2 class="co-title">Coupon Code</h2>
+            </div>
+          </div>
+
+          <% if (_coupon && _coupon.code) { %>
+            <!-- Coupon already applied — show applied state -->
+            <div class="coupon-applied" id="couponAppliedState">
+              <svg class="coupon-check-icon" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="9" stroke="#5a7c5a" stroke-width="1.4"/>
+                <path d="M6 10.5l2.5 2.5L14 8" stroke="#5a7c5a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div class="coupon-applied-info">
+                <span class="coupon-applied-code"><%= _coupon.code %></span>
+                <span class="coupon-applied-msg">Coupon applied successfully</span>
+              </div>
+              <button type="button" class="coupon-remove-btn" id="couponRemoveBtn" aria-label="Remove coupon">✕</button>
+            </div>
+            <div class="coupon-input-wrap" id="couponInputState" style="display:none;">
+              <input type="text" id="couponInput" class="coupon-input" placeholder="Enter coupon code" maxlength="30" autocomplete="off" spellcheck="false">
+              <button type="button" class="coupon-apply-btn" id="couponApplyBtn">Apply</button>
+            </div>
+          <% } else { %>
+            <!-- No coupon applied — show input -->
+            <div class="coupon-applied" id="couponAppliedState" style="display:none;">
+              <svg class="coupon-check-icon" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="9" stroke="#5a7c5a" stroke-width="1.4"/>
+                <path d="M6 10.5l2.5 2.5L14 8" stroke="#5a7c5a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div class="coupon-applied-info">
+                <span class="coupon-applied-code" id="couponAppliedCode"></span>
+                <span class="coupon-applied-msg">Coupon applied successfully</span>
+              </div>
+              <button type="button" class="coupon-remove-btn" id="couponRemoveBtn" aria-label="Remove coupon">✕</button>
+            </div>
+            <div class="coupon-input-wrap" id="couponInputState">
+              <input type="text" id="couponInput" class="coupon-input" placeholder="Enter coupon code" maxlength="30" autocomplete="off" spellcheck="false">
+              <button type="button" class="coupon-apply-btn" id="couponApplyBtn">Apply</button>
+            </div>
+          <% } %>
+
+          <p class="coupon-error" id="couponError" style="display:none;"></p>
+        </section>
+
       </div>
 
       <!-- ============ RIGHT COLUMN ============ -->
@@ -119,17 +167,23 @@
         <h2 class="summary-title">Order Summary</h2>
 
         <!-- Items -->
-        <ul class="summary-items">
+        <ul class="summary-items" id="checkoutSummaryItems">
           <% _items.forEach(function (item) { %>
-            <li class="summary-item">
+            <li class="summary-item" data-cart-item-id="<%= item.cart_item_id %>" data-unit-price="<%= item.unit_price %>" data-max-qty="<%= item.stock %>">
               <div class="summary-thumb">
                 <img src="<%= item.image %>" alt="<%= item.name %>">
-                <span class="summary-qty-badge"><%= item.quantity %></span>
               </div>
               <div class="summary-info">
                 <p class="summary-name"><%= item.name %></p>
-                <p class="summary-meta"><%= item.size %> · Qty <%= item.quantity %></p>
-                <p class="summary-price"><%= fmt(item.item_total) %></p>
+                <p class="summary-meta"><%= item.size %></p>
+                <div class="co-qty-control">
+                  <button type="button" class="co-qty-btn co-qty-decrease" <%= item.quantity <= 1 ? 'disabled' : '' %> aria-label="Decrease quantity">−</button>
+                  <span class="co-qty-value"><%= item.quantity %></span>
+                  <button type="button" class="co-qty-btn co-qty-increase" <%= item.quantity >= item.stock ? 'disabled' : '' %> aria-label="Increase quantity">+</button>
+                </div>
+              </div>
+              <div class="summary-item-right">
+                <p class="summary-price co-item-total"><%= fmt(item.item_total) %></p>
               </div>
             </li>
           <% }); %>
@@ -139,33 +193,32 @@
         <dl class="totals">
           <div class="totals-row">
             <dt>Subtotal</dt>
-            <dd><%= fmt(_subtotal) %></dd>
+            <dd id="co-subtotal"><%= fmt(_subtotal) %></dd>
           </div>
-          <% if (_discount > 0) { %>
-          <div class="totals-row is-discount">
-            <dt>Coupon Discount<% if (_coupon) { %> (<%= _coupon.code %>)<% } %></dt>
-            <dd>−<%= fmt(_discount) %></dd>
+          <!-- Discount row — always in DOM so JS can toggle it -->
+          <div class="totals-row is-discount" id="co-discount-row" <% if (_discount <= 0) { %>style="display:none;"<% } %>>
+            <dt id="co-discount-label">Coupon Discount<% if (_coupon && _coupon.code) { %> (<%= _coupon.code %>)<% } %></dt>
+            <dd id="co-discount-val">−<%= fmt(_discount) %></dd>
           </div>
-          <% } %>
           <div class="totals-row">
             <dt>GST (18%)</dt>
-            <dd><%= fmt(_tax) %></dd>
+            <dd id="co-tax"><%= fmt(_tax) %></dd>
           </div>
           <div class="totals-row">
             <dt>Shipping</dt>
-            <dd><% if (_shipping === 0) { %><span class="free-tag">Free</span><% } else { %><%= fmt(_shipping) %><% } %></dd>
+            <dd id="co-shipping"><% if (_shipping === 0) { %><span class="free-tag">Free</span><% } else { %><%= fmt(_shipping) %><% } %></dd>
           </div>
         </dl>
 
         <div class="total-row">
           <span class="total-label">Total Payable</span>
-          <span class="total-amount"><%= fmt(_total) %></span>
+          <span class="total-amount" id="co-total"><%= fmt(_total) %></span>
         </div>
 
         <% if (_shipping === 0) { %>
-          <p class="free-shipping-note">✦ Free shipping applied</p>
+          <p class="free-shipping-note" id="co-ship-note">✦ Free shipping applied</p>
         <% } else { %>
-          <p class="free-shipping-note">Add ₹<%= (2000 - (_subtotal - _discount)).toLocaleString('en-IN') %> more for free shipping</p>
+          <p class="free-shipping-note" id="co-ship-note">Add ₹<%= (2000 - (_subtotal - _discount)).toLocaleString('en-IN') %> more for free shipping</p>
         <% } %>
 
         <p class="secure-note">Cash on Delivery · 100% secure checkout</p>
@@ -186,7 +239,7 @@
   <%- include('../partials/logout-modal') %>
 
   <script>
-    // Highlight selected address card
+    // ── Address card selection ────────────────────────────────────────────────
     document.querySelectorAll('input[name="addressId"]').forEach(function(radio) {
       radio.addEventListener('change', function() {
         document.querySelectorAll('.address-radio-card').forEach(function(card) {
@@ -196,13 +249,115 @@
       });
     });
 
-    // Prevent double-submit
+    // ── Prevent double-submit ─────────────────────────────────────────────────
     document.getElementById('checkoutForm').addEventListener('submit', function() {
       const btn = document.getElementById('placeOrderBtn');
       btn.disabled = true;
       btn.textContent = 'Placing Order...';
     });
+
+    // ── Checkout quantity controls ─────────────────────────────────────────────
+    (function () {
+      const GST_RATE = 0.18;
+      const FREE_SHIPPING_ABOVE = 2000;
+      const SHIPPING_FEE = 99;
+
+      function fmt(n) {
+        return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function recalcSummary() {
+        let subtotal = 0;
+        document.querySelectorAll('#checkoutSummaryItems .summary-item').forEach(function(row) {
+          const qty = parseInt(row.querySelector('.co-qty-value').textContent, 10);
+          const unit = parseFloat(row.dataset.unitPrice);
+          subtotal += qty * unit;
+        });
+
+        const discountEl = document.getElementById('co-discount-row');
+        const discount = discountEl ? parseFloat(discountEl.dataset.discount || 0) : 0;
+        const taxable = Math.max(subtotal - discount, 0);
+        const tax = parseFloat((taxable * GST_RATE).toFixed(2));
+        const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
+        const total = parseFloat((taxable + tax + shipping).toFixed(2));
+
+        const sub = document.getElementById('co-subtotal');   if (sub) sub.textContent = fmt(subtotal);
+        const taxEl = document.getElementById('co-tax');      if (taxEl) taxEl.textContent = fmt(tax);
+        const totalEl = document.getElementById('co-total');  if (totalEl) totalEl.textContent = fmt(total);
+
+        const shipEl = document.getElementById('co-shipping');
+        if (shipEl) shipEl.textContent = shipping === 0 ? '<span class="free-tag">Free</span>' : fmt(shipping);
+
+        const noteEl = document.getElementById('co-ship-note');
+        if (noteEl) {
+          if (shipping === 0) {
+            noteEl.textContent = '\u2746 Free shipping applied';
+          } else {
+            const need = (2000 - taxable).toLocaleString('en-IN');
+            noteEl.textContent = 'Add \u20B9' + need + ' more for free shipping';
+          }
+        }
+      }
+
+      document.getElementById('checkoutSummaryItems').addEventListener('click', async function(e) {
+        const isInc = e.target.classList.contains('co-qty-increase');
+        const isDec = e.target.classList.contains('co-qty-decrease');
+        if (!isInc && !isDec) return;
+        if (e.target.disabled) return;
+
+        const row = e.target.closest('.summary-item');
+        const cartItemId = row.dataset.cartItemId;
+        const action = isInc ? 'increase' : 'decrease';
+        const maxQty = parseInt(row.dataset.maxQty, 10);
+        const unitPrice = parseFloat(row.dataset.unitPrice);
+
+        // Optimistic UI update
+        const qtyEl = row.querySelector('.co-qty-value');
+        const decBtn = row.querySelector('.co-qty-decrease');
+        const incBtn = row.querySelector('.co-qty-increase');
+        const itemTotalEl = row.querySelector('.co-item-total');
+
+        let currentQty = parseInt(qtyEl.textContent, 10);
+        const newQty = isInc ? currentQty + 1 : currentQty - 1;
+        if (newQty < 1 || newQty > maxQty) return;
+
+        qtyEl.textContent = newQty;
+        decBtn.disabled = newQty <= 1;
+        incBtn.disabled = newQty >= maxQty;
+        itemTotalEl.textContent = fmt(newQty * unitPrice);
+        recalcSummary();
+
+        // Sync with server
+        try {
+          const res = await fetch('/cart/update', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cart_item_id: cartItemId, action }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            // Rollback optimistic update
+            qtyEl.textContent = currentQty;
+            decBtn.disabled = currentQty <= 1;
+            incBtn.disabled = currentQty >= maxQty;
+            itemTotalEl.textContent = fmt(currentQty * unitPrice);
+            recalcSummary();
+            essToast(data.message || 'Could not update quantity.', 'error');
+          }
+        } catch (err) {
+          console.error('Checkout qty update failed:', err);
+          // Rollback
+          qtyEl.textContent = currentQty;
+          decBtn.disabled = currentQty <= 1;
+          incBtn.disabled = currentQty >= maxQty;
+          itemTotalEl.textContent = fmt(currentQty * unitPrice);
+          recalcSummary();
+        }
+      });
+    })();
   </script>
+
+  <script src="/user/js/checkout/coupon.js"></script>
 
 </body>
 </html>
