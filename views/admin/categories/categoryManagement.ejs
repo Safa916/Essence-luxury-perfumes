@@ -123,6 +123,7 @@
                                             data-id="<%= cat._id %>"
                                             data-name="<%= cat.name %>"
                                             data-active="<%= cat.is_active %>"
+                                            data-banner="<%= cat.banner_url || '' %>"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
@@ -207,7 +208,7 @@
             <% if (typeof formError !== 'undefined' && formError && openModal === 'add') { %>
                 <p class="form-error"><%= formError %></p>
             <% } %>
-            <form action="/admin/categories/add" method="POST">
+            <form action="/admin/categories/add" method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>Category Name</label>
                     <input
@@ -217,6 +218,12 @@
                         value="<%= (typeof openModal !== 'undefined' && openModal === 'add' && typeof enteredName !== 'undefined') ? enteredName : '' %>"
                         required
                     />
+                </div>
+                <div class="form-group">
+                    <label>Banner Image (Optional)</label>
+                    <input type="file" name="banner" id="addBannerInput" accept="image/png, image/jpeg, image/webp, image/gif, image/svg+xml" />
+                    <span class="form-hint">Used for homepage split banner (For Her / For Him)</span>
+                    <span class="file-type-error" id="addBannerError" style="display:none; color:#FF453A; font-size:12px; margin-top:4px; font-weight:500;">⚠ Only image files are allowed (PNG, JPG, WEBP, GIF, SVG).</span>
                 </div>
                 <div class="form-row-toggle">
                     <div>
@@ -246,11 +253,23 @@
             <% if (typeof formError !== 'undefined' && formError && openModal === 'edit') { %>
                 <p class="form-error"><%= formError %></p>
             <% } %>
-            <form action="/admin/categories/0/edit" method="POST" id="editCategoryForm">
+            <form action="/admin/categories/0/edit" method="POST" id="editCategoryForm" enctype="multipart/form-data">
                 <input type="hidden" name="_method" value="PUT">
                 <div class="form-group">
                     <label>Category Name</label>
                     <input type="text" name="name" id="editCategoryName" required />
+                </div>
+                <div class="form-group">
+                    <label>Banner Image (Optional)</label>
+                    <div id="editBannerPreviewWrapper" style="display:none; margin-bottom: 8px;">
+                        <div class="banner-preview-wrapper">
+                            <img src="" id="editBannerPreviewImg" class="banner-preview-img" alt="Current banner">
+                            <span class="banner-preview-info">Current Banner (uploading new replaces it)</span>
+                        </div>
+                    </div>
+                    <input type="file" name="banner" id="editBannerInput" accept="image/png, image/jpeg, image/webp, image/gif, image/svg+xml" />
+                    <span class="form-hint">Leave blank to keep existing image</span>
+                    <span class="file-type-error" id="editBannerError" style="display:none; color:#FF453A; font-size:12px; margin-top:4px; font-weight:500;">⚠ Only image files are allowed (PNG, JPG, WEBP, GIF, SVG).</span>
                 </div>
                 <div class="form-row-toggle">
                     <div>
@@ -318,6 +337,49 @@
     </div>
 
     <script>
+        // ── Image-only file validation ──────────────────────────────────────
+        const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+
+        function validateImageInput(inputEl, errorEl, formEl) {
+            inputEl.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) {
+                    errorEl.style.display = 'none';
+                    return;
+                }
+                if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                    errorEl.style.display = 'block';
+                    this.value = '';   // clear the invalid selection
+                } else {
+                    errorEl.style.display = 'none';
+                }
+            });
+
+            // Also block form submit if somehow an invalid file slips through
+            if (formEl) {
+                formEl.addEventListener('submit', function (e) {
+                    const file = inputEl.files[0];
+                    if (file && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                        e.preventDefault();
+                        errorEl.style.display = 'block';
+                        inputEl.focus();
+                    }
+                });
+            }
+        }
+
+        validateImageInput(
+            document.getElementById('addBannerInput'),
+            document.getElementById('addBannerError'),
+            document.querySelector('form[action="/admin/categories/add"]')
+        );
+
+        validateImageInput(
+            document.getElementById('editBannerInput'),
+            document.getElementById('editBannerError'),
+            document.getElementById('editCategoryForm')
+        );
+        // ────────────────────────────────────────────────────────────────────
         function openModal(id) { document.getElementById(id).classList.add('open'); }
         function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -342,6 +404,18 @@
                 document.getElementById('editCategoryForm').action = `/admin/categories/${id}/edit`;
                 document.getElementById('editCategoryName').value = btn.dataset.name;
                 document.getElementById('editCategoryActive').checked = btn.dataset.active === 'true';
+
+                const banner = btn.dataset.banner;
+                const previewWrapper = document.getElementById('editBannerPreviewWrapper');
+                const previewImg = document.getElementById('editBannerPreviewImg');
+                if (banner) {
+                    previewImg.src = banner;
+                    previewWrapper.style.display = 'block';
+                } else {
+                    previewWrapper.style.display = 'none';
+                    previewImg.src = '';
+                }
+
                 openModal('editModalOverlay');
             });
         });
