@@ -5,7 +5,7 @@ const Product = require('../../models/product');
 const Variant = require('../../models/variant');
 const WishlistItem = require('../../models/wishlistItems');
 
-const MAX_QTY_PER_ITEM = 5;
+const MAX_QTY_PER_ITEM = 10;
 
 function toNumber(decimal128) {
   if (decimal128 === null || decimal128 === undefined) return 0;
@@ -53,8 +53,17 @@ exports.addToCart = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid product or variant.' });
     }
 
-    const product = await Product.findById(product_id).lean();
+    const product = await Product.findById(product_id)
+      .populate('brand_id', 'is_active')
+      .populate('category_id', 'is_active')
+      .lean();
     if (!product || !product.is_active || product.is_deleted) {
+      return res.status(400).json({ success: false, message: 'This product is no longer available.' });
+    }
+    if (product.category_id && product.category_id.is_active === false) {
+      return res.status(400).json({ success: false, message: 'This product is no longer available.' });
+    }
+    if (product.brand_id && product.brand_id.is_active === false) {
       return res.status(400).json({ success: false, message: 'This product is no longer available.' });
     }
 
@@ -74,7 +83,16 @@ exports.addToCart = async (req, res) => {
     }
 
     const cart = await getOrCreateCart(userId);
-    const unitPrice = toNumber(variant.price);
+    const offerService = require('../../services/offerService');
+    const activeOffers = await offerService.getActiveOffers();
+    const basePrice = toNumber(variant.price);
+    const offerCalc = offerService.calculateProductDiscount({
+      productId: product._id,
+      categoryId: product.category_id,
+      price: basePrice,
+      activeOffers,
+    });
+    const unitPrice = offerCalc.finalPrice;
 
     if (buyNow) {
       await CartItem.deleteMany({ cart_id: cart._id });
@@ -149,15 +167,25 @@ exports.renderCart = async (req, res) => {
         currentPage: 1,
         totalPages: 1,
         totalItems: 0,
+        cartCount: 0,
       });
     }
 
     const cartItemsRaw = await CartItem.find({ cart_id: cart._id })
-      .populate('product_id')
+      .populate({
+        path: 'product_id',
+        populate: [
+          { path: 'brand_id', select: 'is_active' },
+          { path: 'category_id', select: 'is_active' },
+        ],
+      })
       .populate('variant_id')
       .lean();
 
     let hasUnavailable = false;
+
+    const offerService = require('../../services/offerService');
+    const activeOffers = await offerService.getActiveOffers();
 
     // Build the full items list (all pages) so subtotal is always accurate
     const allItems = cartItemsRaw
@@ -166,12 +194,25 @@ exports.renderCart = async (req, res) => {
         const product = item.product_id;
         const variant = item.variant_id;
 
-        const productOk = product.is_active && !product.is_deleted;
+        const brandOk = !product.brand_id || product.brand_id.is_active !== false;
+        const catOk = !product.category_id || product.category_id.is_active !== false;
+        const productOk = product.is_active && !product.is_deleted && brandOk && catOk;
         const variantOk = variant && variant.is_active && !variant.deleted_at;
         const inStock = variantOk && variant.quantity > 0;
         const available = productOk && variantOk && inStock;
 
         if (!available) hasUnavailable = true;
+
+        const basePrice = variant ? toNumber(variant.price) : toNumber(item.unit_price);
+        const offerCalc = offerService.calculateProductDiscount({
+          productId: product._id,
+          categoryId: product.category_id,
+          price: basePrice,
+          activeOffers,
+        });
+
+        const effectiveUnitPrice = offerCalc.finalPrice;
+        const effectiveTotalPrice = effectiveUnitPrice * item.quantity;
 
         return {
           cart_item_id: item._id,
@@ -182,8 +223,12 @@ exports.renderCart = async (req, res) => {
           variant_id: variant ? variant._id : null,
           size_ml: variant ? variant.size_ml : null,
           quantity: item.quantity,
-          unit_price: toNumber(item.unit_price),
-          total_price: toNumber(item.total_price),
+          unit_price: effectiveUnitPrice,
+          total_price: effectiveTotalPrice,
+          original_price: basePrice,
+          hasOffer: offerCalc.discount > 0,
+          offerDiscount: offerCalc.discount,
+          offerPercentage: offerCalc.discountPercentage,
           max_qty: variant ? Math.min(MAX_QTY_PER_ITEM, variant.quantity) : 0,
           available,
           unavailableReason: !productOk
@@ -214,6 +259,7 @@ exports.renderCart = async (req, res) => {
       currentPage,
       totalPages,
       totalItems,
+      cartCount: totalItems,
     });
   } catch (err) {
     console.error('renderCart error:', err);
@@ -231,6 +277,13 @@ exports.updateQuantity = async (req, res) => {
 
     const variant = item.variant_id;
     const maxQty = variant ? Math.min(MAX_QTY_PER_ITEM, variant.quantity) : MAX_QTY_PER_ITEM;
+
+    if (action === 'increase' && item.quantity >= maxQty) {
+      const msg = item.quantity >= MAX_QTY_PER_ITEM 
+        ? `You can only purchase a maximum of ${MAX_QTY_PER_ITEM} units of this item.`
+        : 'Maximum available stock reached for this item.';
+      return res.status(400).json({ success: false, message: msg, maxReached: true });
+    }
 
     let newQty = item.quantity;
     if (action === 'increase') newQty = Math.min(item.quantity + 1, maxQty);

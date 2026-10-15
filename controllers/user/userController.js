@@ -7,6 +7,7 @@ const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const { generateOTPCode } = require('../../utils/otp');
 const { isValidName, isValidPassword, suggestEmailCorrection } = require('../../utils/validators');
+const referralService = require('../../services/referralService');
 
 
 
@@ -54,6 +55,21 @@ exports.registerUser = async (req, res) => {
       password_hash: password,
         has_password: true, 
     });
+
+    // Generate a referral code for this new user right away
+    await referralService.getOrCreateCode(newUser._id);
+
+    // If the signup came through a referral link, record the pending referral
+    const refCode = (req.body.ref || req.query.ref || '').toString().trim();
+    if (refCode) {
+      const referrer = await referralService.findReferrerByCode(refCode);
+      if (referrer) {
+        await referralService.recordPendingReferral({
+          referrerId: referrer._id,
+          refereeId:  newUser._id,
+        });
+      }
+    }
 
     const otpCode = generateOTPCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
@@ -117,6 +133,14 @@ exports.verifyOTP = async (req, res) => {
 
     otpRecord.is_used = true;
     await otpRecord.save();
+
+    // Reward any pending referral now that email is verified
+    const verifiedUser = await User.findOne({ email: normalizedEmail }).select('_id').lean();
+    if (verifiedUser) {
+      await referralService.rewardReferral(verifiedUser._id).catch(err =>
+        console.error('rewardReferral error (non-fatal):', err.message)
+      );
+    }
 
     res.status(200).json({ message: 'Email verified successfully' });
   } catch (error) {
@@ -403,6 +427,22 @@ if (!user) {
     is_verified: true,
     has_password: false,          // ← explicit, this account has no real password
   });
+
+  // Generate a referral code for the new Google user
+  await referralService.getOrCreateCode(user._id);
+
+  // Handle referral if signup came via a referral link (stored in session/cookie by the signup page)
+  const refCode = (req.body.ref || req.query.ref || '').toString().trim();
+  if (refCode) {
+    const referrer = await referralService.findReferrerByCode(refCode);
+    if (referrer) {
+      await referralService.recordPendingReferral({ referrerId: referrer._id, refereeId: user._id });
+      // Google users are immediately verified — reward right away
+      await referralService.rewardReferral(user._id).catch(err =>
+        console.error('Google referral reward error (non-fatal):', err.message)
+      );
+    }
+  }
 } else if (!user.google_id) {
   // Just link the Google account — never touch password_hash, has_password, or auth_provider
   user.google_id = googleId;

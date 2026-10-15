@@ -42,7 +42,7 @@ const walletTransactionSchema = new mongoose.Schema(
     },
     related_order_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Order',
+      ref: 'order',
       default: null,
     },
     related_payment_id: {

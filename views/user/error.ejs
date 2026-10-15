@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Something went wrong — Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <style>
+    .error-page {
+      min-height: calc(100vh - 70px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+    }
+
+    .error-box {
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .error-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.75rem;
+      color: var(--gold);
+      opacity: 0.8;
+    }
+
+    .error-code {
+      font-family: var(--font-display);
+      font-size: 5rem;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--ink);
+      margin: 0 0 0.5rem;
+      letter-spacing: 0.04em;
+    }
+
+    .error-title {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 500;
+      margin: 0 0 1rem;
+      color: var(--ink);
+    }
+
+    .error-message {
+      font-size: 0.92rem;
+      color: var(--ink-soft);
+      line-height: 1.7;
+      margin: 0 0 2.5rem;
+      padding: 1rem 1.5rem;
+      background: var(--panel);
+      border-left: 3px solid var(--gold);
+    }
+
+    .error-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .error-divider {
+      border: none;
+      border-top: 1px solid var(--line);
+      margin: 2.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <%- include('./partials/header', { activePage: '', user: typeof user !== 'undefined' ? user : null, cartCount: typeof cartCount !== 'undefined' ? cartCount : 0 }) %>
+
+  <div class="error-page">
+    <div class="error-box">
+
+      <!-- Icon -->
+      <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <circle cx="12" cy="16" r="0.5" fill="currentColor"/>
+      </svg>
+
+      <p class="error-code"><%= typeof statusCode !== 'undefined' ? statusCode : '' %></p>
+      <h1 class="error-title">Something went wrong</h1>
+
+      <% if (typeof message !== 'undefined' && message) { %>
+        <p class="error-message"><%= message %></p>
+      <% } else { %>
+        <p class="error-message">An unexpected error occurred. Please try again or return to the homepage.</p>
+      <% } %>
+
+      <hr class="error-divider">
+
+      <div class="error-actions">
+        <a href="javascript:history.back()" class="btn btn-dark">← Go Back</a>
+        <a href="/" class="btn">Return to Home</a>
+        <a href="/cart" class="btn">View Cart</a>
+      </div>
+
+    </div>
+  </div>
+
+  <%- include('./partials/logout-modal') %>
+
+</body>
+</html>

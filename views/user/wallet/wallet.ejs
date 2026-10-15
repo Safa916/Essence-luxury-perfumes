@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Wallet — Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/profile/user-profile.css">
+  <link rel="stylesheet" href="/user/wallet/wallet.css">
+</head>
+<body>
+
+  <%- include('../partials/header', { activePage: 'wallet', user: user }) %>
+
+  <div class="account-layout">
+
+    <%- include('../partials/account-sidebar', { activePage: 'wallet' }) %>
+
+    <!-- ===== Main ===== -->
+    <main class="account-main">
+      <div class="wallet-container">
+
+        <!-- Header -->
+        <div class="wallet-header">
+          <h1 class="wallet-title">My Wallet</h1>
+          <p class="wallet-subtitle">Manage your balance and track your transactions</p>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="wallet-grid">
+
+          <!-- Left Column -->
+          <div class="wallet-left-col">
+
+            <!-- Available Balance Card -->
+            <div class="wallet-balance-card">
+              <p class="card-label">Available Balance</p>
+              <h2 class="card-balance" id="walletBalanceDisplay">
+                ₹<%= Number(balance).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+              </h2>
+              <button type="button" class="btn-add-money" id="openAddMoneyBtn">
+                <span>Add Money</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Wallet Terms Card -->
+            <div class="wallet-terms-card">
+              <h3 class="terms-title">Wallet Terms</h3>
+              <ul class="terms-list">
+                <li class="terms-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                  <span>Wallet can be used for purchases and refunds.</span>
+                </li>
+                <li class="terms-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                  </svg>
+                  <span>Non-transferable to other users or bank accounts.</span>
+                </li>
+                <li class="terms-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span>No expiry on your credits.</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Transactions Card -->
+          <div class="wallet-tx-card">
+            <div class="tx-header">
+              <h2 class="tx-header-title">Transaction History</h2>
+              <span class="tx-header-filter">All Activity</span>
+            </div>
+
+            <% if (!transactions.length) { %>
+              <div style="padding: 3.5rem 0; text-align: center; color: #888; font-size: 0.9rem;">
+                No transactions found yet.
+              </div>
+            <% } else { %>
+              <table class="tx-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Method</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% transactions.forEach(function(tx) { %>
+                    <tr>
+                      <td class="tx-date"><%= tx.date %></td>
+                      <td>
+                        <% if (tx.category === 'top_up') { %>
+                          <span class="badge-tag badge-topup">Added Money</span>
+                        <% } else if (tx.category === 'refund') { %>
+                          <span class="badge-tag badge-refund">Refund</span>
+                        <% } else { %>
+                          <span class="badge-tag badge-purchase">Purchase</span>
+                        <% } %>
+                        <div class="tx-method"><%= tx.methodDisplay %></div>
+                      </td>
+                      <td class="tx-desc"><%= tx.description %></td>
+                      <td class="tx-amount <%= tx.type === 'credit' ? 'is-credit' : 'is-debit' %>">
+                        <%= tx.type === 'credit' ? '+' : '−' %>₹<%= Number(tx.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+
+              <!-- Pagination -->
+              <% if (totalPages > 1) { %>
+                <div class="tx-pagination">
+                  <% if (currentPage > 1) { %>
+                    <a href="/wallet?page=<%= currentPage - 1 %>" class="page-btn">«</a>
+                  <% } %>
+                  <% for (let p = 1; p <= totalPages; p++) { %>
+                    <a href="/wallet?page=<%= p %>" class="page-btn <%= p === currentPage ? 'is-active' : '' %>">
+                      <%= String(p).padStart(2, '0') %>
+                    </a>
+                  <% } %>
+                  <% if (currentPage < totalPages) { %>
+                    <a href="/wallet?page=<%= currentPage + 1 %>" class="page-btn">»</a>
+                  <% } %>
+                </div>
+              <% } %>
+            <% } %>
+
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= ADD MONEY MODAL ================= -->
+  <div class="wallet-modal-overlay" id="addMoneyModal">
+    <div class="wallet-modal">
+      <button type="button" class="modal-close-btn" id="closeAddMoneyBtn">&times;</button>
+
+      <!-- Step 1: Input Form -->
+      <div id="modalStepInput">
+        <h2 class="modal-title">Add Money to Wallet</h2>
+        <p class="modal-subtitle">Top up your account for faster checkouts.</p>
+
+        <label class="amount-input-label">Enter Amount</label>
+        <div class="amount-input-wrap">
+          <span class="currency-sym">₹</span>
+          <input type="number" id="topupAmountInput" value="2000" min="1" step="1">
+        </div>
+
+        <div class="preset-chips">
+          <button type="button" class="chip-btn" data-val="500">₹500</button>
+          <button type="button" class="chip-btn" data-val="1000">₹1000</button>
+          <button type="button" class="chip-btn is-active" data-val="2000">₹2000</button>
+          <button type="button" class="chip-btn" data-val="5000">₹5000</button>
+        </div>
+
+        <label class="amount-input-label">Payment Method</label>
+        <div class="gateway-choice">
+          <div class="gateway-info">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span>Razorpay</span>
+          </div>
+          <input type="radio" checked disabled>
+        </div>
+
+        <button type="button" class="btn-proceed-pay" id="btnProceedTopup">
+          Proceed to Pay →
+        </button>
+
+        <p class="modal-security-note">
+          🔒 Secure transaction powered by Razorpay
+        </p>
+      </div>
+
+      <!-- Step 2: Success State -->
+      <div id="modalStepSuccess" style="display:none; text-align:center;">
+        <div class="status-icon-box success">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2 class="modal-title">Payment Successful</h2>
+        <p class="modal-subtitle" id="successMsgText">
+          Amount has been successfully added to your wallet.
+        </p>
+
+        <div class="status-card-details">
+          <div class="status-detail-row">
+            <span class="status-detail-label">Transaction ID</span>
+            <span class="status-detail-val" id="successTxId">#TXN-</span>
+          </div>
+          <div class="status-detail-row">
+            <span class="status-detail-label">New Wallet Balance</span>
+            <span class="status-detail-val" id="successNewBal">₹0.00</span>
+          </div>
+        </div>
+
+        <button type="button" class="btn-proceed-pay" id="btnDoneReload">
+          Back to Wallet
+        </button>
+      </div>
+
+      <!-- Step 3: Failed State -->
+      <div id="modalStepFailed" style="display:none; text-align:center;">
+        <div class="status-icon-box error">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h2 class="modal-title">Payment Failed</h2>
+        <p class="modal-subtitle" id="failedMsgText">
+          Something went wrong with your transaction. Please try again.
+        </p>
+
+        <div class="status-card-details">
+          <div class="status-detail-row">
+            <span class="status-detail-label">Status</span>
+            <span class="status-detail-val" style="color:#dc2626;">Payment Cancelled / Incomplete</span>
+          </div>
+        </div>
+
+        <button type="button" class="btn-proceed-pay" id="btnRetryTopup" style="margin-bottom:0.75rem;">
+          Retry Payment
+        </button>
+        <button type="button" class="btn-proceed-pay" id="btnFailedClose" style="background:#fff; color:#333; border:1px solid #ddd;">
+          Back to Wallet
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <%- include('../partials/logout-modal') %>
+
+  <!-- Razorpay SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <script>
+    (function() {
+      const modal = document.getElementById('addMoneyModal');
+      const openBtn = document.getElementById('openAddMoneyBtn');
+      const closeBtn = document.getElementById('closeAddMoneyBtn');
+      const input = document.getElementById('topupAmountInput');
+      const chips = document.querySelectorAll('.chip-btn');
+      const proceedBtn = document.getElementById('btnProceedTopup');
+
+      const stepInput = document.getElementById('modalStepInput');
+      const stepSuccess = document.getElementById('modalStepSuccess');
+      const stepFailed = document.getElementById('modalStepFailed');
+
+      function showStep(step) {
+        stepInput.style.display   = step === 'input' ? 'block' : 'none';
+        stepSuccess.style.display = step === 'success' ? 'block' : 'none';
+        stepFailed.style.display  = step === 'failed' ? 'block' : 'none';
+      }
+
+      openBtn.addEventListener('click', () => {
+        showStep('input');
+        modal.classList.add('is-open');
+      });
+
+      function closeModal() {
+        modal.classList.remove('is-open');
+      }
+
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      document.getElementById('btnDoneReload').addEventListener('click', () => window.location.reload());
+      document.getElementById('btnFailedClose').addEventListener('click', closeModal);
+      document.getElementById('btnRetryTopup').addEventListener('click', () => showStep('input'));
+
+      // Chips toggle
+      chips.forEach(btn => {
+        btn.addEventListener('click', function() {
+          chips.forEach(c => c.classList.remove('is-active'));
+          this.classList.add('is-active');
+          input.value = this.dataset.val;
+        });
+      });
+
+      input.addEventListener('input', function() {
+        chips.forEach(c => {
+          if (c.dataset.val === input.value) {
+            c.classList.add('is-active');
+          } else {
+            c.classList.remove('is-active');
+          }
+        });
+      });
+
+      // Proceed to Razorpay
+      proceedBtn.addEventListener('click', async function() {
+        const amount = parseFloat(input.value);
+        if (!amount || amount < 1) {
+          alert('Please enter a valid amount.');
+          return;
+        }
+
+        proceedBtn.disabled = true;
+        proceedBtn.textContent = 'Initiating...';
+
+        try {
+          const res = await fetch('/wallet/topup/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount }),
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            alert(data.message || 'Could not initiate top-up.');
+            proceedBtn.disabled = false;
+            proceedBtn.textContent = 'Proceed to Pay →';
+            return;
+          }
+
+          const options = {
+            key: data.keyId,
+            amount: data.amount,
+            currency: data.currency,
+            name: 'Essence Luxury Perfumes',
+            description: 'Wallet Top-up',
+            order_id: data.orderId,
+            prefill: {
+              name: data.user.name,
+              email: data.user.email,
+              contact: data.user.phone,
+            },
+            theme: { color: '#111111' },
+            handler: async function(response) {
+              proceedBtn.textContent = 'Crediting Wallet...';
+              try {
+                const verifyRes = await fetch('/wallet/topup/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    amount,
+                  }),
+                });
+
+                const verifyData = await verifyRes.json();
+                if (verifyData.success) {
+                  document.getElementById('successMsgText').textContent =
+                    `₹${amount.toLocaleString('en-IN')} has been successfully added to your wallet.`;
+                  document.getElementById('successTxId').textContent = verifyData.transactionId || 'Completed';
+                  document.getElementById('successNewBal').textContent =
+                    '₹' + Number(verifyData.newBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                  showStep('success');
+                } else {
+                  document.getElementById('failedMsgText').textContent = verifyData.message || 'Verification failed.';
+                  showStep('failed');
+                }
+              } catch (verifyErr) {
+                console.error(verifyErr);
+                showStep('failed');
+              }
+            },
+            modal: {
+              ondismiss: function() {
+                proceedBtn.disabled = false;
+                proceedBtn.textContent = 'Proceed to Pay →';
+              }
+            }
+          };
+
+          const rzp = new Razorpay(options);
+          rzp.on('payment.failed', function(resp) {
+            document.getElementById('failedMsgText').textContent = resp.error?.description || 'Payment failed.';
+            showStep('failed');
+          });
+          rzp.open();
+        } catch (err) {
+          console.error(err);
+          alert('Failed to connect to gateway.');
+          proceedBtn.disabled = false;
+          proceedBtn.textContent = 'Proceed to Pay →';
+        }
+      });
+
+    })();
+  </script>
+
+</body>
+</html>

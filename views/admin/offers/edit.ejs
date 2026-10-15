@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Offer — Essence Admin</title>
+  <link rel="stylesheet" href="/admin/dashboard.css">
+  <link rel="stylesheet" href="/admin/partials/sidebar.css">
+  <style>
+    .edit-page-wrap { padding:2.5rem; display:flex; justify-content:center; }
+    .edit-card {
+      background:#fff; border:1px solid #f0f0f0; border-radius:4px;
+      width:100%; max-width:580px; padding:2.5rem;
+      box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    }
+    .edit-title { font-size:1.6rem; font-weight:700; text-transform:uppercase; margin:0 0 0.25rem; text-align:center; }
+    .edit-sub   { font-size:0.8rem; color:#6b7280; text-align:center; margin:0 0 2rem; }
+
+    .form-group { margin-bottom:1.1rem; }
+    .form-group label {
+      display:block; font-size:0.7rem; font-weight:700;
+      letter-spacing:0.06em; text-transform:uppercase; color:#374151; margin-bottom:0.4rem;
+    }
+    .form-group input:not([type="radio"]):not([type="checkbox"]),
+    .form-group select {
+      width:100%; padding:0.65rem 0.75rem; border:1px solid #e5e7eb;
+      font-size:0.875rem; color:#111; outline:none; background:#f9fafb;
+      box-sizing:border-box; transition:border-color .15s;
+    }
+    .form-group input:not([type="radio"]):not([type="checkbox"]):focus,
+    .form-group select:focus { border-color:#111; background:#fff; }
+
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+    .radio-group { display:flex; gap:1.2rem; align-items:center; margin-top:0.4rem; }
+    .radio-label {
+      display:inline-flex; align-items:center; gap:0.45rem;
+      font-size:0.8rem; color:#374151; cursor:pointer; font-weight:600;
+      letter-spacing:0.04em; text-transform:uppercase; white-space:nowrap;
+    }
+    .radio-label input[type="radio"] {
+      width:16px !important; height:16px !important; margin:0 !important;
+      cursor:pointer; accent-color:#111;
+    }
+
+    .active-toggle-wrap {
+      display:flex; align-items:center; justify-content:space-between;
+      background:#f9fafb; padding:0.85rem 1rem; margin-top:0.5rem; margin-bottom:1.2rem;
+    }
+    .toggle-info h4 { margin:0; font-size:0.82rem; font-weight:600; color:#111; }
+    .toggle-info p  { margin:2px 0 0; font-size:0.7rem; color:#6b7280; }
+
+    .switch {
+      position:relative; display:inline-block; width:34px; height:18px;
+    }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider {
+      position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+      background-color:#d1d5db; transition:.2s; border-radius:18px;
+    }
+    .slider:before {
+      position:absolute; content:""; height:14px; width:14px; left:2px; bottom:2px;
+      background-color:white; transition:.2s; border-radius:50%;
+    }
+    input:checked + .slider { background-color:#111; }
+    input:checked + .slider:before { transform:translateX(16px); }
+
+    .form-actions { display:flex; flex-direction:column; gap:0.6rem; margin-top:1.5rem; }
+    .btn-submit {
+      width:100%; padding:0.8rem; background:#111; color:#fff;
+      border:none; font-weight:700; font-size:0.8rem; letter-spacing:0.08em;
+      text-transform:uppercase; cursor:pointer; transition:background .15s;
+    }
+    .btn-submit:hover { background:#333; }
+    .btn-cancel {
+      width:100%; padding:0.75rem; background:#e5e7eb; color:#374151;
+      border:none; font-weight:600; font-size:0.8rem; letter-spacing:0.06em;
+      text-transform:uppercase; cursor:pointer; text-align:center; text-decoration:none;
+      display:block; box-sizing:border-box;
+    }
+    .btn-cancel:hover { background:#d1d5db; }
+
+    .field-error { font-size:0.72rem; color:#dc2626; margin-top:0.3rem; display:none; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar', { activePage: 'offers' }) %>
+
+  <main class="main-content">
+    <div class="edit-page-wrap">
+      <div class="edit-card">
+        <h2 class="edit-title">Edit Offer</h2>
+        <p class="edit-sub">Update promotional campaign details</p>
+
+        <form method="POST" action="/admin/offers/<%= offer._id %>/edit" id="editOfferForm">
+          <div class="form-group">
+            <label>Offer Name *</label>
+            <input type="text" name="name" id="offerName" value="<%= offer.name %>" required maxlength="100">
+            <div class="field-error" id="nameError"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Discount Type</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="discount_type" value="percentage" <%= offer.discount_type === 'percentage' ? 'checked' : '' %>> Percentage
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="discount_type" value="fixed" <%= offer.discount_type === 'fixed' ? 'checked' : '' %>> Flat Amount
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Apply To</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="apply_to" value="product" <%= offer.apply_to === 'product' ? 'checked' : '' %>> Product
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="apply_to" value="category" <%= offer.apply_to === 'category' ? 'checked' : '' %>> Category
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label id="targetSelectLabel">Select <%= offer.apply_to === 'product' ? 'Product' : 'Category' %> *</label>
+            <select name="target_id" id="targetSelect" required>
+              <option value="" disabled>Select an option</option>
+              <% allProducts.forEach(function(p) { %>
+                <option value="<%= p._id %>" data-type="product" <%= (offer.apply_to === 'product' && offer.target_id === p._id.toString()) ? 'selected' : '' %> style="<%= offer.apply_to === 'product' ? '' : 'display:none;' %>">
+                  <%= p.name %>
+                </option>
+              <% }); %>
+              <% allCategories.forEach(function(c) { %>
+                <option value="<%= c._id %>" data-type="category" <%= (offer.apply_to === 'category' && offer.target_id === c._id.toString()) ? 'selected' : '' %> style="<%= offer.apply_to === 'category' ? '' : 'display:none;' %>">
+                  <%= c.name %>
+                </option>
+              <% }); %>
+            </select>
+            <div class="field-error" id="targetError"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label id="discountValLabel">Discount Value (<%= offer.discount_type === 'percentage' ? '%' : '₹' %>) *</label>
+              <input type="number" name="discount_value" id="discountValue" step="0.01" min="1" <%= offer.discount_type === 'percentage' ? 'max="90"' : '' %> value="<%= offer.discount_value %>" required>
+              <div class="field-error" id="discountError"></div>
+            </div>
+            <div class="form-group">
+              <label>Minimum Purchase (₹)</label>
+              <input type="number" name="minimum_purchase_amount" step="0.01" min="0" value="<%= offer.minimum_purchase_amount || '' %>" placeholder="0.00">
+            </div>
+          </div>
+
+          <div class="form-group" id="maxDiscountGroup" style="<%= offer.discount_type === 'percentage' ? '' : 'display:none;' %>">
+            <label>Maximum Discount (₹)</label>
+            <input type="number" name="maximum_discount_amount" step="0.01" min="0" value="<%= offer.maximum_discount_amount || '' %>" placeholder="0.00">
+            <small style="font-size:0.7rem; color:#6b7280;">*Set max discount amount for percentage offers</small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Start Date</label>
+              <input type="date" name="start_date" id="startDate" value="<%= offer.start_date_str %>">
+            </div>
+            <div class="form-group">
+              <label>End Date</label>
+              <input type="date" name="end_date" id="endDate" value="<%= offer.end_date_str %>">
+              <div class="field-error" id="dateError"></div>
+            </div>
+          </div>
+
+          <div class="active-toggle-wrap">
+            <div class="toggle-info">
+              <h4>Active</h4>
+              <p>Enable this offer immediately</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" name="status" value="active" <%= offer.status === 'active' ? 'checked' : '' %>>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-submit">Save Changes</button>
+            <a href="/admin/offers" class="btn-cancel">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const applyToRadios = document.querySelectorAll('input[name="apply_to"]');
+    const targetSelect = document.getElementById('targetSelect');
+    const targetLabel  = document.getElementById('targetSelectLabel');
+
+    applyToRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        const val = radio.value;
+        targetLabel.textContent = val === 'product' ? 'Select Product *' : 'Select Category *';
+        targetSelect.value = '';
+        Array.from(targetSelect.options).forEach(opt => {
+          if (!opt.value) return;
+          opt.style.display = opt.dataset.type === val ? '' : 'none';
+        });
+      });
+    });
+
+    const discRadios = document.querySelectorAll('input[name="discount_type"]');
+    const discLabel  = document.getElementById('discountValLabel');
+    const discInput  = document.getElementById('discountValue');
+    const maxDiscGroup = document.getElementById('maxDiscountGroup');
+
+    discRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.value === 'percentage') {
+          discLabel.textContent = 'Discount Value (%) *';
+          discInput.max = '90';
+          maxDiscGroup.style.display = '';
+        } else {
+          discLabel.textContent = 'Discount Value (₹) *';
+          discInput.removeAttribute('max');
+          maxDiscGroup.style.display = 'none';
+        }
+      });
+    });
+
+    document.getElementById('editOfferForm').addEventListener('submit', function(e) {
+      let hasErr = false;
+      const name = document.getElementById('offerName').value.trim();
+      const nameErr = document.getElementById('nameError');
+      if (!name) {
+        nameErr.textContent = 'Offer name cannot be blank';
+        nameErr.style.display = 'block';
+        hasErr = true;
+      } else {
+        nameErr.style.display = 'none';
+      }
+
+      const target = document.getElementById('targetSelect').value;
+      const targetErr = document.getElementById('targetError');
+      if (!target) {
+        targetErr.textContent = 'Please select a product or category';
+        targetErr.style.display = 'block';
+        hasErr = true;
+      } else {
+        targetErr.style.display = 'none';
+      }
+
+      const sDate = document.getElementById('startDate').value;
+      const eDate = document.getElementById('endDate').value;
+      const dateErr = document.getElementById('dateError');
+      if (sDate && eDate && new Date(eDate) < new Date(sDate)) {
+        dateErr.textContent = 'End date cannot be earlier than start date';
+        dateErr.style.display = 'block';
+        hasErr = true;
+      } else {
+        dateErr.style.display = 'none';
+      }
+
+      if (hasErr) e.preventDefault();
+    });
+  </script>
+</body>
+</html>

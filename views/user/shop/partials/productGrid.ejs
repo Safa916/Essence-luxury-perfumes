@@ -39,7 +39,13 @@
           <% if (product.category) { %>
             <p class="product-desc"><%= product.category %></p>
           <% } %>
-          <p class="product-price">₹<%= Number(product.price).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></p>
+          <div class="product-price-wrap" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <p class="product-price" style="margin:0;">₹<%= Number(product.price).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></p>
+            <% if (product.hasOffer) { %>
+              <span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af;">₹<%= Number(product.originalPrice).toLocaleString('en-IN') %></span>
+              <span style="font-size:0.68rem; font-weight:700; color:#16a34a; background:#f0fdf4; padding:0.15rem 0.4rem; border-radius:2px;"><%= product.offerPercentage %>% OFF</span>
+            <% } %>
+          </div>
           <% if (product.stock <= 0) { %>
             <p class="product-stock-status oos">Out of Stock</p>
           <% } else if (product.stock <= 10) { %>

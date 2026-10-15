@@ -161,7 +161,7 @@
       const selectedReason = document.querySelector('input[name="return_reason"]:checked');
       if (!selectedReason) {
         e.preventDefault();
-        alert('Please select a reason for your return before submitting.');
+        essToast('Please select a reason for your return before submitting.', 'warning');
         return;
       }
       
@@ -171,7 +171,7 @@
         const textOnlyRegex = /^[A-Za-z\s]+$/;
         if (!textOnlyRegex.test(commentsInput)) {
           e.preventDefault();
-          alert('Additional comments can only contain letters and spaces. No numbers or special characters are allowed.');
+          essToast('Comments can only contain letters and spaces — no numbers or special characters.', 'warning');
         }
       }
     });

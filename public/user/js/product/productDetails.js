@@ -83,6 +83,37 @@
     return '₹' + Number(amount).toLocaleString('en-IN');
   }
 
+  function updateStockIndicator(stock) {
+    const indicator = document.getElementById('stockIndicator');
+    if (!indicator) return;
+
+    if (stock <= 0) {
+      indicator.innerHTML = `
+        <div class="stock-badge stock-badge--out">
+          <span class="stock-dot"></span>
+          <span class="stock-text">Out of Stock &mdash; 0 products remaining</span>
+        </div>`;
+    } else if (stock <= 5) {
+      indicator.innerHTML = `
+        <div class="stock-badge stock-badge--low">
+          <span class="stock-dot"></span>
+          <span class="stock-text">Hurry, only <strong>${stock}</strong> ${stock === 1 ? 'product remains' : 'products remain'} in stock!</span>
+        </div>`;
+    } else if (stock <= 15) {
+      indicator.innerHTML = `
+        <div class="stock-badge stock-badge--medium">
+          <span class="stock-dot"></span>
+          <span class="stock-text">Limited Stock &mdash; <strong>${stock}</strong> products remaining</span>
+        </div>`;
+    } else {
+      indicator.innerHTML = `
+        <div class="stock-badge stock-badge--in">
+          <span class="stock-dot"></span>
+          <span class="stock-text">In Stock &mdash; <strong>${stock}</strong> products available</span>
+        </div>`;
+    }
+  }
+
   function selectVariant(btn) {
     sizeButtons.forEach((b) => b.classList.remove('is-selected'));
     btn.classList.add('is-selected');
@@ -97,8 +128,10 @@
     }
     priceRow.innerHTML = html;
 
+    updateStockIndicator(stock);
+
     const outOfStockForThisSize = stock <= 0;
-    sizeStockNote.style.display = outOfStockForThisSize ? 'block' : 'none';
+    if (sizeStockNote) sizeStockNote.style.display = outOfStockForThisSize ? 'block' : 'none';
 
     if (addToBagBtn) {
       addToBagBtn.disabled = outOfStockForThisSize;
@@ -111,7 +144,6 @@
 
   sizeButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      if (btn.classList.contains('is-disabled')) return;
       selectVariant(btn);
     });
   });

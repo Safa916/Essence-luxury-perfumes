@@ -1,18 +1,21 @@
+<%
+  const _active = typeof activePage !== 'undefined' ? activePage : '';
+  const _cartCount = typeof cartCount !== 'undefined' ? Number(cartCount) : (typeof locals !== 'undefined' && typeof locals.cartCount !== 'undefined' ? Number(locals.cartCount) : (typeof totalItems !== 'undefined' ? Number(totalItems) : 0));
+%>
 <header class="site-header">
   <div class="header-inner">
     <a href="/" class="logo">ESSENCE</a>
 
     <nav class="main-nav">
-      <a href="/" class="nav-link <%= activePage === 'home' ? 'is-active' : '' %>">Home</a>
-      <a href="/categories" class="nav-link <%= activePage === 'categories' ? 'is-active' : '' %>">Categories</a>
-      <a href="/brands" class="nav-link <%= activePage === 'brands' ? 'is-active' : '' %>">Brands</a>
-      <a href="/shop" class="nav-link <%= activePage === 'shop' ? 'is-active' : '' %>">Shop</a>
-      <a href="/new-arrivals" class="nav-link <%= activePage === 'new-arrivals' ? 'is-active' : '' %>">New arrivals</a>
+      <a href="/" class="nav-link <%= _active === 'home' ? 'is-active' : '' %>">Home</a>
+      <a href="/categories" class="nav-link <%= _active === 'categories' ? 'is-active' : '' %>">Categories</a>
+      <a href="/brands" class="nav-link <%= _active === 'brands' ? 'is-active' : '' %>">Brands</a>
+      <a href="/shop" class="nav-link <%= _active === 'shop' ? 'is-active' : '' %>">Shop</a>
     </nav>
 
     <div class="header-icons">
 
-           <% if (activePage !== 'shop') { %>
+      <% if (_active !== 'shop') { %>
       <div class="header-search" id="headerSearch">
         <button type="button" class="icon-btn" id="headerSearchToggle" aria-label="Search" aria-expanded="false">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -33,15 +36,14 @@
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20.5s-7.5-4.6-10-9.3C.5 7.8 2.4 4.5 5.8 4c2-.3 3.9.6 5.2 2.4C12.3 4.6 14.2 3.7 16.2 4c3.4.5 5.3 3.8 3.8 7.2-2.5 4.7-10 9.3-10 9.3z"/></svg>
       </a>
 
-      <a href="/cart" class="icon-btn cart-btn" aria-label="Bag" style="position: relative;">
+      <a href="/cart" class="icon-btn cart-btn <%= _active === 'cart' ? 'is-active' : '' %>" aria-label="Bag" style="position: relative;">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
-        <% if (typeof cartCount !== 'undefined' && cartCount > 0) { %>
-          <span class="cart-badge"><%= cartCount > 99 ? '99+' : cartCount %></span>
+        <% if (_cartCount > 0) { %>
+          <span class="cart-badge"><%= _cartCount > 99 ? '99+' : _cartCount %></span>
         <% } %>
       </a>
 
       <% if (typeof user !== 'undefined' && user) { %>
-        <!-- Signed-in state -->
         <div class="user-menu">
           <a href="/profile" class="icon-btn profile-btn" aria-label="My Profile">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
@@ -50,15 +52,49 @@
           <button type="button" id="logoutBtn" class="btn-logout">Logout</button>
         </div>
       <% } else { %>
-        <!-- Signed-out state -->
         <a href="/auth/login" class="icon-btn" aria-label="Account">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
         </a>
         <a href="/auth/login" class="btn btn-login">Sign In</a>
       <% } %>
+
+      <!-- Hamburger (mobile only) -->
+      <button type="button" class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
     </div>
   </div>
 </header>
+
+<!-- Mobile nav drawer -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+<nav class="mobile-nav-drawer" id="mobileNavDrawer" aria-hidden="true">
+  <div class="mobile-nav-header">
+    <a href="/" class="logo">ESSENCE</a>
+    <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="mobile-nav-links">
+    <a href="/" class="mobile-nav-link <%= _active === 'home' ? 'is-active' : '' %>">Home</a>
+    <a href="/categories" class="mobile-nav-link <%= _active === 'categories' ? 'is-active' : '' %>">Categories</a>
+    <a href="/brands" class="mobile-nav-link <%= _active === 'brands' ? 'is-active' : '' %>">Brands</a>
+    <a href="/shop" class="mobile-nav-link <%= _active === 'shop' ? 'is-active' : '' %>">Shop</a>
+  </div>
+  <div class="mobile-nav-footer">
+    <% if (typeof user !== 'undefined' && user) { %>
+      <a href="/profile" class="mobile-nav-link">My Profile</a>
+      <a href="/orders" class="mobile-nav-link">My Orders</a>
+      <a href="/wallet" class="mobile-nav-link">My Wallet</a>
+      <a href="/coupon" class="mobile-nav-link">My Coupons</a>
+      <a href="/wishlist" class="mobile-nav-link">Wishlist</a>
+      <button type="button" id="mobileLogoutBtn" class="mobile-nav-link mobile-logout-btn">Logout</button>
+    <% } else { %>
+      <a href="/auth/login" class="btn btn-dark mobile-signin-btn">Sign In</a>
+    <% } %>
+  </div>
+</nav>
 
 <script>
   (function () {
@@ -124,5 +160,53 @@
         badge.remove();
       }
     };
+
+    // ── Mobile Nav Drawer ──
+    var hamburger   = document.getElementById('hamburgerBtn');
+    var drawer      = document.getElementById('mobileNavDrawer');
+    var overlay     = document.getElementById('mobileNavOverlay');
+    var closeBtn    = document.getElementById('mobileNavClose');
+    var mobileLogout = document.getElementById('mobileLogoutBtn');
+
+    function openDrawer() {
+      drawer.classList.add('is-open');
+      overlay.classList.add('is-open');
+      hamburger.classList.add('is-open');
+      hamburger.setAttribute('aria-expanded', 'true');
+      drawer.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('is-open');
+      overlay.classList.remove('is-open');
+      hamburger.classList.remove('is-open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      drawer.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    if (hamburger) hamburger.addEventListener('click', openDrawer);
+    if (closeBtn)  closeBtn.addEventListener('click', closeDrawer);
+    if (overlay)   overlay.addEventListener('click', closeDrawer);
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeDrawer();
+    });
+
+    // Wire up mobile logout button to the same form as desktop logout
+    if (mobileLogout) {
+      mobileLogout.addEventListener('click', function() {
+        var desktopLogout = document.getElementById('logoutBtn');
+        if (desktopLogout) desktopLogout.click();
+        else window.location.href = '/auth/logout';
+      });
+    }
+
   })();
 </script>
+
+<!-- Global Essence UI: branded toast + confirm (replaces alert/confirm sitewide) -->
+<script src="/user/js/essence-ui.js"></script>
+

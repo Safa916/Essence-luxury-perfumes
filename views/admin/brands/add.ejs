@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add New Brand — Essence Admin</title>
+  <link rel="stylesheet" href="/admin/dashboard.css">
+  <link rel="stylesheet" href="/admin/partials/sidebar.css">
+  <style>
+    .bm-container {
+      padding: 36px 48px;
+      max-width: 1100px;
+    }
+
+    .bm-breadcrumb {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #8e8e93;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bm-breadcrumb a {
+      color: #8e8e93;
+      text-decoration: none;
+    }
+
+    .bm-breadcrumb a:hover {
+      color: #111;
+    }
+
+    .bm-page-title {
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      color: #111111;
+      margin: 0 0 32px;
+      line-height: 1.1;
+    }
+
+    .bm-card {
+      background: #ffffff;
+      border: 1px solid #eef0f2;
+      border-radius: 4px;
+      padding: 40px;
+      max-width: 680px;
+    }
+
+    .form-group {
+      margin-bottom: 28px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #48484a;
+      margin-bottom: 10px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #f2f3f5;
+      border: 1px solid transparent;
+      padding: 14px 18px;
+      font-size: 0.92rem;
+      color: #111;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .form-input:focus {
+      background: #fff;
+      border-color: #111;
+    }
+
+    /* Toggle Switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 24px 0;
+      border-top: 1px solid #f2f2f7;
+      border-bottom: 1px solid #f2f2f7;
+      margin-bottom: 32px;
+    }
+
+    .toggle-info h4 {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #111;
+      margin: 0 0 4px;
+    }
+
+    .toggle-info p {
+      font-size: 0.75rem;
+      color: #8e8e93;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #e5e5ea;
+      transition: 0.25s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.25s;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .slider {
+      background-color: #111111;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
+    /* Actions */
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .btn-cancel {
+      background: #ffffff;
+      color: #111111;
+      border: 1px solid #d1d1d6;
+      padding: 12px 28px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .btn-cancel:hover {
+      border-color: #111;
+    }
+
+    .btn-submit {
+      background: #111111;
+      color: #ffffff;
+      border: none;
+      padding: 12px 32px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-submit:hover {
+      background: #333333;
+    }
+
+    .error-banner {
+      background: #fff5f5;
+      border-left: 3px solid #e53e3e;
+      color: #c53030;
+      padding: 12px 16px;
+      font-size: 0.8rem;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <%- include('../partials/sidebar', { activePage: 'brand' }) %>
+
+  <main class="main-content">
+    <div class="bm-container">
+      <div class="bm-breadcrumb">
+        <a href="/admin/brands">Brand Management</a>
+        <span>&rsaquo;</span>
+        <span>Add New Brand</span>
+      </div>
+
+      <h1 class="bm-page-title">Add New Brand</h1>
+
+      <% if (typeof errors !== 'undefined' && errors.length) { %>
+        <div class="error-banner">
+          <% errors.forEach(function(err) { %>
+            <div><%= err %></div>
+          <% }); %>
+        </div>
+      <% } %>
+
+      <div class="bm-card">
+        <form action="/admin/brands/add" method="POST" id="addBrandForm">
+          <!-- Brand Name -->
+          <div class="form-group">
+            <label for="brandName" class="form-label">Brand Name</label>
+            <input
+              type="text"
+              name="name"
+              id="brandName"
+              class="form-input"
+              placeholder="e.g. LATHAFA"
+              required
+              autocomplete="off"
+            >
+          </div>
+
+          <!-- Brand Tagline / Subtitle -->
+          <div class="form-group">
+            <label for="brandTagline" class="form-label">Brand Tagline / Hero Subtitle</label>
+            <input
+              type="text"
+              name="tagline"
+              id="brandTagline"
+              class="form-input"
+              placeholder="e.g. Only pour beaucoup, par chaque, pour toujours"
+            >
+          </div>
+
+          <!-- Active Visibility Status -->
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <h4>Active Visibility Status</h4>
+              <p>Determine if this brand is visible in public storefronts and search results.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" name="is_active" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <a href="/admin/brands" class="btn-cancel">Cancel</a>
+            <button type="submit" class="btn-submit">Add Brand</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

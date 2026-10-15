@@ -9,27 +9,36 @@ const brandSchema = new mongoose.Schema(
     },
     slug: {
       type: String,
-      required: [true, 'Slug is required'],
       unique: true,
       lowercase: true,
       trim: true,
-      // e.g. "coco-noir" — used in URLs like /brands/coco-noir
     },
     tagline: {
       type: String,
       trim: true,
-    },
-    logo_url: {
-      type: String,
-      default: null,
+      default: '',
     },
     banner_url: {
       type: String,
       default: null,
     },
+    is_active: {
+      type: Boolean,
+      default: true,
+    },
   },
-  { timestamps: { createdAt: 'created_at', updatedAt: false } } // diagram only shows created_at
+  { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
 
-const brands = mongoose.models.brands || mongoose.model('brands', brandSchema);
-module.exports = brands;
+// Auto-generate slug from name if not provided
+brandSchema.pre('save', function (next) {
+  if (!this.slug && this.name) {
+    this.slug = this.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
+  if (typeof next === 'function') {
+    next();
+  }
+});
+
+const Brand = mongoose.models.brands || mongoose.model('brands', brandSchema);
+module.exports = Brand;

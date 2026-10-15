@@ -220,7 +220,7 @@
     if (!requireLoginOrRedirect()) return;
         const variantId = btn.dataset.defaultVariantId;
         if (!variantId) {
-          alert('This product has no available size right now.');
+          essToast('This product has no available size right now.', 'warning');
           return;
         }
 
@@ -241,7 +241,7 @@
             return;
           }
           if (!data.success) {
-            alert(data.message || 'Could not add to bag.');
+            essToast(data.message || 'Could not add to bag.', 'error');
             btn.disabled = false;
             btn.textContent = originalText;
             return;
@@ -255,7 +255,7 @@
           }, 1500);
         } catch (err) {
           console.error(err);
-          alert('Something went wrong adding this to your bag.');
+          essToast('Something went wrong adding this to your bag.', 'error');
           btn.disabled = false;
           btn.textContent = originalText;
         }
@@ -294,7 +294,7 @@
               btn.classList.add('is-active');
               if (svg) svg.setAttribute('fill', 'currentColor');
               btn.setAttribute('aria-label', 'Remove from wishlist');
-              alert(data.message || 'Could not remove from wishlist.');
+              essToast(data.message || 'Could not remove from wishlist.', 'error');
             }
           } else {
             res = await fetch('/wishlist/add', {
@@ -312,7 +312,7 @@
               btn.classList.remove('is-active');
               if (svg) svg.setAttribute('fill', 'none');
               btn.setAttribute('aria-label', 'Add to wishlist');
-              alert(data.message || 'Could not add to wishlist.');
+              essToast(data.message || 'Could not add to wishlist.', 'error');
             }
           }
         } catch (err) {
@@ -327,7 +327,7 @@
             if (svg) svg.setAttribute('fill', 'none');
             btn.setAttribute('aria-label', 'Add to wishlist');
           }
-          alert('Something went wrong updating your wishlist.');
+          essToast('Something went wrong updating your wishlist.', 'error');
         }
       });
     });

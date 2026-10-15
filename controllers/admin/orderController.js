@@ -280,7 +280,7 @@ exports.updateItemStatus = async (req, res) => {
     const order = await Order.findOneAndUpdate(
       { _id: req.params.id, 'items._id': new mongoose.Types.ObjectId(req.params.itemId) },
       { $set: { 'items.$.item_status': status } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (order) {

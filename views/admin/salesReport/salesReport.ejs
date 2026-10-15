@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sales Report — Essence Admin</title>
+  <link rel="stylesheet" href="/admin/dashboard.css">
+  <link rel="stylesheet" href="/admin/partials/sidebar.css">
+  <style>
+    /* ── Layout & Header ── */
+    .report-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+      text-transform: uppercase;
+      color: #111;
+    }
+    .page-sub {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .report-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-export {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.7rem 1.25rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .btn-export-pdf {
+      background: #111;
+      color: #fff;
+      border: 1px solid #111;
+    }
+    .btn-export-pdf:hover {
+      background: #333;
+      border-color: #333;
+    }
+    .btn-export-excel {
+      background: #fff;
+      color: #111;
+      border: 1px solid #e5e7eb;
+    }
+    .btn-export-excel:hover {
+      background: #f9fafb;
+      border-color: #111;
+    }
+    .btn-export svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    /* ── Filter Card ── */
+    .filter-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.2rem;
+    }
+    .filter-pill {
+      display: inline-block;
+      padding: 0.5rem 1.1rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-decoration: none;
+      color: #4b5563;
+      background: #f3f4f6;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      transition: all 0.15s ease;
+    }
+    .filter-pill:hover {
+      background: #e5e7eb;
+      color: #111;
+    }
+    .filter-pill.active {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+
+    .custom-range-form {
+      display: flex;
+      align-items: flex-end;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      padding-top: 1rem;
+      border-top: 1px solid #f3f4f6;
+    }
+    .date-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .date-field label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+    }
+    .date-field input[type="date"] {
+      border: 1px solid #d1d5db;
+      border-radius: 2px;
+      padding: 0.55rem 0.85rem;
+      font-size: 0.88rem;
+      outline: none;
+      background: #f9fafb;
+      color: #111;
+      min-width: 170px;
+    }
+    .date-field input[type="date"]:focus {
+      border-color: #111;
+      background: #fff;
+    }
+    .btn-apply {
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 2px;
+      padding: 0.65rem 1.5rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      height: 38px;
+    }
+    .btn-apply:hover {
+      background: #333;
+    }
+
+    /* ── Summary Cards ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .summary-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 1.35rem 1.6rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .summary-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: #111;
+    }
+    .summary-card.revenue::before { background: #16a34a; }
+    .summary-card.discount::before { background: #ea580c; }
+    .summary-card.coupon::before { background: #4f46e5; }
+    .sc-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #6b7280;
+      margin-bottom: 0.4rem;
+    }
+    .sc-value {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: -0.02em;
+    }
+    .sc-sub {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 0.35rem;
+    }
+
+    /* ── Table Card ── */
+    .table-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .table-header-bar {
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+    }
+    .table-header-bar h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0;
+      color: #111;
+    }
+    .table-count-info {
+      font-size: 0.78rem;
+      color: #6b7280;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .report-table th {
+      background: #f9fafb;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .report-table td {
+      padding: 0.95rem 1rem;
+      border-bottom: 1px solid #f3f4f6;
+      vertical-align: middle;
+    }
+    .report-table tr:last-child td {
+      border-bottom: none;
+    }
+    .report-table tr:hover td {
+      background: #fafafa;
+    }
+
+    .order-link {
+      color: #111;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+    .order-link:hover {
+      text-decoration: underline;
+    }
+    .customer-name {
+      font-weight: 600;
+      color: #111;
+    }
+    .customer-email {
+      font-size: 0.76rem;
+      color: #6b7280;
+      margin-top: 1px;
+    }
+    .amt-col {
+      font-weight: 700;
+      color: #111;
+    }
+    .disc-col {
+      color: #ea580c;
+      font-weight: 600;
+    }
+    .coupon-badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-radius: 3px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: center;
+      padding: 1.4rem;
+      border-top: 1px solid #f3f4f6;
+    }
+    .pagination a, .pagination span {
+      padding: 0.4rem 0.85rem;
+      border-radius: 3px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: #374151;
+      border: 1px solid #e5e7eb;
+    }
+    .pagination a:hover {
+      background: #f3f4f6;
+    }
+    .pagination .current {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar', { activePage: 'sales-report' }) %>
+
+  <main class="main-content">
+    <div style="padding: 2rem 2.5rem;">
+
+      <!-- Header -->
+      <div class="report-header">
+        <div>
+          <h1 class="page-title">Sales Report</h1>
+          <p class="page-sub">Comprehensive overview of orders, revenue, discounts, and coupon analytics.</p>
+        </div>
+        <div class="report-actions">
+          <a href="/admin/sales-report/download/pdf?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>" class="btn-export btn-export-pdf">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download PDF
+          </a>
+          <a href="/admin/sales-report/download/excel?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>" class="btn-export btn-export-excel">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Download Excel
+          </a>
+        </div>
+      </div>
+
+      <!-- Filters Card -->
+      <div class="filter-card">
+        <!-- Quick Filter Pills -->
+        <div class="filter-pills">
+          <a href="/admin/sales-report?filter=daily" class="filter-pill <%= filter === 'daily' ? 'active' : '' %>">Daily (Today)</a>
+          <a href="/admin/sales-report?filter=weekly" class="filter-pill <%= filter === 'weekly' ? 'active' : '' %>">Weekly (Last 7 Days)</a>
+          <a href="/admin/sales-report?filter=yearly" class="filter-pill <%= filter === 'yearly' ? 'active' : '' %>">Yearly (This Year)</a>
+          <a href="/admin/sales-report?filter=all" class="filter-pill <%= filter === 'all' ? 'active' : '' %>">All Time</a>
+          <a href="javascript:void(0)" onclick="toggleCustomRange()" class="filter-pill <%= filter === 'custom' ? 'active' : '' %>">Custom Date Range</a>
+        </div>
+
+        <!-- Custom Date Range Form -->
+        <form method="GET" action="/admin/sales-report" id="customRangeForm" class="custom-range-form" style="<%= filter === 'custom' ? '' : 'display:none;' %>">
+          <input type="hidden" name="filter" value="custom">
+          <div class="date-field">
+            <label for="fromDate">From Date</label>
+            <input type="date" id="fromDate" name="from" value="<%= customFrom %>" required>
+          </div>
+          <div class="date-field">
+            <label for="toDate">To Date</label>
+            <input type="date" id="toDate" name="to" value="<%= customTo %>" required>
+          </div>
+          <button type="submit" class="btn-apply">Apply Filter</button>
+        </form>
+      </div>
+
+      <!-- Summary Metrics Grid -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="sc-label">Overall Sales Count</div>
+          <div class="sc-value"><%= summary.overallSalesCount %></div>
+          <div class="sc-sub">Successful orders placed</div>
+        </div>
+
+        <div class="summary-card revenue">
+          <div class="sc-label">Total Order Amount</div>
+          <div class="sc-value">₹<%= summary.totalOrderAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+          <div class="sc-sub">Gross revenue generated</div>
+        </div>
+
+        <div class="summary-card discount">
+          <div class="sc-label">Total Discount</div>
+          <div class="sc-value">₹<%= summary.totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+          <div class="sc-sub">Promotional & coupon savings</div>
+        </div>
+
+        <div class="summary-card coupon">
+          <div class="sc-label">Coupon Deductions</div>
+          <div class="sc-value">₹<%= summary.totalCouponDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+          <div class="sc-sub">Direct coupon code deductions</div>
+        </div>
+      </div>
+
+      <!-- Orders Table Card -->
+      <div class="table-card">
+        <div class="table-header-bar">
+          <h2>Orders List</h2>
+          <div class="table-count-info">Showing <%= orders.length %> of <%= totalRecords %> matching records</div>
+        </div>
+
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th style="text-align: right;">Amount</th>
+              <th style="text-align: right;">Discount</th>
+              <th style="text-align: center;">Coupon</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (orders.length === 0) { %>
+              <tr>
+                <td colspan="7" style="text-align: center; color: #6b7280; padding: 2.5rem;">
+                  No successful orders found for the selected period.
+                </td>
+              </tr>
+            <% } %>
+
+            <% orders.forEach(function(o) { %>
+              <tr>
+                <td style="color: #6b7280; font-size: 0.82rem;">
+                  <%= o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' %>
+                  <div style="font-size: 0.72rem; color: #9ca3af;">
+                    <%= o.placed_at ? new Date(o.placed_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '' %>
+                  </div>
+                </td>
+                <td>
+                  <a href="/admin/orders/<%= o._id %>" class="order-link">
+                    <%= o.order_number %>
+                  </a>
+                </td>
+                <td>
+                  <div class="customer-name"><%= o.customerName %></div>
+                  <div class="customer-email"><%= o.customerEmail %></div>
+                </td>
+                <td style="text-align: right;" class="amt-col">
+                  ₹<%= o.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+                <td style="text-align: right;" class="disc-col">
+                  <%= o.discount > 0 ? ('-₹' + o.discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : '—' %>
+                </td>
+                <td style="text-align: center;">
+                  <% if (o.coupon_code) { %>
+                    <span class="coupon-badge"><%= o.coupon_code %></span>
+                  <% } else { %>
+                    <span style="color: #9ca3af;">—</span>
+                  <% } %>
+                </td>
+                <td>
+                  <span style="text-transform: capitalize; font-size: 0.78rem; font-weight: 600; color: <%= o.order_status === 'delivered' ? '#16a34a' : '#2563eb' %>;">
+                    <%= o.order_status %>
+                  </span>
+                  <div style="font-size: 0.72rem; color: #9ca3af; text-transform: uppercase;">
+                    <%= o.payment_method %>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+          <div class="pagination">
+            <% if (currentPage > 1) { %>
+              <a href="?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>&page=<%= currentPage - 1 %>">Prev</a>
+            <% } %>
+
+            <% for (let p = 1; p <= totalPages; p++) { %>
+              <% if (p === currentPage) { %>
+                <span class="current"><%= p %></span>
+              <% } else if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) { %>
+                <a href="?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>&page=<%= p %>"><%= p %></a>
+              <% } else if (p === currentPage - 3 || p === currentPage + 3) { %>
+                <span style="border:none; padding:0.4rem 0.2rem;">...</span>
+              <% } %>
+            <% } %>
+
+            <% if (currentPage < totalPages) { %>
+              <a href="?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>&page=<%= currentPage + 1 %>">Next</a>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function toggleCustomRange() {
+      const form = document.getElementById('customRangeForm');
+      if (form.style.display === 'none' || !form.style.display) {
+        form.style.display = 'flex';
+      } else {
+        form.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

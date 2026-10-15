@@ -26,7 +26,10 @@
           body: JSON.stringify({ cart_item_id: cartItemId, action }),
         });
         const data = await res.json();
-        if (!data.success) return alert(data.message || 'Could not update quantity.');
+        if (!data.success) {
+          essToast(data.message || 'Could not update quantity.', 'error');
+          return;
+        }
 
         row.querySelector('.qty-value').textContent = data.quantity;
         row.querySelector('.item-total').textContent = formatINR(data.total_price);
@@ -35,7 +38,7 @@
         if (cartSubtotalEl) cartSubtotalEl.textContent = formatINR(data.subtotal);
       } catch (err) {
         console.error(err);
-        alert('Something went wrong updating quantity.');
+        essToast('Something went wrong updating quantity.', 'error');
       }
       return;
     }
@@ -45,7 +48,10 @@
       try {
         const res = await fetch(`/cart/remove/${cartItemId}`, { method: 'DELETE' });
         const data = await res.json();
-        if (!data.success) return alert(data.message || 'Could not remove item.');
+        if (!data.success) {
+          essToast(data.message || 'Could not remove item.', 'error');
+          return;
+        }
 
         row.remove();
         if (cartSubtotalEl) cartSubtotalEl.textContent = formatINR(data.subtotal);
@@ -57,23 +63,18 @@
         const totalPages  = parseInt(cartItemsWrapper.dataset.totalPages, 10) || 1;
 
         if (data.itemCount === 0) {
-          // Cart is completely empty — reload to show empty state
           window.location.href = '/cart';
         } else {
-          // If we just removed the last item on this page and there are
-          // still items on earlier pages, go back one page
           const remainingOnPage = cartItemsWrapper.querySelectorAll('.cart-item').length;
           if (remainingOnPage === 0 && currentPage > 1) {
             window.location.href = '/cart?page=' + (currentPage - 1);
           } else if (remainingOnPage === 0) {
-            // Last item on page 1 but more items exist — reload to normalise
             window.location.href = '/cart';
           }
-          // Otherwise just leave the remaining items visible and update subtotal
         }
       } catch (err) {
         console.error(err);
-        alert('Something went wrong removing this item.');
+        essToast('Something went wrong removing this item.', 'error');
       }
     }
   });
@@ -81,7 +82,6 @@
   if (checkoutBtn) {
     checkoutBtn.addEventListener('click', () => {
       if (checkoutBtn.disabled) return;
-      console.log('Proceed to checkout clicked');
     });
   }
 })();

@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,12 +6,192 @@
     <title>Essence Admin Dashboard</title>
     <!-- CSS stylesheet link -->
     <link rel="stylesheet" href="/admin/dashboard.css">
-       <link rel="stylesheet" href="/admin/partials/sidebar.css" />
+    <link rel="stylesheet" href="/admin/partials/sidebar.css" />
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-filter-group {
+            display: inline-flex;
+            gap: 4px;
+            background: #f2f2f7;
+            padding: 3px;
+            border-radius: 6px;
+        }
+        .chart-filter-btn {
+            border: none;
+            background: transparent;
+            padding: 5px 12px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #636366;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chart-filter-btn:hover {
+            color: #000;
+        }
+        .chart-filter-btn.active {
+            background: #000000;
+            color: #ffffff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        }
+        .product-img {
+            max-width: 85%;
+            max-height: 85%;
+            object-fit: contain;
+            transition: transform 0.3s;
+        }
+        .product-card:hover .product-img {
+            transform: scale(1.04);
+        }
+
+        /* ── Three Top 10 Lists ── */
+        .top-lists-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        @media (max-width: 1100px) {
+            .top-lists-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .top-list-card {
+            background: #ffffff;
+            border: 1px solid #eef0f2;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .top-list-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+        .top-list-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f2f2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fcfcfd;
+        }
+        .tl-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tl-title-wrap h4 {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #1c1c1e;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 0;
+        }
+        .tl-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #8e8e93;
+            background: #f2f2f7;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+        .top-list-body {
+            padding: 8px 18px 16px;
+            flex: 1;
+        }
+        .tl-items {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .tl-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f7f7f9;
+        }
+        .tl-item:last-child {
+            border-bottom: none;
+        }
+        .tl-rank {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background: #f2f2f7;
+            color: #636366;
+            flex-shrink: 0;
+        }
+        .tl-rank.rank-1 {
+            background: #000000;
+            color: #ffffff;
+        }
+        .tl-rank.rank-2 {
+            background: #bfa15f;
+            color: #ffffff;
+        }
+        .tl-rank.rank-3 {
+            background: #8e8e93;
+            color: #ffffff;
+        }
+        .tl-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .tl-name {
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #1c1c1e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tl-sub {
+            font-size: 0.72rem;
+            color: #8e8e93;
+            margin-top: 1px;
+        }
+        .tl-count {
+            font-size: 0.78rem;
+            color: #48484a;
+            white-space: nowrap;
+            text-align: right;
+        }
+        .tl-count strong {
+            color: #111111;
+            font-weight: 700;
+            font-size: 0.86rem;
+        }
+        .tl-empty {
+            padding: 2.5rem 1rem;
+            text-align: center;
+            color: #8e8e93;
+            font-size: 0.82rem;
+        }
+    </style>
 </head>
 <body>
 
     <!-- Sidebar Navigation -->
-   <%- include('./partials/sidebar', { activePage: 'dashboard' }) %>
+    <%- include('./partials/sidebar', { activePage: 'dashboard' }) %>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -24,22 +202,12 @@
                 <input type="text" class="top-search-input" placeholder="Search Analytics...">
             </div>
             <div class="header-actions">
-                <button class="sales-report-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 20V10"></path>
-                        <path d="M18 20V4"></path>
-                        <path d="M6 20v-4"></path>
-                    </svg>
-                    Sales Report
-                </button>
                 <div class="admin-profile">
-                    
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="8" r="4"></circle>
                         <path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path>
                     </svg>
-                    
-                    Admin_root
+                    <%= (admin && admin.email) || 'Admin_root' %>
                 </div>
                 <button type="button" id="adminLogoutBtn" class="admin-logout-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -52,28 +220,21 @@
             </div>
         </header>
 
-
-        
-
         <!-- Portfolio Title Section -->
         <section class="report-title-section">
-            <h2 class="report-title">May 2025 — Portfolio Report</h2>
-            <div class="report-filters">
-                <button class="filter-btn">
+            <div>
+                <h2 class="report-title">Store Performance & Analytics</h2>
+                <p style="font-size: 0.8rem; color: #8e8e93; margin-top: 4px;">Real-time revenue, order growth, and product performance.</p>
+            </div>
+            <div>
+                <a href="/admin/sales-report" class="sales-report-btn" style="text-decoration:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        <path d="M12 20V10"></path>
+                        <path d="M18 20V4"></path>
+                        <path d="M6 20v-4"></path>
                     </svg>
-                    Filter
-                </button>
-                <button class="filter-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    Date Range
-                </button>
+                    Sales Report
+                </a>
             </div>
         </section>
 
@@ -92,12 +253,12 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="18 15 12 9 6 15"></polyline>
                         </svg>
-                        +12.5%
+                        Revenue
                     </div>
                 </div>
                 <div class="kpi-middle">
                     <div class="kpi-label">Total Revenue</div>
-                    <div class="kpi-value">₹ 45,231.89</div>
+                    <div class="kpi-value">₹<%= (stats && stats.totalRevenue != null ? stats.totalRevenue : 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
                 </div>
             </div>
 
@@ -114,12 +275,12 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="18 15 12 9 6 15"></polyline>
                         </svg>
-                        +8.2%
+                        Orders
                     </div>
                 </div>
                 <div class="kpi-middle">
                     <div class="kpi-label">Total Orders</div>
-                    <div class="kpi-value">2,350</div>
+                    <div class="kpi-value"><%= (stats && stats.totalOrders != null ? stats.totalOrders : 0).toLocaleString('en-IN') %></div>
                 </div>
             </div>
 
@@ -137,198 +298,187 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="18 15 12 9 6 15"></polyline>
                         </svg>
-                        +4.1%
+                        Users
                     </div>
                 </div>
                 <div class="kpi-middle">
                     <div class="kpi-label">Active Users</div>
-                    <div class="kpi-value">12,842</div>
+                    <div class="kpi-value"><%= (stats && stats.activeUsers != null ? stats.activeUsers : 0).toLocaleString('en-IN') %></div>
                 </div>
             </div>
         </section>
 
-        <!-- Analytics Section: Chart + Market Share -->
-        <section class="analytics-section">
+        <!-- Analytics Section: Full-width Chart -->
+        <section class="analytics-section" style="display:block;">
 
             <!-- Revenue Chart -->
-            <div class="analytics-card chart-card">
+            <div class="analytics-card chart-card" style="width:100%;">
                 <div class="chart-header">
-                    <h3 class="chart-title">Revenue Growth Trends</h3>
-                    <div class="chart-legend">
-                        <span class="legend-dot"></span>
-                        Current Period
+                    <div>
+                        <h3 class="chart-title">Revenue Growth Trends</h3>
+                        <p id="chartSub" style="font-size:0.75rem; color:#8e8e93; margin-top:2px;">Loading sales analytics...</p>
                     </div>
-                </div>
-                <div class="chart-container">
-                    <div class="bar-wrapper">
-                        <div class="bar-fill" style="height: 45%;"></div>
-                        <div class="bar-label">AUG</div>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar-fill" style="height: 58%;"></div>
-                        <div class="bar-label">OCT</div>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar-fill" style="height: 40%;"></div>
-                        <div class="bar-label">DEC</div>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar-fill" style="height: 70%;"></div>
-                        <div class="bar-label">FEB</div>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar-fill" style="height: 88%;"></div>
-                        <div class="bar-label">APR</div>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar-fill active" style="height: 100%;"></div>
-                        <div class="bar-label">MAY</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Market Share -->
-            <div class="analytics-card market-share-card">
-                <div>
-                    <h3 class="market-share-title">Market Share</h3>
-                    <div class="share-list">
-                        <div class="share-item">
-                            <div class="share-info">
-                                <span class="share-brand">Dior Sauvage</span>
-                                <span class="share-percentage">40%</span>
-                            </div>
-                            <div class="share-progress-bg">
-                                <div class="share-progress-fill" style="width: 40%;"></div>
-                            </div>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <div class="chart-filter-group">
+                            <button type="button" class="chart-filter-btn" data-filter="daily">Daily</button>
+                            <button type="button" class="chart-filter-btn" data-filter="weekly">Weekly</button>
+                            <button type="button" class="chart-filter-btn active" data-filter="monthly">Monthly</button>
+                            <button type="button" class="chart-filter-btn" data-filter="yearly">Yearly</button>
+                            <button type="button" class="chart-filter-btn" data-filter="custom">Custom</button>
                         </div>
-                        <div class="share-item">
-                            <div class="share-info">
-                                <span class="share-brand">Chanel No. 5</span>
-                                <span class="share-percentage">25%</span>
-                            </div>
-                            <div class="share-progress-bg">
-                                <div class="share-progress-fill" style="width: 25%;"></div>
-                            </div>
-                        </div>
-                        <div class="share-item">
-                            <div class="share-info">
-                                <span class="share-brand">Bleu de Chanel</span>
-                                <span class="share-percentage">20%</span>
-                            </div>
-                            <div class="share-progress-bg">
-                                <div class="share-progress-fill" style="width: 20%;"></div>
-                            </div>
-                        </div>
-                        <div class="share-item">
-                            <div class="share-info">
-                                <span class="share-brand">Creed Aventus</span>
-                                <span class="share-percentage">15%</span>
-                            </div>
-                            <div class="share-progress-bg">
-                                <div class="share-progress-fill" style="width: 15%;"></div>
-                            </div>
+                        <!-- Custom date-range picker (hidden by default) -->
+                        <div id="customDateRange" style="display:none; align-items:center; gap:6px; flex-wrap:wrap;">
+                            <input type="date" id="chartStartDate" style="padding:4px 8px; font-size:0.75rem; border:1px solid #d1d1d6; border-radius:4px; outline:none;">
+                            <span style="font-size:0.75rem; color:#8e8e93;">to</span>
+                            <input type="date" id="chartEndDate" style="padding:4px 8px; font-size:0.75rem; border:1px solid #d1d1d6; border-radius:4px; outline:none;">
+                            <button type="button" id="applyCustomRange" style="padding:4px 10px; font-size:0.72rem; font-weight:700; background:#000; color:#fff; border:none; border-radius:4px; cursor:pointer; letter-spacing:0.04em;">Apply</button>
                         </div>
                     </div>
                 </div>
-                <div class="quote-block">
-                    <p class="quote-text">"Dior continues to dominate the premium fresh-spicy segment."</p>
+                <div class="chart-container" style="position: relative; height: 260px; width: 100%; margin-top: 15px;">
+                    <canvas id="salesChart"></canvas>
                 </div>
             </div>
         </section>
 
-        <!-- Elite Perfumery Sales -->
-        <section>
+        <!-- Best Sellers Visual Grid -->
+        <section style="margin-top: 35px;">
             <div class="sales-section-header">
-                <h3 class="sales-title">Elite Perfumery Sales</h3>
+                <h3 class="sales-title">Best Sellers</h3>
                 <a href="/admin/products" class="view-catalog-link">View Full Catalog</a>
             </div>
 
             <div class="products-grid">
-
-                <div class="product-card">
-                    <div class="product-img-wrapper">
-                        <span class="product-badge best-seller">Best Seller</span>
-                        <svg class="product-img perfume-illustration" viewBox="0 0 140 180" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="50" y="20" width="40" height="18" rx="3" fill="#1c1c1e"></rect>
-                            <rect x="58" y="8" width="24" height="14" rx="2" fill="#48484a"></rect>
-                            <path d="M45 38h50a4 4 0 0 1 4 4v110a8 8 0 0 1-8 8H49a8 8 0 0 1-8-8V42a4 4 0 0 1 4-4Z" fill="#111318"></path>
-                            <rect x="47" y="90" width="46" height="30" fill="#2c2f36"></rect>
-                        </svg>
+                <% if (!topProducts || topProducts.length === 0) { %>
+                    <div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: #8e8e93; background: #fff; border: 1px solid #eef0f2;">
+                        No sales recorded yet. Once orders are placed, best selling perfumes will appear here.
                     </div>
-                    <div class="product-details">
-                        <h4 class="product-name">Dior Sauvage Elite</h4>
-                        <div class="sales-vol-group">
-                            <span class="sales-vol-label">Sales Volume</span>
-                            <div class="sales-vol-row">
-                                <span class="sales-units">1,402 units</span>
-                                <span class="sales-value">₹1.2M</span>
+                <% } else { %>
+                    <% topProducts.slice(0, 4).forEach(function(product, index) { %>
+                        <div class="product-card">
+                            <div class="product-img-wrapper">
+                                <% if (index === 0) { %>
+                                    <span class="product-badge best-seller">#1 Best Seller</span>
+                                <% } else if (index < 3) { %>
+                                    <span class="product-badge premium">Top <%= index + 1 %></span>
+                                <% } %>
+                                <img src="<%= product.image %>" alt="<%= product.name %>" class="product-img" onerror="this.onerror=null; this.src='/user/images/placeholder.jpg';">
+                            </div>
+                            <div class="product-details">
+                                <h4 class="product-name" title="<%= product.name %>"><%= product.name %></h4>
+                                <div class="sales-vol-group">
+                                    <span class="sales-vol-label">Units Sold</span>
+                                    <div class="sales-vol-row">
+                                        <span class="sales-units"><%= product.quantitySold %> units sold</span>
+                                        <span class="sales-value">₹<%= product.revenue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) %></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    <% }); %>
+                <% } %>
+            </div>
+        </section>
+
+        <!-- Three Top 10 Rankings Section -->
+        <section style="margin-top: 40px; margin-bottom: 25px;">
+            <div class="sales-section-header" style="margin-bottom: 20px;">
+                <div>
+                    <h3 class="sales-title">Top 10 Rankings</h3>
+                    <p style="font-size: 0.8rem; color: #8e8e93; margin-top: 4px;">Top 10 performance across products, categories, and brands.</p>
+                </div>
+            </div>
+
+            <div class="top-lists-grid">
+                <!-- 1. Top 10 Products -->
+                <div class="top-list-card">
+                    <div class="top-list-header">
+                        <div class="tl-title-wrap">
+                            <h4>Top 10 Products</h4>
+                        </div>
+                        <span class="tl-badge">By Quantity</span>
+                    </div>
+                    <div class="top-list-body">
+                        <% if (!topProducts || topProducts.length === 0) { %>
+                            <div class="tl-empty">No product sales recorded yet.</div>
+                        <% } else { %>
+                            <ul class="tl-items">
+                                <% topProducts.forEach(function(item, idx) { %>
+                                    <li class="tl-item">
+                                        <div class="tl-rank <%= idx < 3 ? 'rank-' + (idx + 1) : '' %>"><%= idx + 1 %></div>
+                                        <div class="tl-info">
+                                            <span class="tl-name" title="<%= item.name %>"><%= item.name %></span>
+                                            <span class="tl-sub">₹<%= item.revenue.toLocaleString('en-IN') %></span>
+                                        </div>
+                                        <div class="tl-count">
+                                            <strong><%= item.quantitySold %></strong> sold
+                                        </div>
+                                    </li>
+                                <% }); %>
+                            </ul>
+                        <% } %>
                     </div>
                 </div>
 
-                <div class="product-card">
-                    <div class="product-img-wrapper">
-                        <svg class="product-img perfume-illustration" viewBox="0 0 140 180" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="55" y="18" width="30" height="16" rx="3" fill="#1c1c1e"></rect>
-                            <rect x="60" y="6" width="20" height="12" rx="2" fill="#333"></rect>
-                            <rect x="42" y="34" width="56" height="118" rx="4" fill="#15181d"></rect>
-                            <rect x="52" y="70" width="36" height="40" fill="#22252b"></rect>
-                        </svg>
-                    </div>
-                    <div class="product-details">
-                        <h4 class="product-name">Bleu de Chanel</h4>
-                        <div class="sales-vol-group">
-                            <span class="sales-vol-label">Sales Volume</span>
-                            <div class="sales-vol-row">
-                                <span class="sales-units">985 units</span>
-                                <span class="sales-value">₹842K</span>
-                            </div>
+                <!-- 2. Top 10 Categories -->
+                <div class="top-list-card">
+                    <div class="top-list-header">
+                        <div class="tl-title-wrap">
+                            <h4>Top 10 Categories</h4>
                         </div>
+                        <span class="tl-badge">By Quantity</span>
+                    </div>
+                    <div class="top-list-body">
+                        <% if (!topCategories || topCategories.length === 0) { %>
+                            <div class="tl-empty">No category sales recorded yet.</div>
+                        <% } else { %>
+                            <ul class="tl-items">
+                                <% topCategories.forEach(function(item, idx) { %>
+                                    <li class="tl-item">
+                                        <div class="tl-rank <%= idx < 3 ? 'rank-' + (idx + 1) : '' %>"><%= idx + 1 %></div>
+                                        <div class="tl-info">
+                                            <span class="tl-name" title="<%= item.name %>"><%= item.name %></span>
+                                            <span class="tl-sub">₹<%= item.revenue.toLocaleString('en-IN') %></span>
+                                        </div>
+                                        <div class="tl-count">
+                                            <strong><%= item.quantitySold %></strong> sold
+                                        </div>
+                                    </li>
+                                <% }); %>
+                            </ul>
+                        <% } %>
                     </div>
                 </div>
 
-                <div class="product-card">
-                    <div class="product-img-wrapper">
-                        <svg class="product-img perfume-illustration" viewBox="0 0 140 180" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="58" y="14" width="24" height="16" rx="3" fill="#8e8e93"></rect>
-                            <path d="M48 30h44a4 4 0 0 1 4 4v104a10 10 0 0 1-10 10H54a10 10 0 0 1-10-10V34a4 4 0 0 1 4-4Z" fill="#3a3a3c"></path>
-                            <rect x="50" y="60" width="40" height="50" fill="#232326"></rect>
-                        </svg>
-                    </div>
-                    <div class="product-details">
-                        <h4 class="product-name">Aventus</h4>
-                        <div class="sales-vol-group">
-                            <span class="sales-vol-label">Sales Volume</span>
-                            <div class="sales-vol-row">
-                                <span class="sales-units">520 units</span>
-                                <span class="sales-value">₹2.1M</span>
-                            </div>
+                <!-- 3. Top 10 Brands -->
+                <div class="top-list-card">
+                    <div class="top-list-header">
+                        <div class="tl-title-wrap">
+                            <h4>Top 10 Brands</h4>
                         </div>
+                        <span class="tl-badge">By Quantity</span>
+                    </div>
+                    <div class="top-list-body">
+                        <% if (!topBrands || topBrands.length === 0) { %>
+                            <div class="tl-empty">No brand sales recorded yet.</div>
+                        <% } else { %>
+                            <ul class="tl-items">
+                                <% topBrands.forEach(function(item, idx) { %>
+                                    <li class="tl-item">
+                                        <div class="tl-rank <%= idx < 3 ? 'rank-' + (idx + 1) : '' %>"><%= idx + 1 %></div>
+                                        <div class="tl-info">
+                                            <span class="tl-name" title="<%= item.name %>"><%= item.name %></span>
+                                            <span class="tl-sub">₹<%= item.revenue.toLocaleString('en-IN') %></span>
+                                        </div>
+                                        <div class="tl-count">
+                                            <strong><%= item.quantitySold %></strong> sold
+                                        </div>
+                                    </li>
+                                <% }); %>
+                            </ul>
+                        <% } %>
                     </div>
                 </div>
-
-                <div class="product-card">
-                    <div class="product-img-wrapper">
-                        <span class="product-badge premium">Premium</span>
-                        <svg class="product-img perfume-illustration" viewBox="0 0 140 180" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="56" y="12" width="28" height="16" rx="3" fill="#bfa15f"></rect>
-                            <path d="M46 28h48a6 6 0 0 1 6 6v96a14 14 0 0 1-14 14H54a14 14 0 0 1-14-14V34a6 6 0 0 1 6-6Z" fill="#a8321f"></path>
-                            <rect x="48" y="64" width="44" height="40" fill="#8f2a19"></rect>
-                        </svg>
-                    </div>
-                    <div class="product-details">
-                        <h4 class="product-name">Baccarat Rouge 540</h4>
-                        <div class="sales-vol-group">
-                            <span class="sales-vol-label">Sales Volume</span>
-                            <div class="sales-vol-row">
-                                <span class="sales-units">312 units</span>
-                                <span class="sales-value">₹4.2M</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </section>
 
@@ -351,6 +501,7 @@
         </div>
     </div>
 
+    <!-- Chart.js and Logout Script -->
     <script>
         var adminLogoutBtn = document.getElementById('adminLogoutBtn');
         var logoutModal = document.getElementById('logoutModal');
@@ -369,12 +520,194 @@
             window.location.href = '/admin/logout';
         });
 
-        // Also close on backdrop click, for convenience
         logoutModal?.addEventListener('click', function (e) {
             if (e.target === logoutModal) {
                 logoutModal.style.display = 'none';
             }
         });
+
+        // ── Chart.js Sales Bar Chart ─────────────────────────────────────────
+        let salesChart = null;
+
+        async function loadChartData(filter, startDate, endDate) {
+            const subEl = document.getElementById('chartSub');
+            if (subEl) subEl.textContent = 'Updating analytics...';
+
+            try {
+                let url = `/admin/api/dashboard/chart?filter=${filter}`;
+                if (filter === 'custom' && startDate && endDate) {
+                    url += `&startDate=${startDate}&endDate=${endDate}`;
+                }
+
+                const res  = await fetch(url);
+                const data = await res.json();
+
+                if (!data.success) throw new Error(data.message || 'Error loading chart');
+
+                if (subEl) {
+                    subEl.textContent = `Period Revenue: ₹${data.totalSales.toLocaleString('en-IN', { minimumFractionDigits: 2 })} · ${data.totalOrders} orders`;
+                }
+
+                const canvas = document.getElementById('salesChart');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+
+                if (salesChart) {
+                    salesChart.data.labels             = data.labels;
+                    salesChart.data.datasets[0].data   = data.sales;
+                    salesChart.data.datasets[1].data   = data.orderCounts;
+                    salesChart.update('active');
+                } else {
+                    salesChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: [
+                                {
+                                    label: 'Revenue (₹)',
+                                    data: data.sales,
+                                    backgroundColor: 'rgba(17,17,17,0.82)',
+                                    borderColor: '#111111',
+                                    borderWidth: 0,
+                                    borderRadius: 3,
+                                    borderSkipped: false,
+                                    yAxisID: 'y',
+                                },
+                                {
+                                    label: 'Orders',
+                                    data: data.orderCounts,
+                                    backgroundColor: 'rgba(191,161,95,0.75)',
+                                    borderColor: '#bfa15f',
+                                    borderWidth: 0,
+                                    borderRadius: 3,
+                                    borderSkipped: false,
+                                    yAxisID: 'y1',
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top',
+                                    align: 'end',
+                                    labels: {
+                                        boxWidth: 12,
+                                        boxHeight: 12,
+                                        font: { size: 10, weight: '600' },
+                                        color: '#48484a',
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: '#111111',
+                                    padding: 10,
+                                    titleFont: { size: 11, weight: '700' },
+                                    bodyFont: { size: 11 },
+                                    callbacks: {
+                                        label: function (context) {
+                                            if (context.datasetIndex === 0) {
+                                                return ` Revenue: ₹${context.parsed.y.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                                            }
+                                            return ` Orders: ${context.parsed.y}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { display: false },
+                                    ticks: {
+                                        font: { size: 10, weight: '500' },
+                                        color: '#8e8e93',
+                                        maxRotation: 45,
+                                        autoSkip: true,
+                                        maxTicksLimit: 24,
+                                    }
+                                },
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    grid: { color: '#f2f2f7' },
+                                    beginAtZero: true,
+                                    ticks: {
+                                        font: { size: 10 },
+                                        color: '#8e8e93',
+                                        callback: function (val) {
+                                            if (val >= 100000) return '₹' + (val / 100000).toFixed(1) + 'L';
+                                            if (val >= 1000)   return '₹' + (val / 1000).toFixed(0) + 'k';
+                                            return '₹' + val;
+                                        }
+                                    }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    beginAtZero: true,
+                                    grid: { drawOnChartArea: false },
+                                    ticks: {
+                                        font: { size: 10 },
+                                        color: '#bfa15f',
+                                        stepSize: 1,
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                if (subEl) subEl.textContent = 'Could not load sales analytics';
+            }
+        }
+
+        // Custom date range controls
+        const customPanel   = document.getElementById('customDateRange');
+        const applyBtn      = document.getElementById('applyCustomRange');
+        const startDateInp  = document.getElementById('chartStartDate');
+        const endDateInp    = document.getElementById('chartEndDate');
+
+        // Default custom dates: last 30 days
+        (function () {
+            const today = new Date();
+            const past  = new Date();
+            past.setDate(today.getDate() - 29);
+            const fmt = d => d.toISOString().slice(0, 10);
+            startDateInp.value = fmt(past);
+            endDateInp.value   = fmt(today);
+        })();
+
+        applyBtn.addEventListener('click', function () {
+            const s = startDateInp.value;
+            const e = endDateInp.value;
+            if (!s || !e) return;
+            if (s > e) { alert('Start date must be before end date'); return; }
+            loadChartData('custom', s, e);
+        });
+
+        // Filter button clicks
+        document.querySelectorAll('.chart-filter-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.chart-filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const filter = this.getAttribute('data-filter');
+
+                // Show/hide custom date picker
+                if (filter === 'custom') {
+                    customPanel.style.display = 'flex';
+                } else {
+                    customPanel.style.display = 'none';
+                    loadChartData(filter);
+                }
+            });
+        });
+
+        // Initial chart load (monthly)
+        loadChartData('monthly');
     </script>
 
 </body>

@@ -66,6 +66,40 @@
       </div>
 
       <div class="edit-card">
+        <% if (locals.query && locals.query.error === 'invalid_desc') { %>
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:0.8rem 1rem; margin-bottom:1.2rem; font-size:0.82rem; font-weight:500;">
+            ⚠ Invalid description. Must contain at least 3 letters/numbers (symbols only like "----------" are not allowed).
+          </div>
+        <% } else if (locals.query && locals.query.error === 'invalid_value') { %>
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:0.8rem 1rem; margin-bottom:1.2rem; font-size:0.82rem; font-weight:500;">
+            ⚠ Invalid discount value. Must be greater than 0 (and ≤ 100% for percentage).
+          </div>
+        <% } else if (locals.query && locals.query.error === 'fixed_gt_min') { %>
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:0.8rem 1rem; margin-bottom:1.2rem; font-size:0.82rem; font-weight:500;">
+            ⚠ Fixed discount cannot be equal to or greater than the minimum order value.
+          </div>
+        <% } else if (locals.query && locals.query.error === 'invalid_max_cap') { %>
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:0.8rem 1rem; margin-bottom:1.2rem; font-size:0.82rem; font-weight:500;">
+            ⚠ Maximum discount cap is required and must be greater than 0 for percentage discounts.
+          </div>
+        <% } else if (locals.query && locals.query.error === 'invalid_limit') { %>
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:0.8rem 1rem; margin-bottom:1.2rem; font-size:0.82rem; font-weight:500;">
+            ⚠ Usage limit per user is required and must be a positive integer (at least 1).
+          </div>
+        <% } else if (locals.query && locals.query.error === 'invalid_total_limit') { %>
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:0.8rem 1rem; margin-bottom:1.2rem; font-size:0.82rem; font-weight:500;">
+            ⚠ Total usage limit must be a positive integer (at least 1).
+          </div>
+        <% } else if (locals.query && locals.query.error === 'invalid_date') { %>
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:0.8rem 1rem; margin-bottom:1.2rem; font-size:0.82rem; font-weight:500;">
+            ⚠ Expiry date cannot be in the past.
+          </div>
+        <% } else if (locals.query && locals.query.error) { %>
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:0.8rem 1rem; margin-bottom:1.2rem; font-size:0.82rem; font-weight:500;">
+            ⚠ Failed to update coupon. Please check your inputs and try again.
+          </div>
+        <% } %>
+
         <p class="code-display"><%= coupon.code %></p>
         <p class="code-note">Coupon code cannot be changed after creation.</p>
 
@@ -75,8 +109,10 @@
           <div class="form-group">
             <label>Description *</label>
             <input type="text" id="e-desc" name="description"
+              maxlength="100"
               value="<%= coupon.description %>"
               oninput="clearErr('e-err-desc')">
+            <p class="form-hint">Describe this promotion (minimum 3 characters, no symbols-only).</p>
             <span class="field-error" id="e-err-desc">Description is required.</span>
           </div>
 
@@ -123,11 +159,36 @@
             </div>
           </div>
 
+          <!-- Usage Limits -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Usage Limit Per User *</label>
+              <input type="number" id="e-limit-user" name="usage_limit_per_user"
+                min="1" step="1"
+                value="<%= coupon.usage_limit_per_user || 1 %>"
+                placeholder="1"
+                oninput="clearErr('e-err-limit-user')">
+              <p class="form-hint">How many times each customer can redeem this coupon.</p>
+              <span class="field-error" id="e-err-limit-user">Usage limit per user must be at least 1.</span>
+            </div>
+            <div class="form-group">
+              <label>Total Usage Limit <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
+              <input type="number" id="e-limit-total" name="total_usage_limit"
+                min="1" step="1"
+                value="<%= coupon.total_usage_limit || '' %>"
+                placeholder="Leave blank for unlimited"
+                oninput="clearErr('e-err-limit-total')">
+              <p class="form-hint">Total redemptions across all customers.</p>
+              <span class="field-error" id="e-err-limit-total">Total usage limit must be at least 1.</span>
+            </div>
+          </div>
+
           <!-- Valid until + Status -->
           <div class="form-row">
             <div class="form-group">
               <label>Valid Until <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
               <input type="date" id="e-valid" name="valid_until"
+                min="<%= new Date().toISOString().split('T')[0] %>"
                 value="<%= coupon.valid_until || '' %>"
                 oninput="clearErr('e-err-valid')">
               <span class="field-error" id="e-err-valid">Expiry date must be today or in the future.</span>
@@ -163,7 +224,6 @@
       const err = document.getElementById(errId);
       if (!err) return;
       err.style.display = 'none';
-      // clear red border from the input before this error span
       let prev = err.previousElementSibling;
       while (prev && prev.tagName === 'P') prev = prev.previousElementSibling;
       if (prev && (prev.tagName === 'INPUT' || prev.tagName === 'SELECT')) {
@@ -182,45 +242,55 @@
       let valid = true;
 
       // 1. Description
-      const desc = document.getElementById('e-desc');
-      if (!desc.value.trim()) {
+      const descInput = document.getElementById('e-desc');
+      const cleanDesc = descInput.value.trim();
+      const descAlphanumCount = cleanDesc.replace(/[^a-zA-Z0-9]/g, '').length;
+
+      if (!cleanDesc) {
         showErr('e-desc', 'e-err-desc', 'Description is required.');
+        valid = false;
+      } else if (cleanDesc.length < 3 || cleanDesc.length > 100) {
+        showErr('e-desc', 'e-err-desc', 'Description must be between 3 and 100 characters.');
+        valid = false;
+      } else if (descAlphanumCount < 3) {
+        showErr('e-desc', 'e-err-desc', 'Description must contain actual words/letters, not just symbols (e.g. "----------").');
         valid = false;
       } else { clearErr('e-err-desc'); }
 
       // 2. Discount value
       const discInput = document.getElementById('e-disc-val');
       const dv = parseFloat(discInput.value);
+      const discType = document.getElementById('editDiscType').value;
+
       if (!discInput.value || isNaN(dv) || dv <= 0) {
         showErr('e-disc-val', 'e-err-disc-val', 'Enter a valid discount value greater than 0.');
         valid = false;
-      } else {
-        const discType = document.getElementById('editDiscType').value;
-        if (discType === 'percentage' && dv > 100) {
-          showErr('e-disc-val', 'e-err-disc-val', 'Percentage discount cannot exceed 100%.');
-          valid = false;
-        } else { clearErr('e-err-disc-val'); }
-      }
+      } else if (discType === 'percentage' && dv > 100) {
+        showErr('e-disc-val', 'e-err-disc-val', 'Percentage discount cannot exceed 100%.');
+        valid = false;
+      } else { clearErr('e-err-disc-val'); }
 
       // 3. Min Order Value — required, >= 0
       const minOrder = document.getElementById('e-min-order');
-      if (minOrder.value === '' || minOrder.value === null) {
-        showErr('e-min-order', 'e-err-min-order', 'Min order value is required. Enter 0 if no minimum.');
+      const mov = minOrder.value !== '' ? parseFloat(minOrder.value) : 0;
+      if (minOrder.value === '' || minOrder.value === null || isNaN(mov) || mov < 0) {
+        showErr('e-min-order', 'e-err-min-order', 'Min order value is required and cannot be negative. Enter 0 if no minimum.');
         valid = false;
-      } else if (parseFloat(minOrder.value) < 0) {
-        showErr('e-min-order', 'e-err-min-order', 'Min order value cannot be negative.');
+      } else if (discType === 'fixed' && mov > 0 && dv >= mov) {
+        showErr('e-disc-val', 'e-err-disc-val', 'Fixed discount (₹' + dv + ') must be less than min order value (₹' + mov + ').');
         valid = false;
       } else { clearErr('e-err-min-order'); }
 
       // 4. Max Discount Cap — required only for percentage
-      const discType = document.getElementById('editDiscType').value;
       if (discType === 'percentage') {
         const maxCap = document.getElementById('e-max-cap');
         const capVal = parseFloat(maxCap.value);
         if (!maxCap.value || isNaN(capVal) || capVal <= 0) {
-          showErr('e-max-cap', 'e-err-max-cap', 'Max discount cap is required for percentage discounts.');
+          showErr('e-max-cap', 'e-err-max-cap', 'Max discount cap is required and must be greater than 0 for percentage discounts.');
           valid = false;
         } else { clearErr('e-err-max-cap'); }
+      } else {
+        clearErr('e-err-max-cap');
       }
 
       // 5. Valid Until — if filled, must not be in the past
@@ -232,7 +302,30 @@
           showErr('e-valid', 'e-err-valid', 'Expiry date must be today or in the future.');
           valid = false;
         } else { clearErr('e-err-valid'); }
+      } else {
+        clearErr('e-err-valid');
       }
+
+      // 6. Usage Limit Per User
+      const userLimitInput = document.getElementById('e-limit-user');
+      const userLimitVal = parseInt(userLimitInput.value, 10);
+      if (!userLimitInput.value || isNaN(userLimitVal) || userLimitVal < 1) {
+        showErr('e-limit-user', 'e-err-limit-user', 'Usage limit per user is required and must be at least 1.');
+        valid = false;
+      } else { clearErr('e-err-limit-user'); }
+
+      // 7. Total Usage Limit (optional)
+      const totalLimitInput = document.getElementById('e-limit-total');
+      if (totalLimitInput.value) {
+        const totalLimitVal = parseInt(totalLimitInput.value, 10);
+        if (isNaN(totalLimitVal) || totalLimitVal < 1) {
+          showErr('e-limit-total', 'e-err-limit-total', 'Total usage limit must be at least 1.');
+          valid = false;
+        } else if (userLimitVal > totalLimitVal) {
+          showErr('e-limit-total', 'e-err-limit-total', 'Total limit cannot be smaller than per-user limit.');
+          valid = false;
+        } else { clearErr('e-err-limit-total'); }
+      } else { clearErr('e-err-limit-total'); }
 
       if (valid) {
         document.getElementById('editForm').submit();

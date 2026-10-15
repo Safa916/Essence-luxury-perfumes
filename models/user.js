@@ -52,6 +52,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    referral_code: {
+      type: String,
+      unique: true,
+      sparse: true, // allows null without unique-key conflicts
+      uppercase: true,
+      trim: true,
+    },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );

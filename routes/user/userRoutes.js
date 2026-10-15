@@ -59,7 +59,7 @@ router.get('/user-signup', checkUser, (req, res) => {
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
 
-  res.render('user/auth/user-signup');
+  res.render('user/auth/user-signup', { refCode: req.query.ref || '' });
 });
 
 

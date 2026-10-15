@@ -170,7 +170,7 @@ const withSl = products.map((p, i) => {
 exports.renderAddProduct = async (req, res) => {
   const [categories, brands] = await Promise.all([
     Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
-    Brand ? Brand.find().lean() : [],
+    Brand ? Brand.find({ is_active: true }).sort({ name: 1 }).lean() : [],
   ]);
   res.render('admin/products/addProduct', { categories, brands, errors: {}, oldInput: null });
 };
@@ -188,7 +188,7 @@ exports.createProduct = async (req, res) => {
       deleteUploadedImages(uploadedImages);
       const [categories, brands] = await Promise.all([
         Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
-        Brand ? Brand.find().lean() : [],
+        Brand ? Brand.find({ is_active: true }).sort({ name: 1 }).lean() : [],
       ]);
       return res.status(400).render('admin/products/addProduct', {
         categories,
@@ -248,7 +248,7 @@ exports.createProduct = async (req, res) => {
 
     const [categories, brands] = await Promise.all([
       Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
-      Brand ? Brand.find().lean() : [],
+      Brand ? Brand.find({ is_active: true }).sort({ name: 1 }).lean() : [],
     ]);
 
        let errors;
@@ -278,7 +278,7 @@ exports.renderEditProduct = async (req, res) => {
 
   const [categories, brands, variantCount] = await Promise.all([
     Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
-    Brand ? Brand.find().lean() : [],
+    Brand ? Brand.find({ $or: [{ is_active: true }, { _id: product.brand_id }] }).sort({ name: 1 }).lean() : [],
     Variant.countDocuments({ product_id: product._id, deleted_at: null }),
   ]);
 
@@ -331,7 +331,7 @@ exports.updateProduct = async (req, res) => {
       deleteUploadedImages(req.processedImages);
       const [categories, brands, variantCount] = await Promise.all([
         Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
-        Brand ? Brand.find().lean() : [],
+        Brand ? Brand.find({ $or: [{ is_active: true }, { _id: product.brand_id }] }).sort({ name: 1 }).lean() : [],
         Variant.countDocuments({ product_id: product._id, deleted_at: null }),
       ]);
       return res.status(400).render('admin/products/editProduct', {

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Available Coupons & Offers — Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/profile/user-profile.css">
+  <link rel="stylesheet" href="/user/coupons/coupons.css">
+</head>
+<body>
+
+  <%- include('../partials/header', { activePage: 'coupons', user: typeof user !== 'undefined' ? user : null }) %>
+
+  <div class="account-layout">
+
+    <%- include('../partials/account-sidebar', { activePage: 'coupons' }) %>
+
+    <main class="account-main">
+
+      <p class="eyebrow">Exclusive Privileges</p>
+      <h1 class="page-title">Available Coupons</h1>
+      <p class="page-subtitle">Apply these codes at checkout to unlock savings on our haute perfumery collections.</p>
+
+      <% if (!coupons || !coupons.length) { %>
+        <div class="coupons-empty">
+          <div class="coupons-empty-icon">
+            <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.2">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+              <line x1="7" y1="7" x2="7.01" y2="7"/>
+            </svg>
+          </div>
+          <p class="coupons-empty-title">No Active Coupons Right Now</p>
+          <p class="coupons-empty-desc">Check back soon for upcoming limited-edition seasonal offers and member privileges.</p>
+          <a href="/shop" class="btn btn-dark">Explore Fragrances</a>
+        </div>
+      <% } else { %>
+        <% if (typeof availableCoupons !== 'undefined' && availableCoupons.length > 0) { %>
+          <div class="coupons-section-header">
+            <h2 class="coupons-section-title">Active Offers Ready to Use (<%= availableCoupons.length %>)</h2>
+          </div>
+          <div class="coupons-grid">
+            <% availableCoupons.forEach(function (c) { %>
+              <div class="coupon-box is-active-coupon" data-code="<%= c.code %>">
+                <div class="coupon-box-top">
+                  <div class="coupon-badge-wrap">
+                    <span class="coupon-discount-tag">
+                      <%= c.discount_type === 'percentage' ? c.discount_value + '% OFF' : '₹' + c.discount_value + ' FLAT OFF' %>
+                    </span>
+                  </div>
+                  <div class="coupon-code-chip" title="Click to copy" onclick="copyCouponCode('<%= c.code %>')">
+                    <span class="chip-code"><%= c.code %></span>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <h3 class="coupon-title"><%= c.description %></h3>
+
+                <ul class="coupon-rules">
+                  <li>
+                    <span class="rule-bullet">&bull;</span>
+                    <span>Minimum purchase: <strong>₹<%= c.min_order_value.toLocaleString('en-IN') %></strong></span>
+                  </li>
+                  <% if (c.max_discount_amount && c.discount_type === 'percentage') { %>
+                    <li>
+                      <span class="rule-bullet">&bull;</span>
+                      <span>Maximum discount: <strong>₹<%= c.max_discount_amount.toLocaleString('en-IN') %></strong></span>
+                    </li>
+                  <% } %>
+                  <% if (c.valid_until) { %>
+                    <li>
+                      <span class="rule-bullet">&bull;</span>
+                      <span>Valid until: <strong><%= new Date(c.valid_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong></span>
+                    </li>
+                  <% } %>
+                  <li>
+                    <span class="rule-bullet">&bull;</span>
+                    <span>Remaining uses for you: <strong><%= c.userRemainingUses %> of <%= c.limitPerUser %></strong></span>
+                  </li>
+                </ul>
+
+                <div class="coupon-box-actions">
+                  <button type="button" class="btn-copy-code" onclick="copyCouponCode('<%= c.code %>')">
+                    Copy Code
+                  </button>
+                  <a href="/shop" class="btn-use-code">
+                    Use in Shop &rarr;
+                  </a>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+
+        <% if (typeof usedCoupons !== 'undefined' && usedCoupons.length > 0) { %>
+          <div class="coupons-section-header" style="margin-top: 3rem;">
+            <h2 class="coupons-section-title">Already Redeemed Offers (<%= usedCoupons.length %>)</h2>
+            <p class="coupons-section-sub">You have already reached the maximum usage limit for these coupons.</p>
+          </div>
+          <div class="coupons-grid">
+            <% usedCoupons.forEach(function (c) { %>
+              <div class="coupon-box is-used-coupon" data-code="<%= c.code %>">
+                <div class="coupon-box-top">
+                  <div class="coupon-badge-wrap">
+                    <span class="coupon-discount-tag coupon-discount-tag--muted">
+                      <%= c.discount_type === 'percentage' ? c.discount_value + '% OFF' : '₹' + c.discount_value + ' FLAT OFF' %>
+                    </span>
+                  </div>
+                  <span class="coupon-used-pill">Already Used ✓</span>
+                </div>
+
+                <h3 class="coupon-title" style="color: var(--ink-soft);"><%= c.description %></h3>
+
+                <ul class="coupon-rules">
+                  <li>
+                    <span class="rule-bullet">&bull;</span>
+                    <span>Code: <strong><%= c.code %></strong></span>
+                  </li>
+                  <li>
+                    <span class="rule-bullet">&bull;</span>
+                    <span>Used: <strong><%= c.userUsageCount %> of <%= c.limitPerUser %> times</strong></span>
+                  </li>
+                  <% if (c.valid_until) { %>
+                    <li>
+                      <span class="rule-bullet">&bull;</span>
+                      <span>Valid until: <strong><%= new Date(c.valid_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong></span>
+                    </li>
+                  <% } %>
+                </ul>
+
+                <div class="coupon-box-actions">
+                  <span class="used-note">This offer has already been redeemed for your account.</span>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      <% } %>
+
+    </main>
+
+  </div>
+
+  <%- include('../partials/logout-modal') %>
+  <%- include('../partials/footer') %>
+
+  <script>
+    function copyCouponCode(code) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(code).then(function () {
+          if (typeof essToast === 'function') {
+            essToast('Coupon code ' + code + ' copied to clipboard!', 'success');
+          } else {
+            alert('Copied: ' + code);
+          }
+        }).catch(function () {
+          fallbackCopy(code);
+        });
+      } else {
+        fallbackCopy(code);
+      }
+    }
+
+    function fallbackCopy(code) {
+      var temp = document.createElement('input');
+      temp.value = code;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      if (typeof essToast === 'function') {
+        essToast('Coupon code ' + code + ' copied!', 'success');
+      }
+    }
+  </script>
+
+</body>
+</html>

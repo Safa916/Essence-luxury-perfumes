@@ -26,11 +26,25 @@ const fileFilter = (req, file, cb) => {
 };
 
 // Single image, field name "banner" — matches the Category model's banner_url field
-const uploadCategoryImage = multer({
+const uploadSingle = multer({
   storage,
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 }).single('banner');
+
+const uploadCategoryImage = (req, res, next) => {
+  uploadSingle(req, res, (err) => {
+    if (err) {
+      console.error('Category image upload error:', err.message);
+      const isEdit = req.params && req.params.id;
+      const modalParam = isEdit ? `openModal=edit&editId=${req.params.id}` : 'openModal=add';
+      return res.redirect(
+        `/admin/categories?${modalParam}&formError=${encodeURIComponent(err.message || 'Image upload failed')}`
+      );
+    }
+    next();
+  });
+};
 
 // Builds the public URL saved on the Category doc, e.g. "/uploads/categories/cat-...jpg"
 const toPublicPath = (filename) => `/uploads/categories/${filename}`;

@@ -78,6 +78,26 @@
                         <span class="field-error" id="confirmPassword-error"></span>
                     </div>
 
+                    <!-- Referral Code (optional, visible) -->
+                    <div class="form-group referral-group">
+                        <label class="form-label" for="refCode">
+                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:4px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Referral Code <span class="referral-optional">(Optional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="refCode"
+                            name="ref"
+                            class="form-input"
+                            placeholder="Enter referral code"
+                            maxlength="20"
+                            autocomplete="off"
+                            spellcheck="false"
+                            value="<%= typeof refCode !== 'undefined' ? refCode : '' %>"
+                        >
+                        <span class="referral-hint">Have a friend's referral code? Enter it to earn wallet rewards.</span>
+                    </div>
+
                     <button type="submit" class="submit-btn">Create Account</button>
                 </form>
 
@@ -269,7 +289,7 @@
                 const res = await fetch('/auth/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fullName, email, password, confirmPassword })
+                    body: JSON.stringify({ fullName, email, password, confirmPassword, ref: document.getElementById('refCode').value.trim() })
                 });
 
                 const data = await res.json();
@@ -313,10 +333,11 @@
 
         async function handleGoogleSignIn(response) {
             try {
+                const ref = document.getElementById('refCode') ? document.getElementById('refCode').value.trim() : '';
                 const res = await fetch('/auth/google', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken: response.credential })
+                    body: JSON.stringify({ idToken: response.credential, ref })
                 });
 
                 const data = await res.json();
@@ -332,6 +353,24 @@
                 showErrorToast('Something went wrong signing in with Google');
             }
         }
+        // Pre-fill referral code from URL (?ref=...) if the EJS didn't already
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const ref = params.get('ref') || '';
+            const refInput = document.getElementById('refCode');
+            if (refInput && !refInput.value && ref) {
+                refInput.value = ref;
+                // Show a subtle indicator that the code was auto-filled
+                const hint = refInput.closest('.referral-group');
+                if (hint) {
+                    const hintEl = hint.querySelector('.referral-hint');
+                    if (hintEl) {
+                        hintEl.textContent = '✓ Referral code applied automatically from your invite link.';
+                        hintEl.style.color = '#5a7c5a';
+                    }
+                }
+            }
+        })();
     </script>
 
 </body>

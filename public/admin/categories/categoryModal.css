@@ -84,6 +84,39 @@
     color: #AEAEB2;
 }
 
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    background-color: #f2f2f7;
+    font-size: 0.85rem;
+    color: #555;
+    border: 1px dashed #ccc;
+    cursor: pointer;
+}
+.form-hint {
+    display: block;
+    font-size: 0.72rem;
+    color: #8E8E93;
+    margin-top: 5px;
+}
+.banner-preview-wrapper {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.banner-preview-img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.banner-preview-info {
+    font-size: 0.75rem;
+    color: #666;
+}
+
 .form-row-toggle {
     display: flex;
     align-items: center;

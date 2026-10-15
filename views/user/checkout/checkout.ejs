@@ -3,11 +3,13 @@
   const _addresses  = typeof addresses  !== 'undefined' ? addresses  : [];
   const _defaultId  = typeof defaultAddressId !== 'undefined' ? defaultAddressId : null;
   const _coupon     = typeof coupon     !== 'undefined' ? coupon     : null;
+  const _availableCoupons = typeof availableCoupons !== 'undefined' ? availableCoupons : [];
   const _subtotal   = typeof subtotal   !== 'undefined' ? subtotal   : 0;
   const _discount   = typeof discount   !== 'undefined' ? discount   : 0;
   const _tax        = typeof tax        !== 'undefined' ? tax        : 0;
   const _shipping   = typeof shipping   !== 'undefined' ? shipping   : 0;
   const _total      = typeof total      !== 'undefined' ? total      : 0;
+  const _walletBalance = typeof walletBalance !== 'undefined' ? walletBalance : 0;
   const fmt = (n) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 %>
 <!DOCTYPE html>
@@ -99,15 +101,33 @@
               <svg class="pay-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="7" width="14" height="10" rx="1"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>
             </label>
 
-            <!-- Online Payment — coming soon (disabled) -->
-            <label class="pay-option pay-disabled" title="Coming soon">
-              <input type="radio" name="paymentMethod" value="online" disabled>
+            <!-- Online Payment (Razorpay) -->
+            <label class="pay-option">
+              <input type="radio" name="paymentMethod" value="online">
               <span class="pay-radio"></span>
               <span class="pay-text">
-                <span class="pay-name">Online Payment <span class="coming-soon-tag">Coming Soon</span></span>
-                <span class="pay-desc">Cards, UPI, Net Banking</span>
+                <span class="pay-name">Online Payment</span>
+                <span class="pay-desc">Cards, UPI, Net Banking via Razorpay</span>
               </span>
               <svg class="pay-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </label>
+
+            <!-- Wallet Payment -->
+            <label class="pay-option <%= _walletBalance < _total ? 'pay-disabled' : '' %>" <% if (_walletBalance < _total) { %>title="Insufficient wallet balance"<% } %>>
+              <input type="radio" name="paymentMethod" value="wallet" <%= _walletBalance < _total ? 'disabled' : '' %>>
+              <span class="pay-radio"></span>
+              <span class="pay-text">
+                <span class="pay-name">
+                  Essence Wallet
+                  <% if (_walletBalance < _total) { %>
+                    <span class="coming-soon-tag" style="background:#fef2f2; color:#dc2626; border-color:#fecaca;">Insufficient Balance</span>
+                  <% } else { %>
+                    <span class="coming-soon-tag" style="background:#f0fdf4; color:#16a34a; border-color:#bbf7d0;">Available</span>
+                  <% } %>
+                </span>
+                <span class="pay-desc">Balance: <%= fmt(_walletBalance) %></span>
+              </span>
+              <svg class="pay-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M16 12.5h2.5"/><path d="M3 9.5h18"/></svg>
             </label>
           </div>
         </section>
@@ -119,6 +139,12 @@
               <span class="step-badge">03</span>
               <h2 class="co-title">Coupon Code</h2>
             </div>
+            <% if (_availableCoupons && _availableCoupons.length > 0) { %>
+              <button type="button" class="btn-available-coupons-toggle" id="toggleCouponsBtn">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:4px;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span id="toggleCouponsLabel">Available Offers (<%= _availableCoupons.length %>)</span>
+              </button>
+            <% } %>
           </div>
 
           <% if (_coupon && _coupon.code) { %>
@@ -158,6 +184,59 @@
           <% } %>
 
           <p class="coupon-error" id="couponError" style="display:none;"></p>
+
+          <!-- Available Coupons Section -->
+          <% if (_availableCoupons && _availableCoupons.length > 0) { %>
+            <div class="co-available-coupons" id="availableCouponsWrap">
+              <div class="co-coupons-header">
+                <span class="co-coupons-badge">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>
+                  Available Coupons
+                </span>
+                <span class="co-coupons-count"><%= _availableCoupons.length %> offer<%= _availableCoupons.length > 1 ? 's' : '' %> available</span>
+              </div>
+              <div class="co-coupons-grid">
+                <% _availableCoupons.forEach(function (c) { %>
+                  <% const isThisApplied = (_coupon && _coupon.code === c.code); %>
+                  <div class="co-coupon-card <%= isThisApplied ? 'is-applied' : '' %> <%= c.isEligible ? 'is-eligible' : 'is-locked' %>" data-code="<%= c.code %>">
+                    <div class="co-coupon-left">
+                      <div class="co-coupon-top">
+                        <span class="co-coupon-code"><%= c.code %></span>
+                        <span class="co-coupon-discount">
+                          <%= c.discount_type === 'percentage' ? c.discount_value + '% OFF' : '₹' + c.discount_value + ' FLAT OFF' %>
+                        </span>
+                      </div>
+                      <p class="co-coupon-desc"><%= c.description %></p>
+                      <div class="co-coupon-terms">
+                        <span>Min spend: ₹<%= c.min_order_value.toLocaleString('en-IN') %></span>
+                        <% if (c.max_discount_amount && c.discount_type === 'percentage') { %>
+                          <span> &middot; Max saving: ₹<%= c.max_discount_amount.toLocaleString('en-IN') %></span>
+                        <% } %>
+                        <% if (c.valid_until) { %>
+                          <span> &middot; Valid till <%= new Date(c.valid_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span>
+                        <% } %>
+                      </div>
+                      <% if (!c.isEligible) { %>
+                        <p class="co-coupon-shortfall">
+                          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                          Add ₹<%= Math.ceil(c.shortfall).toLocaleString('en-IN') %> more to unlock
+                        </p>
+                      <% } %>
+                    </div>
+                    <div class="co-coupon-right">
+                      <% if (isThisApplied) { %>
+                        <span class="co-coupon-applied-pill">Applied ✓</span>
+                      <% } else if (c.isEligible) { %>
+                        <button type="button" class="btn-quick-apply" data-code="<%= c.code %>">Apply</button>
+                      <% } else { %>
+                        <button type="button" class="btn-quick-copy" data-code="<%= c.code %>">Copy</button>
+                      <% } %>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+            </div>
+          <% } %>
         </section>
 
       </div>
@@ -169,7 +248,7 @@
         <!-- Items -->
         <ul class="summary-items" id="checkoutSummaryItems">
           <% _items.forEach(function (item) { %>
-            <li class="summary-item" data-cart-item-id="<%= item.cart_item_id %>" data-unit-price="<%= item.unit_price %>" data-max-qty="<%= item.stock %>">
+            <li class="summary-item" data-cart-item-id="<%= item.cart_item_id %>" data-unit-price="<%= item.unit_price %>" data-max-qty="<%= item.stock %>" data-original-price="<%= item.original_price %>">
               <div class="summary-thumb">
                 <img src="<%= item.image %>" alt="<%= item.name %>">
               </div>
@@ -182,8 +261,13 @@
                   <button type="button" class="co-qty-btn co-qty-increase" <%= item.quantity >= item.stock ? 'disabled' : '' %> aria-label="Increase quantity">+</button>
                 </div>
               </div>
-              <div class="summary-item-right">
+              <div class="summary-item-right" style="text-align:right;">
                 <p class="summary-price co-item-total"><%= fmt(item.item_total) %></p>
+                <% if (item.hasOffer) { %>
+                  <p class="co-item-original" style="font-size:0.75rem; text-decoration:line-through; color:#9ca3af; margin:0;">
+                    <%= fmt(item.original_price * item.quantity) %>
+                  </p>
+                <% } %>
               </div>
             </li>
           <% }); %>
@@ -196,7 +280,7 @@
             <dd id="co-subtotal"><%= fmt(_subtotal) %></dd>
           </div>
           <!-- Discount row — always in DOM so JS can toggle it -->
-          <div class="totals-row is-discount" id="co-discount-row" <% if (_discount <= 0) { %>style="display:none;"<% } %>>
+          <div class="totals-row is-discount" id="co-discount-row" data-discount="<%= _discount %>" <% if (_discount <= 0) { %>style="display:none;"<% } %>>
             <dt id="co-discount-label">Coupon Discount<% if (_coupon && _coupon.code) { %> (<%= _coupon.code %>)<% } %></dt>
             <dd id="co-discount-val">−<%= fmt(_discount) %></dd>
           </div>
@@ -221,7 +305,7 @@
           <p class="free-shipping-note" id="co-ship-note">Add ₹<%= (2000 - (_subtotal - _discount)).toLocaleString('en-IN') %> more for free shipping</p>
         <% } %>
 
-        <p class="secure-note">Cash on Delivery · 100% secure checkout</p>
+        <p class="secure-note" id="coSecureNote">Cash on Delivery · 100% secure checkout</p>
 
         <button
           type="submit"
@@ -238,7 +322,33 @@
 
   <%- include('../partials/logout-modal') %>
 
+  <!-- Razorpay Checkout Script -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
   <script>
+    // ── Payment method selection ──────────────────────────────────────────────
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        document.querySelectorAll('.pay-option').forEach(function(opt) {
+          opt.classList.remove('is-active');
+        });
+        this.closest('.pay-option').classList.add('is-active');
+
+        const btn = document.getElementById('placeOrderBtn');
+        const note = document.getElementById('coSecureNote');
+        if (this.value === 'online') {
+          btn.textContent = 'Proceed to Pay Online';
+          if (note) note.textContent = 'Razorpay Secure · 256-bit encrypted payment';
+        } else if (this.value === 'wallet') {
+          btn.textContent = 'Pay with Essence Wallet';
+          if (note) note.textContent = 'Instant payment · Deducted from your wallet';
+        } else {
+          btn.textContent = 'Place Order';
+          if (note) note.textContent = 'Cash on Delivery · 100% secure checkout';
+        }
+      });
+    });
+
     // ── Address card selection ────────────────────────────────────────────────
     document.querySelectorAll('input[name="addressId"]').forEach(function(radio) {
       radio.addEventListener('change', function() {
@@ -249,11 +359,104 @@
       });
     });
 
-    // ── Prevent double-submit ─────────────────────────────────────────────────
-    document.getElementById('checkoutForm').addEventListener('submit', function() {
-      const btn = document.getElementById('placeOrderBtn');
-      btn.disabled = true;
-      btn.textContent = 'Placing Order...';
+    // ── Checkout submission (COD vs Razorpay) ─────────────────────────────────
+    document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+      const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'cod';
+      const addressInput = document.querySelector('input[name="addressId"]:checked');
+
+      if (!addressInput) {
+        e.preventDefault();
+        alert('Please select or add a delivery address first.');
+        return;
+      }
+
+      if (selectedPayment === 'online') {
+        e.preventDefault();
+        const btn = document.getElementById('placeOrderBtn');
+        btn.disabled = true;
+        btn.textContent = 'Initiating Payment...';
+
+        try {
+          const res = await fetch('/checkout/create-razorpay-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ addressId: addressInput.value }),
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            alert(data.message || 'Could not initiate online payment. Please try again.');
+            btn.disabled = false;
+            btn.textContent = 'Proceed to Pay Online';
+            return;
+          }
+
+          const options = {
+            key: data.keyId,
+            amount: data.amount,
+            currency: data.currency,
+            name: 'Essence Luxury Perfumes',
+            description: 'Fragrance Order Payment',
+            order_id: data.orderId,
+            prefill: {
+              name: data.user.name,
+              email: data.user.email,
+              contact: data.user.phone,
+            },
+            theme: {
+              color: '#54433b',
+            },
+            handler: async function (response) {
+              btn.textContent = 'Confirming Payment...';
+              try {
+                const verifyRes = await fetch('/checkout/verify-razorpay-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    addressId: addressInput.value,
+                  }),
+                });
+
+                const verifyData = await verifyRes.json();
+                if (verifyData.success && verifyData.redirectUrl) {
+                  window.location.href = verifyData.redirectUrl;
+                } else {
+                  window.location.href = `/checkout/failure?reason=${encodeURIComponent(verifyData.message || 'Payment verification failed')}`;
+                }
+              } catch (verifyErr) {
+                console.error('Verification error:', verifyErr);
+                window.location.href = '/checkout/failure?reason=Network%20error%20during%20verification';
+              }
+            },
+            modal: {
+              ondismiss: function () {
+                btn.disabled = false;
+                btn.textContent = 'Proceed to Pay Online';
+              },
+            },
+          };
+
+          const rzp = new Razorpay(options);
+          rzp.on('payment.failed', function (response) {
+            const reason = response.error ? response.error.description : 'Payment transaction failed';
+            window.location.href = `/checkout/failure?reason=${encodeURIComponent(reason)}`;
+          });
+          rzp.open();
+        } catch (err) {
+          console.error('Create order error:', err);
+          alert('Failed to connect to payment gateway. Please check your network connection.');
+          btn.disabled = false;
+          btn.textContent = 'Proceed to Pay Online';
+        }
+      } else {
+        // COD or Wallet submission
+        const btn = document.getElementById('placeOrderBtn');
+        btn.disabled = true;
+        btn.textContent = selectedPayment === 'wallet' ? 'Processing Wallet Payment...' : 'Placing Order...';
+      }
     });
 
     // ── Checkout quantity controls ─────────────────────────────────────────────
@@ -286,7 +489,7 @@
         const totalEl = document.getElementById('co-total');  if (totalEl) totalEl.textContent = fmt(total);
 
         const shipEl = document.getElementById('co-shipping');
-        if (shipEl) shipEl.textContent = shipping === 0 ? '<span class="free-tag">Free</span>' : fmt(shipping);
+        if (shipEl) shipEl.innerHTML = shipping === 0 ? '<span class="free-tag">Free</span>' : fmt(shipping);
 
         const noteEl = document.getElementById('co-ship-note');
         if (noteEl) {
@@ -325,6 +528,10 @@
         decBtn.disabled = newQty <= 1;
         incBtn.disabled = newQty >= maxQty;
         itemTotalEl.textContent = fmt(newQty * unitPrice);
+        // Update strikethrough original price if present
+        const originalPrice = parseFloat(row.dataset.originalPrice || 0);
+        const strikeEl = row.querySelector('.co-item-original');
+        if (strikeEl && originalPrice > 0) strikeEl.textContent = fmt(newQty * originalPrice);
         recalcSummary();
 
         // Sync with server

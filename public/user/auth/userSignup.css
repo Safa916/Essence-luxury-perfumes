@@ -267,6 +267,43 @@ body {
     margin-top: 2px;
 }
 
+/* ── Referral Code field ── */
+.referral-group .form-input {
+    border-bottom-style: dashed;
+    border-bottom-color: #d4cabb;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.referral-group .form-input::placeholder {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.referral-group .form-input:focus {
+    border-bottom-style: solid;
+    border-bottom-color: #1c1c1e;
+}
+
+.referral-optional {
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: #b8b0a0;
+    text-transform: none;
+    margin-left: 2px;
+}
+
+.referral-hint {
+    display: block;
+    font-size: 0.68rem;
+    color: #a8a196;
+    margin-top: 3px;
+    line-height: 1.4;
+    transition: color 0.2s;
+}
+
 .submit-btn {
     background-color: #17130d;
     color: #ffffff;

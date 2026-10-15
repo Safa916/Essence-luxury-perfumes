@@ -91,7 +91,34 @@
                 </button>
               <% }); %>
             </div>
-            <p class="size-stock-note" id="sizeStockNote" style="display:none;">This size is currently out of stock.</p>
+
+            <%
+              const initialVariant = variants[0] || null;
+              const initialStock = initialVariant ? Number(initialVariant.quantity) : 0;
+            %>
+            <div class="stock-indicator" id="stockIndicator">
+              <% if (initialStock <= 0) { %>
+                <div class="stock-badge stock-badge--out">
+                  <span class="stock-dot"></span>
+                  <span class="stock-text">Out of Stock &mdash; 0 products remaining</span>
+                </div>
+              <% } else if (initialStock <= 5) { %>
+                <div class="stock-badge stock-badge--low">
+                  <span class="stock-dot"></span>
+                  <span class="stock-text">Hurry, only <strong><%= initialStock %></strong> <%= initialStock === 1 ? 'product remains' : 'products remain' %> in stock!</span>
+                </div>
+              <% } else if (initialStock <= 15) { %>
+                <div class="stock-badge stock-badge--medium">
+                  <span class="stock-dot"></span>
+                  <span class="stock-text">Limited Stock &mdash; <strong><%= initialStock %></strong> products remaining</span>
+                </div>
+              <% } else { %>
+                <div class="stock-badge stock-badge--in">
+                  <span class="stock-dot"></span>
+                  <span class="stock-text">In Stock &mdash; <strong><%= initialStock %></strong> products available</span>
+                </div>
+              <% } %>
+            </div>
           </div>
         <% } %>
 
@@ -104,7 +131,7 @@
         >
           <%= inStock ? 'Add to Atelier Bag' : 'Out of Stock' %>
         </button>
-        <button type="button" class="btn btn-outline buy-now-btn" id="buyNowBtn" <%= !inStock ? 'disabled' : '' %>>
+        <button type="button" class="btn btn-outline buy-now-btn" id="buyNowBtn" data-product-id="<%= product._id %>" <%= !inStock ? 'disabled' : '' %>>
           Buy Now
         </button>
 

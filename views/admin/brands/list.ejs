@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brand Management — Essence Admin</title>
+  <link rel="stylesheet" href="/admin/dashboard.css">
+  <link rel="stylesheet" href="/admin/partials/sidebar.css">
+  <style>
+    .bm-page {
+      padding: 36px 48px;
+      max-width: 1280px;
+    }
+
+    .bm-breadcrumb {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #8e8e93;
+      margin-bottom: 8px;
+    }
+
+    .bm-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .bm-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      color: #111111;
+      margin: 0;
+    }
+
+    .bm-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #111111;
+      color: #ffffff;
+      padding: 12px 24px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .bm-add-btn:hover {
+      background: #333333;
+    }
+
+    /* KPI Cards */
+    .bm-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 320px));
+      gap: 20px;
+      margin-bottom: 36px;
+    }
+
+    .bm-kpi {
+      background: #ffffff;
+      border: 1px solid #eef0f2;
+      border-radius: 4px;
+      padding: 24px 28px;
+      position: relative;
+    }
+
+    .bm-kpi-label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #8e8e93;
+      margin: 0 0 14px;
+    }
+
+    .bm-kpi-val-row {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .bm-kpi-val {
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: #111111;
+      line-height: 1;
+    }
+
+    .bm-kpi-pill {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #e6f9ed;
+      color: #10b981;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* Table & Filter Wrap */
+    .bm-table-card {
+      background: #ffffff;
+      border: 1px solid #eef0f2;
+      border-radius: 4px;
+    }
+
+    .bm-filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid #f2f2f7;
+      gap: 16px;
+    }
+
+    .bm-search-form {
+      display: flex;
+      align-items: center;
+      background: #f4f5f7;
+      border-radius: 4px;
+      padding: 8px 14px;
+      width: 100%;
+      max-width: 360px;
+      gap: 10px;
+    }
+
+    .bm-search-form svg {
+      color: #8e8e93;
+      flex-shrink: 0;
+    }
+
+    .bm-search-input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 0.85rem;
+      color: #111;
+      width: 100%;
+    }
+
+    .bm-search-input::placeholder {
+      color: #a1a1aa;
+    }
+
+    /* Table */
+    .bm-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .bm-table th {
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #8e8e93;
+      padding: 14px 24px;
+      text-align: left;
+      background: #fcfcfd;
+      border-bottom: 1px solid #f2f2f7;
+      font-weight: 800;
+    }
+
+    .bm-table td {
+      padding: 16px 24px;
+      border-bottom: 1px solid #f7f7f9;
+      vertical-align: middle;
+      font-size: 0.85rem;
+      color: #1c1c1e;
+    }
+
+    .bm-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .bm-table tr:hover td {
+      background: #fafafa;
+    }
+
+    .bm-brand-name {
+      font-weight: 800;
+      font-size: 0.92rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #111;
+    }
+
+    .bm-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 0.64rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-radius: 2px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .bm-badge.active {
+      background: #111111;
+      color: #ffffff;
+      border: 1px solid #111;
+    }
+
+    .bm-badge.inactive {
+      background: #f4f4f5;
+      color: #8e8e93;
+      border: 1px solid #e5e5ea;
+    }
+
+    .bm-badge:hover {
+      opacity: 0.8;
+      transform: scale(0.98);
+    }
+
+    .bm-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .bm-icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #71717a;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .bm-icon-btn:hover {
+      color: #111;
+    }
+
+    .bm-icon-btn.del:hover {
+      color: #e11d48;
+    }
+
+    /* Pagination */
+    .bm-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-top: 1px solid #f2f2f7;
+      background: #fcfcfd;
+    }
+
+    .bm-pag-info {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #8e8e93;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .bm-pag-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .bm-pag-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #e5e5ea;
+      background: #ffffff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #71717a;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: all 0.15s;
+    }
+
+    .bm-pag-btn:hover:not(.disabled):not(.current) {
+      border-color: #111;
+      color: #111;
+    }
+
+    .bm-pag-btn.current {
+      background: #111111;
+      color: #ffffff;
+      border-color: #111111;
+      pointer-events: none;
+    }
+
+    .bm-pag-btn.disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .bm-empty {
+      padding: 56px 24px;
+      text-align: center;
+      color: #8e8e93;
+      font-size: 0.9rem;
+    }
+
+    /* Delete Confirmation Modal */
+    .del-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .del-overlay.open {
+      display: flex;
+    }
+
+    .del-box {
+      background: #ffffff;
+      padding: 36px;
+      max-width: 440px;
+      width: 90%;
+      border-radius: 4px;
+    }
+
+    .del-box h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin: 0 0 6px;
+      color: #111;
+    }
+
+    .del-bar {
+      width: 36px;
+      height: 3px;
+      background: #b3402c;
+      margin-bottom: 16px;
+    }
+
+    .del-box p {
+      font-size: 0.86rem;
+      color: #48484a;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .del-warn {
+      background: #fff5f5;
+      border-left: 3px solid #b3402c;
+      padding: 10px 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #b3402c;
+      margin-bottom: 24px;
+    }
+
+    .del-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .del-confirm {
+      background: #111111;
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .del-confirm:hover {
+      background: #b3402c;
+    }
+
+    .del-cancel {
+      background: #ffffff;
+      color: #111;
+      border: 1px solid #d1d1d6;
+      padding: 10px 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<%- include('../partials/sidebar', { activePage: 'brand' }) %>
+
+<main class="main-content">
+  <header class="top-header">
+    <div class="top-search-wrapper">
+      <form action="/admin/brands" method="GET">
+        <input type="text" name="search" value="<%= search %>" class="top-search-input" placeholder="Search brands...">
+      </form>
+    </div>
+    <div class="header-actions">
+      <div class="admin-profile">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>
+        <%= (admin && admin.email) || 'Admin' %>
+      </div>
+    </div>
+  </header>
+
+  <div class="bm-page">
+    <p class="bm-breadcrumb">Architecture / Ecosystem</p>
+    <div class="bm-title-row">
+      <h1 class="bm-title">Brand Management</h1>
+      <a href="/admin/brands/add" class="bm-add-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="12" y2="12"/></svg>
+        Add New Brand
+      </a>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="bm-kpi-row">
+      <div class="bm-kpi">
+        <p class="bm-kpi-label">Total Brands</p>
+        <div class="bm-kpi-val"><%= totalBrands %></div>
+      </div>
+      <div class="bm-kpi">
+        <p class="bm-kpi-label">Active Brands</p>
+        <div class="bm-kpi-val-row">
+          <div class="bm-kpi-val" id="activeBrandsCounter"><%= activeBrands %></div>
+          <% if (totalBrands > 0) { %>
+            <span class="bm-kpi-pill">↗ <%= Math.round(activeBrands / totalBrands * 100) %>%</span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="bm-table-card">
+      <div class="bm-filter-bar">
+        <form action="/admin/brands" method="GET" class="bm-search-form">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input
+            type="text"
+            name="search"
+            value="<%= search %>"
+            class="bm-search-input"
+            placeholder="Filter by name or status..."
+          >
+        </form>
+      </div>
+
+      <% if (!brands || brands.length === 0) { %>
+        <div class="bm-empty">
+          <% if (search) { %>No brands match "<strong><%= search %></strong>". <a href="/admin/brands" style="color:#111; font-weight:700;">Clear</a>
+          <% } else { %>No brands created yet. <a href="/admin/brands/add" style="color:#111; font-weight:700;">Add your first brand →</a><% } %>
+        </div>
+      <% } else { %>
+        <table class="bm-table">
+          <thead>
+            <tr>
+              <th>Brand Name</th>
+              <th>Total Products</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% brands.forEach(function(brand) { %>
+              <tr>
+                <td>
+                  <span class="bm-brand-name"><%= brand.name %></span>
+                </td>
+                <td>
+                  <%= brand.productCount %> Product<%= brand.productCount !== 1 ? 's' : '' %>
+                </td>
+                <td>
+                  <span
+                    class="bm-badge <%= brand.is_active ? 'active' : 'inactive' %>"
+                    id="badge-<%= brand._id %>"
+                    onclick="toggleBrandStatus('<%= brand._id %>')"
+                    title="Click to toggle status"
+                  >
+                    <%= brand.is_active ? 'Active' : 'Inactive' %>
+                  </span>
+                </td>
+                <td>
+                  <div class="bm-actions">
+                    <a href="/admin/brands/<%= brand._id %>/edit" class="bm-icon-btn" title="Edit Brand">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </a>
+                    <button class="bm-icon-btn del" title="Delete Brand" onclick="openDel('<%= brand._id %>', '<%= brand.name.replace(/\'/g, '') %>')">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+
+        <div class="bm-pagination">
+          <span class="bm-pag-info">Showing <%= brands.length %> of <%= totalCount %> brand<%= totalCount !== 1 ? 's' : '' %></span>
+          <div class="bm-pag-btns">
+            <a href="/admin/brands?page=<%= currentPage-1 %><%= search ? '&search='+search : '' %>" class="bm-pag-btn <%= currentPage <= 1 ? 'disabled' : '' %>">‹</a>
+            <% for (let p = 1; p <= totalPages; p++) { %>
+              <a href="/admin/brands?page=<%= p %><%= search ? '&search='+search : '' %>" class="bm-pag-btn <%= p === currentPage ? 'current' : '' %>"><%= p %></a>
+            <% } %>
+            <a href="/admin/brands?page=<%= currentPage+1 %><%= search ? '&search='+search : '' %>" class="bm-pag-btn <%= currentPage >= totalPages ? 'disabled' : '' %>">›</a>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<!-- Delete Modal -->
+<div class="del-overlay" id="delModal">
+  <div class="del-box">
+    <h2>Delete Brand</h2>
+    <div class="del-bar"></div>
+    <p>Are you sure you want to delete <strong id="delName"></strong>? This will remove the brand from the catalog.</p>
+    <div class="del-warn">This action cannot be undone.</div>
+    <div class="del-actions">
+      <button class="del-cancel" onclick="closeDel()">Cancel</button>
+      <form id="delForm" method="POST">
+        <button type="submit" class="del-confirm">Delete Brand</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDel(id, name) {
+    document.getElementById('delName').textContent = name;
+    document.getElementById('delForm').action = '/admin/brands/' + id + '/delete';
+    document.getElementById('delModal').classList.add('open');
+  }
+
+  function closeDel() {
+    document.getElementById('delModal').classList.remove('open');
+  }
+
+  document.getElementById('delModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDel();
+  });
+
+  async function toggleBrandStatus(brandId) {
+    const badge = document.getElementById('badge-' + brandId);
+    if (!badge) return;
+
+    try {
+      const res = await fetch('/admin/brands/' + brandId + '/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.is_active) {
+          badge.className = 'bm-badge active';
+          badge.textContent = 'Active';
+        } else {
+          badge.className = 'bm-badge inactive';
+          badge.textContent = 'Inactive';
+        }
+      } else {
+        alert('Could not update brand status.');
+      }
+    } catch (err) {
+      console.error('Toggle error:', err);
+      alert('Error updating brand status.');
+    }
+  }
+</script>
+</body>
+</html>

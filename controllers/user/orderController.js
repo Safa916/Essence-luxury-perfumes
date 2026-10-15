@@ -289,7 +289,8 @@ exports.cancelOrder = async (req, res) => {
       return res.redirect(`/orders/${req.params.id}?error=not_cancellable`);
     }
 
-    if (order.payment_method === 'Wallet' && order.payment_status === 'paid') {
+    const isPrepaid = (order.payment_method === 'Wallet' || order.payment_method === 'Online Payment') && order.payment_status === 'paid';
+    if (isPrepaid) {
       await walletService.creditWallet({
         userId         : req.user._id,
         amount         : totalRefundAmt,
@@ -371,6 +372,7 @@ exports.renderReturnForm = async (req, res) => {
     res.render('user/orders/return-request', {
       user  : req.user,
       itemId: req.query.itemId || '',
+      query : req.query,
       order : {
         _id      : order._id,
         orderId  : order.order_number,
@@ -454,7 +456,8 @@ exports.submitReturn = async (req, res) => {
     res.redirect(`/orders/${req.params.id}?itemId=${itemId || ''}&returned=1`);
   } catch (err) {
     console.error('submitReturn error:', err);
-    res.redirect(`/orders/${req.params.id}/return?error=return_failed`);
+    const itemId = req.query.itemId || '';
+    res.redirect(`/orders/${req.params.id}/return?itemId=${itemId}&error=return_failed`);
   }
 };
 
@@ -482,8 +485,10 @@ exports.downloadInvoice = async (req, res) => {
     doc.pipe(res);
 
     // ── helpers ──────────────────────────────────────────────────────────────
+    // NOTE: Helvetica does not include the Unicode Rupee glyph (U+20B9).
+    // We use 'Rs.' as the prefix so the symbol always renders correctly in PDF.
     const inr = (n) =>
-      '\u20B9' + Number(n || 0).toLocaleString('en-IN', {
+      'Rs. ' + Number(n || 0).toLocaleString('en-IN', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
@@ -508,15 +513,18 @@ exports.downloadInvoice = async (req, res) => {
     doc.font('Helvetica').fontSize(9)
        .text('LUXURY PERFUMES', L + 20, 95, { characterSpacing: 3 });
 
-    // Invoice label top-right
+    // Invoice label top-right — anchor from L so it stays inside the header band
+    const RIGHT_X = L + PAGE_W - 120;  // start x of right-side header block
+    const RIGHT_W = 110;                // fixed width so text doesn't overflow
+
     doc.font('Helvetica').fontSize(9).fillColor('#B79461')
-       .text('INVOICE', PAGE_W - 30, 62, { align: 'right', width: 80, characterSpacing: 2 });
+       .text('INVOICE', RIGHT_X, 62, { align: 'right', width: RIGHT_W, characterSpacing: 2 });
 
     doc.font('Helvetica-Bold').fontSize(11).fillColor('#F4F0E6')
-       .text(order.order_number, PAGE_W - 30, 78, { align: 'right', width: 80 });
+       .text(order.order_number, RIGHT_X, 78, { align: 'right', width: RIGHT_W });
 
     doc.font('Helvetica').fontSize(9).fillColor('#A6A296')
-       .text(dateStr, PAGE_W - 30, 95, { align: 'right', width: 80 });
+       .text(dateStr, RIGHT_X, 95, { align: 'right', width: RIGHT_W });
 
     doc.fillColor('#1C1A16'); // reset text colour
 
@@ -556,7 +564,15 @@ exports.downloadInvoice = async (req, res) => {
        .strokeColor('#E0DDD8').lineWidth(1).stroke();
 
     // ── TABLE HEADER ──────────────────────────────────────────────────────────
-    const COL = { item: L, desc: L + 30, qty: L + PAGE_W - 120, price: L + PAGE_W - 60 };
+    // Column x-positions — keep PRICE column within the page right edge (L + PAGE_W)
+    const PRICE_W   = 90;                        // fixed width for price values
+    const COL = {
+      item  : L,
+      desc  : L + 30,
+      qty   : L + PAGE_W - 160,
+      price : L + PAGE_W - PRICE_W,             // right-most column, fits inside page
+      priceW: PRICE_W,
+    };
 
     doc.font('Helvetica').fontSize(7).fillColor('#6B675E');
     ['ITEM', 'DESCRIPTION', 'QTY', 'PRICE'].forEach((h, i) => {
@@ -567,11 +583,15 @@ exports.downloadInvoice = async (req, res) => {
     doc.moveTo(L, TABLE_Y + 25).lineTo(L + PAGE_W, TABLE_Y + 25)
        .strokeColor('#E0DDD8').stroke();
 
-    // ── TABLE ROWS ────────────────────────────────────────────────────────────
+    // ── TABLE ROWS — only non-cancelled items ────────────────────────────────
     let rowY = TABLE_Y + 35;
-    const items = order.items || [];
+    // Exclude items that were cancelled by the user
+    const CANCELLED_STATUSES = ['cancelled', 'cancel_requested'];
+    const activeItems = (order.items || []).filter(
+      (it) => !CANCELLED_STATUSES.includes((it.item_status || '').toLowerCase())
+    );
 
-    items.forEach((item) => {
+    activeItems.forEach((item) => {
       const name  = item.product_name || 'Product';
       const size  = item.size || '';
       const qty   = item.quantity || 1;
@@ -593,7 +613,7 @@ exports.downloadInvoice = async (req, res) => {
          .text(String(qty).padStart(2, '0'), COL.qty, rowY);
 
       doc.font('Helvetica-Bold').fontSize(9)
-         .text(inr(total), COL.price, rowY);
+         .text(inr(total), COL.price, rowY, { width: COL.priceW, align: 'right' });
 
       rowY = Math.max(doc.y, rowY) + 20;
 
@@ -602,34 +622,54 @@ exports.downloadInvoice = async (req, res) => {
          .strokeColor('#F2F2EF').lineWidth(0.5).stroke();
     });
 
-    // ── TOTALS ────────────────────────────────────────────────────────────────
+    // ── TOTALS — recalculated from active (non-cancelled) items ──────────────
     const TOT_X = COL.qty;
     const TOT_W = L + PAGE_W - TOT_X;
+
+    // Recalculate from active items so cancelled items don't inflate totals
+    const GST_RATE          = 0.18;
+    const FREE_SHIPPING_AT  = 2000;
+    const SHIPPING_FEE      = 99;
+
+    const activeSubtotal = activeItems.reduce(
+      (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
+    );
+    const savedDiscount  = toNum(order.discount_amount) || 0;
+    // Pro-rate the coupon discount if some items were cancelled
+    const allSubtotal    = toNum(order.subtotal) || activeSubtotal;
+    const discountRatio  = allSubtotal > 0 ? activeSubtotal / allSubtotal : 1;
+    const appliedDiscount = parseFloat((savedDiscount * discountRatio).toFixed(2));
+
+    const taxable        = Math.max(activeSubtotal - appliedDiscount, 0);
+    const activeTax      = parseFloat((taxable * GST_RATE).toFixed(2));
+    const activeShipping = taxable >= FREE_SHIPPING_AT ? 0 : SHIPPING_FEE;
+    const activeTotal    = parseFloat((taxable + activeTax + activeShipping).toFixed(2));
 
     rowY += 10;
     doc.moveTo(L, rowY).lineTo(L + PAGE_W, rowY).strokeColor('#E0DDD8').lineWidth(1).stroke();
 
     const totals = [
-      ['SUBTOTAL', toNum(order.subtotal)],
-      ['SHIPPING', toNum(order.shipping_fee) === 0 ? null : toNum(order.shipping_fee)],
-      ['TAX (GST 18%)', toNum(order.tax_amount)],
+      ['SUBTOTAL',     activeSubtotal],
+      ['SHIPPING',     activeShipping === 0 ? null : activeShipping],
+      ['TAX (GST 18%)', activeTax],
     ];
 
-    if (toNum(order.discount_amount) > 0) {
-      totals.push(['DISCOUNT', -toNum(order.discount_amount)]);
+    if (appliedDiscount > 0) {
+      totals.push(['DISCOUNT', -appliedDiscount]);
     }
 
     rowY += 12;
     totals.forEach(([label, val]) => {
       if (val === null) {
         doc.font('Helvetica').fontSize(8).fillColor('#6B675E')
-           .text(label, TOT_X, rowY)
-           .text('FREE', L + PAGE_W - 30, rowY, { align: 'right', width: 30 });
+           .text(label, TOT_X, rowY);
+        doc.font('Helvetica').fontSize(8).fillColor('#1C1A16')
+           .text('FREE', COL.price, rowY, { width: COL.priceW, align: 'right' });
       } else {
         doc.font('Helvetica').fontSize(8).fillColor('#6B675E')
            .text(label, TOT_X, rowY);
         doc.font('Helvetica').fontSize(8).fillColor('#1C1A16')
-           .text(inr(Math.abs(val)), L + PAGE_W - 30, rowY, { align: 'right', width: 80 });
+           .text(inr(Math.abs(val)), COL.price, rowY, { width: COL.priceW, align: 'right' });
       }
       rowY += 16;
     });
@@ -639,8 +679,8 @@ exports.downloadInvoice = async (req, res) => {
     doc.rect(TOT_X - 10, rowY, TOT_W + 10, 40).fill('#1C1A16');
     doc.font('Helvetica').fontSize(8).fillColor('#A6A296')
        .text('TOTAL AMOUNT', TOT_X, rowY + 8, { characterSpacing: 1.5 });
-    doc.font('Helvetica-Bold').fontSize(16).fillColor('#F4F0E6')
-       .text(inr(toNum(order.total_amount)), L + PAGE_W - 30, rowY + 6, { align: 'right', width: 80 });
+    doc.font('Helvetica-Bold').fontSize(14).fillColor('#F4F0E6')
+       .text(inr(activeTotal), COL.price, rowY + 10, { width: COL.priceW, align: 'right' });
 
     // ── FOOTER ────────────────────────────────────────────────────────────────
     rowY += 70;

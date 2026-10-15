@@ -20,7 +20,13 @@ exports.renderWishlist = async (req, res) => {
   try {
     const itemsRaw = await WishlistItem.find({ user_id: req.user._id })
       .sort({ added_at: -1 })
-      .populate('product_id')
+      .populate({
+        path: 'product_id',
+        populate: [
+          { path: 'brand_id', select: 'is_active' },
+          { path: 'category_id', select: 'is_active' },
+        ],
+      })
       .populate('variant_id')
       .lean();
 
@@ -29,7 +35,9 @@ exports.renderWishlist = async (req, res) => {
       .map((item) => {
         const product = item.product_id;
         const variant = item.variant_id;
-        const available = product.is_active && !product.is_deleted;
+        const brandOk = !product.brand_id || product.brand_id.is_active !== false;
+        const catOk = !product.category_id || product.category_id.is_active !== false;
+        const available = product.is_active && !product.is_deleted && brandOk && catOk;
 
         return {
           wishlist_item_id: item._id,

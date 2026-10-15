@@ -83,7 +83,7 @@ async function buildProductQuery(query, userId) {
 
   const sortOption = SORT_MAP[sort] || SORT_MAP.newest;
 
-  // Start pipeline: match active, non-deleted products then filter by active category
+  // Start pipeline: match active, non-deleted products then filter by active category & active brand
   const pipeline = [
     { $match: match },
     // Join the category and exclude products belonging to an inactive category
@@ -99,6 +99,23 @@ async function buildProductQuery(query, userId) {
       $match: {
         '_cat.is_active': true,
         '_cat.is_deleted': { $ne: true },
+      },
+    },
+    // Join the brand and exclude products belonging to an inactive brand
+    {
+      $lookup: {
+        from: 'brands',
+        localField: 'brand_id',
+        foreignField: '_id',
+        as: '_brand',
+      },
+    },
+    {
+      $match: {
+        $or: [
+          { brand_id: null },
+          { '_brand.is_active': true },
+        ],
       },
     },
   ];
@@ -187,6 +204,7 @@ async function buildProductQuery(query, userId) {
               brand: { $arrayElemAt: ['$brand.name', 0] },
               brand_slug: { $arrayElemAt: ['$brand.slug', 0] },
               category: { $arrayElemAt: ['$category.name', 0] },
+              category_id: 1,
               default_variant_id: { $arrayElemAt: ['$defaultVariant._id', 0] },
               variant_count: { $size: '$allVariants' }, // NEW
             },
@@ -202,6 +220,29 @@ async function buildProductQuery(query, userId) {
   
   const totalProducts = result[0]?.totalCount[0]?.count || 0;
   const totalPages = Math.max(Math.ceil(totalProducts / limit), 1);
+
+  // Apply offer discounts (comparing product vs category offer, taking larger)
+  const offerService = require('../../services/offerService');
+  const activeOffers = await offerService.getActiveOffers();
+
+  products = products.map((p) => {
+    const offerCalc = offerService.calculateProductDiscount({
+      productId: p._id,
+      categoryId: p.category_id,
+      price: p.price,
+      activeOffers,
+    });
+    return {
+      ...p,
+      originalPrice: offerCalc.originalPrice,
+      price: offerCalc.finalPrice,
+      hasOffer: offerCalc.discount > 0,
+      offerDiscount: offerCalc.discount,
+      offerPercentage: offerCalc.discountPercentage,
+      appliedOffer: offerCalc.appliedOffer,
+      offerType: offerCalc.offerType,
+    };
+  });
 
   if (userId && products.length) {
     const wishlistedIds = await WishlistItem.find({
@@ -220,7 +261,7 @@ async function buildProductQuery(query, userId) {
 async function getFilterOptions() {
   const [categories, brands, concentrations, sizes, priceBounds] = await Promise.all([
     Category.find({ is_active: true, is_deleted: { $ne: true } }).select('name slug').lean(),
-    Brand.find().select('name slug').lean(),
+    Brand.find({ is_active: true }).select('name slug').sort({ name: 1 }).lean(),
     Variant.distinct('concentration', { deleted_at: null, concentration: { $nin: [null, ''] } }),
     Variant.distinct('size_ml', { deleted_at: null, size_ml: { $ne: null } }),
     Product.aggregate([

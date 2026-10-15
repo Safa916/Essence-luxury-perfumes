@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offers Management — Essence Admin</title>
+  <link rel="stylesheet" href="/admin/dashboard.css">
+  <link rel="stylesheet" href="/admin/partials/sidebar.css">
+  <style>
+    /* ── Page layout ── */
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:2rem; gap:1rem; flex-wrap:wrap; }
+    .page-title  { font-size:2rem; font-weight:700; letter-spacing:-0.02em; margin:0 0 0.25rem; text-transform:uppercase; }
+    .page-sub    { font-size:0.85rem; color:#6b7280; margin:0; line-height:1.5; }
+
+    .btn-add {
+      display:inline-flex; align-items:center; gap:0.4rem;
+      background:#111; color:#fff; border:none;
+      padding:0.7rem 1.4rem; font-size:0.78rem; font-weight:600;
+      letter-spacing:0.06em; text-transform:uppercase; cursor:pointer;
+      text-decoration:none; white-space:nowrap;
+      transition:background .15s;
+    }
+    .btn-add:hover { background:#333; }
+
+    /* ── Filter / Search bar ── */
+    .filter-bar {
+      display:flex; gap:1rem; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap;
+    }
+    .search-box {
+      flex:1; min-width:240px; position:relative;
+    }
+    .search-box svg {
+      position:absolute; left:1rem; top:50%; transform:translateY(-50%);
+      color:#9ca3af; pointer-events:none;
+    }
+    .search-input {
+      width:100%; padding:0.75rem 1rem 0.75rem 2.75rem;
+      border:1px solid #e5e7eb; background:#f9fafb;
+      font-size:0.875rem; outline:none; color:#111;
+      transition:border-color .15s; box-sizing:border-box;
+    }
+    .search-input:focus { border-color:#111; background:#fff; }
+
+    .select-filter {
+      padding:0.75rem 1.2rem; border:1px solid #e5e7eb; background:#f9fafb;
+      font-size:0.8rem; font-weight:600; color:#4b5563; outline:none; cursor:pointer;
+    }
+
+    /* ── Flash messages ── */
+    .flash { padding:0.7rem 1.1rem; margin-bottom:1.2rem; font-size:0.83rem; border-left:3px solid; }
+    .flash-success { background:#f0fdf4; border-color:#22c55e; color:#166534; }
+    .flash-error   { background:#fef2f2; border-color:#ef4444; color:#991b1b; }
+
+    /* ── Table Card ── */
+    .table-card {
+      background:#fff; border:1px solid #f0f0f0; border-radius:4px; overflow:hidden;
+    }
+    .offers-table { width:100%; border-collapse:collapse; }
+    .offers-table th {
+      font-size:0.68rem; font-weight:700; letter-spacing:0.08em;
+      color:#9ca3af; text-transform:uppercase; padding:0.9rem 1rem;
+      border-bottom:1px solid #f0f0f0; text-align:left; white-space:nowrap;
+    }
+    .offers-table td {
+      padding:1.1rem 1rem; border-bottom:1px solid #f7f7f7;
+      font-size:0.85rem; vertical-align:middle;
+    }
+    .offers-table tr:last-child td { border-bottom:none; }
+    .offers-table tr:hover td { background:#fafafa; }
+
+    .offer-title { font-weight:700; font-size:0.9rem; color:#111; margin:0 0 2px; }
+    .offer-code { font-size:0.72rem; color:#9ca3af; font-weight:600; letter-spacing:0.04em; }
+
+    .type-badge {
+      display:inline-block; padding:0.2rem 0.55rem;
+      font-size:0.65rem; font-weight:700; letter-spacing:0.06em;
+      text-transform:uppercase; border-radius:2px;
+    }
+    .type-badge-product  { background:#eff6ff; color:#2563eb; }
+    .type-badge-category { background:#f0fdf4; color:#16a34a; }
+
+    .target-desc { font-size:0.78rem; color:#6b7280; margin-top:2px; }
+
+    .disc-main { font-weight:700; font-size:0.95rem; color:#111; }
+    .disc-sub { font-size:0.7rem; color:#9ca3af; text-transform:uppercase; margin-top:1px; }
+
+    .cond-main { font-size:0.8rem; color:#374151; font-weight:500; }
+    .cond-sub { font-size:0.7rem; color:#9ca3af; }
+
+    .duration-cell { font-size:0.78rem; color:#4b5563; }
+
+    /* Status dot */
+    .status-wrap { display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; }
+    .status-dot { width:7px; height:7px; border-radius:50%; }
+    .status-active .status-dot   { background:#16a34a; }
+    .status-active { color:#16a34a; }
+    .status-inactive .status-dot { background:#9ca3af; }
+    .status-inactive { color:#9ca3af; }
+    .status-expired .status-dot  { background:#dc2626; }
+    .status-expired { color:#dc2626; }
+
+    /* Switch toggle */
+    .switch {
+      position:relative; display:inline-block; width:34px; height:18px; margin-left:0.5rem;
+    }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider {
+      position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+      background-color:#d1d5db; transition:.2s; border-radius:18px;
+    }
+    .slider:before {
+      position:absolute; content:""; height:14px; width:14px; left:2px; bottom:2px;
+      background-color:white; transition:.2s; border-radius:50%;
+    }
+    input:checked + .slider { background-color:#111; }
+    input:checked + .slider:before { transform:translateX(16px); }
+
+    /* Action buttons */
+    .action-btns { display:flex; align-items:center; gap:0.5rem; }
+    .action-btn {
+      background:none; border:1px solid #e5e7eb; padding:0.35rem 0.55rem;
+      cursor:pointer; color:#6b7280; border-radius:2px;
+      transition:all .15s; text-decoration:none; display:inline-flex;
+      align-items:center; justify-content:center;
+    }
+    .action-btn:hover { border-color:#111; color:#111; }
+    .action-btn.del:hover { border-color:#ef4444; color:#ef4444; }
+
+    /* ── Modal (Add Offer) ── */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.45);
+      display:none; align-items:center; justify-content:center; z-index:999;
+      padding:1.5rem;
+    }
+    .modal-overlay.open { display:flex; }
+    .modal-card {
+      background:#fff; width:100%; max-width:540px; max-height:90vh;
+      overflow-y:auto; padding:2.2rem 2.4rem; box-shadow:0 10px 25px rgba(0,0,0,0.1);
+      position:relative;
+    }
+    .modal-title { font-size:1.6rem; font-weight:700; text-transform:uppercase; margin:0 0 0.25rem; text-align:center; }
+    .modal-sub   { font-size:0.8rem; color:#6b7280; text-align:center; margin:0 0 1.8rem; }
+
+    .form-group { margin-bottom:1.1rem; }
+    .form-group label {
+      display:block; font-size:0.7rem; font-weight:700;
+      letter-spacing:0.06em; text-transform:uppercase; color:#374151; margin-bottom:0.4rem;
+    }
+    .form-group input:not([type="radio"]):not([type="checkbox"]),
+    .form-group select {
+      width:100%; padding:0.65rem 0.75rem; border:1px solid #e5e7eb;
+      font-size:0.875rem; color:#111; outline:none; background:#f9fafb;
+      box-sizing:border-box; transition:border-color .15s;
+    }
+    .form-group input:not([type="radio"]):not([type="checkbox"]):focus,
+    .form-group select:focus { border-color:#111; background:#fff; }
+
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+    .radio-group { display:flex; gap:1.2rem; align-items:center; margin-top:0.4rem; }
+    .radio-label {
+      display:inline-flex; align-items:center; gap:0.45rem;
+      font-size:0.8rem; color:#374151; cursor:pointer; font-weight:600;
+      letter-spacing:0.04em; text-transform:uppercase; white-space:nowrap;
+    }
+    .radio-label input[type="radio"] {
+      width:16px !important; height:16px !important; margin:0 !important;
+      cursor:pointer; accent-color:#111;
+    }
+
+    .active-toggle-wrap {
+      display:flex; align-items:center; justify-content:space-between;
+      background:#f9fafb; padding:0.85rem 1rem; margin-top:0.5rem; margin-bottom:1.2rem;
+    }
+    .toggle-info h4 { margin:0; font-size:0.82rem; font-weight:600; color:#111; }
+    .toggle-info p  { margin:2px 0 0; font-size:0.7rem; color:#6b7280; }
+
+    .modal-actions { display:flex; flex-direction:column; gap:0.6rem; margin-top:1.5rem; }
+    .btn-submit {
+      width:100%; padding:0.8rem; background:#111; color:#fff;
+      border:none; font-weight:700; font-size:0.8rem; letter-spacing:0.08em;
+      text-transform:uppercase; cursor:pointer; transition:background .15s;
+    }
+    .btn-submit:hover { background:#333; }
+    .btn-cancel {
+      width:100%; padding:0.75rem; background:#e5e7eb; color:#374151;
+      border:none; font-weight:600; font-size:0.8rem; letter-spacing:0.06em;
+      text-transform:uppercase; cursor:pointer; text-align:center;
+    }
+    .btn-cancel:hover { background:#d1d5db; }
+
+    /* Delete Confirmation Modal */
+    .delete-modal-card {
+      background:#fff; width:100%; max-width:440px; padding:2rem;
+      text-align:center;
+    }
+    .del-title { font-size:1.3rem; font-weight:700; text-transform:uppercase; margin:0 0 0.8rem; }
+    .del-desc { font-size:0.83rem; color:#4b5563; line-height:1.5; margin:0 0 1.5rem; }
+    .del-desc strong { color:#111; }
+    .btn-del-confirm {
+      width:100%; padding:0.75rem; background:#111; color:#fff;
+      border:none; font-weight:700; font-size:0.78rem; letter-spacing:0.06em;
+      text-transform:uppercase; cursor:pointer; margin-bottom:0.6rem;
+    }
+    .field-error { font-size:0.72rem; color:#dc2626; margin-top:0.3rem; display:none; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar', { activePage: 'offers' }) %>
+
+  <main class="main-content">
+    <div style="padding:2rem 2.5rem;">
+
+      <!-- Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Offers</h1>
+          <p class="page-sub">Manage discounts, coupons, and special product offers across the entire store ecosystem.</p>
+        </div>
+        <button type="button" class="btn-add" id="openAddModalBtn">+ Add Offer</button>
+      </div>
+
+      <!-- Flash messages -->
+      <% if (query && query.success === 'created') { %>
+        <div class="flash flash-success">Offer created successfully.</div>
+      <% } else if (query && query.success === 'updated') { %>
+        <div class="flash flash-success">Offer updated successfully.</div>
+      <% } else if (query && query.success === 'deleted') { %>
+        <div class="flash flash-success">Offer deleted successfully.</div>
+      <% } else if (query && query.error) { %>
+        <div class="flash flash-error">
+          <%= query.error === 'name_required' ? 'Offer name is required.' :
+              query.error === 'invalid_discount' ? 'Valid discount amount or percentage is required.' :
+              query.error === 'percentage_out_of_range' ? 'Discount percentage must be between 1% and 90%.' :
+              query.error === 'target_required' ? 'Please select a product or category for this offer.' :
+              query.error === 'invalid_dates' ? 'End date cannot be earlier than start date.' :
+              query.error === 'code_exists' ? 'An offer with this code already exists.' :
+              'An error occurred. Please check your inputs.' %>
+        </div>
+      <% } %>
+
+      <!-- Filter bar -->
+      <form method="GET" action="/admin/offers" class="filter-bar">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" name="search" class="search-input" placeholder="Search offers by name or code..." value="<%= query.search || '' %>">
+        </div>
+
+        <select name="type" class="select-filter" onchange="this.form.submit()">
+          <option value="all" <%= (query.type || 'all') === 'all' ? 'selected' : '' %>>All Types</option>
+          <option value="product" <%= query.type === 'product' ? 'selected' : '' %>>Product Offers</option>
+          <option value="category" <%= query.type === 'category' ? 'selected' : '' %>>Category Offers</option>
+        </select>
+
+        <select name="status" class="select-filter" onchange="this.form.submit()">
+          <option value="all" <%= (query.status || 'all') === 'all' ? 'selected' : '' %>>All Status</option>
+          <option value="active" <%= query.status === 'active' ? 'selected' : '' %>>Active</option>
+          <option value="draft" <%= query.status === 'draft' ? 'selected' : '' %>>Draft</option>
+          <option value="expired" <%= query.status === 'expired' ? 'selected' : '' %>>Expired</option>
+        </select>
+      </form>
+
+      <!-- Offers Table -->
+      <div class="table-card">
+        <% if (!offers.length) { %>
+          <div style="padding:3.5rem; text-align:center; color:#9ca3af; font-size:0.875rem;">
+            No promotional offers found matching your criteria.
+          </div>
+        <% } else { %>
+          <table class="offers-table">
+            <thead>
+              <tr>
+                <th>Offer Name</th>
+                <th>Apply To</th>
+                <th>Discount</th>
+                <th>Conditions</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% offers.forEach(function(o) { %>
+                <tr>
+                  <td>
+                    <div class="offer-title"><%= o.name %></div>
+                    <div class="offer-code">CODE: <%= o.internal_code || 'AUTOMATIC' %></div>
+                  </td>
+
+                  <td>
+                    <span class="type-badge type-badge-<%= o.apply_to %>"><%= o.apply_to %></span>
+                    <div class="target-desc" title="<%= o.targets %>">
+                      <%= o.targets.length > 25 ? o.targets.substring(0, 25) + '…' : o.targets %>
+                    </div>
+                  </td>
+
+                  <td>
+                    <div class="disc-main">
+                      <%= o.discount_type === 'percentage' ? o.discount_value + '% Off' : '₹' + o.discount_value + ' Flat' %>
+                    </div>
+                    <div class="disc-sub"><%= o.discount_type %></div>
+                  </td>
+
+                  <td>
+                    <div class="cond-main">
+                      <%= o.minimum_purchase_amount > 0 ? 'Min ₹' + o.minimum_purchase_amount : 'No Min' %>
+                    </div>
+                    <div class="cond-sub">
+                      <%= o.maximum_discount_amount > 0 ? 'Max ₹' + o.maximum_discount_amount : 'No Cap' %>
+                    </div>
+                  </td>
+
+                  <td class="duration-cell">
+                    <% if (o.start_date || o.end_date) { %>
+                      <%= o.start_date ? new Date(o.start_date).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : 'Now' %>
+                      –
+                      <%= o.end_date ? new Date(o.end_date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : 'Ongoing' %>
+                    <% } else { %>
+                      Ongoing
+                    <% } %>
+                  </td>
+
+                  <td>
+                    <div class="status-wrap status-<%= o.status === 'active' ? 'active' : (o.status === 'expired' ? 'expired' : 'inactive') %>">
+                      <span class="status-dot"></span>
+                      <span><%= o.status %></span>
+                      <label class="switch">
+                        <input type="checkbox" class="toggle-status" data-id="<%= o._id %>" <%= o.raw_status === 'active' ? 'checked' : '' %>>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                  </td>
+
+                  <td style="text-align:right;">
+                    <div class="action-btns" style="justify-content:flex-end;">
+                      <a href="/admin/offers/<%= o._id %>/edit" class="action-btn" title="Edit offer">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </a>
+                      <button type="button" class="action-btn del btn-open-del" data-id="<%= o._id %>" data-name="<%= o.name %>" title="Delete offer">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ── ADD OFFER MODAL ── -->
+  <div class="modal-overlay" id="addOfferModal">
+    <div class="modal-card">
+      <h2 class="modal-title">Add Offer</h2>
+      <p class="modal-sub">Create a new promotional campaign for essence</p>
+
+      <form method="POST" action="/admin/offers" id="addOfferForm">
+        <div class="form-group">
+          <label>Offer Name *</label>
+          <input type="text" name="name" id="offerName" placeholder="e.g. Summer Peak Performance 2024" required maxlength="100">
+          <div class="field-error" id="nameError"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Discount Type</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="discount_type" value="percentage" checked> Percentage
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="discount_type" value="fixed"> Flat Amount
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Apply To</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="apply_to" value="product" checked> Product
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="apply_to" value="category"> Category
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label id="targetSelectLabel">Select Product *</label>
+          <select name="target_id" id="targetSelect" required>
+            <option value="" disabled selected>Select an option</option>
+            <% allProducts.forEach(function(p) { %>
+              <option value="<%= p._id %>" data-type="product"><%= p.name %></option>
+            <% }); %>
+            <% allCategories.forEach(function(c) { %>
+              <option value="<%= c._id %>" data-type="category" style="display:none;"><%= c.name %></option>
+            <% }); %>
+          </select>
+          <div class="field-error" id="targetError"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label id="discountValLabel">Discount Value (%) *</label>
+            <input type="number" name="discount_value" id="discountValue" step="0.01" min="1" max="90" placeholder="0.00" required>
+            <div class="field-error" id="discountError"></div>
+          </div>
+          <div class="form-group">
+            <label>Minimum Purchase (₹)</label>
+            <input type="number" name="minimum_purchase_amount" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="form-group" id="maxDiscountGroup">
+          <label>Maximum Discount (₹)</label>
+          <input type="number" name="maximum_discount_amount" step="0.01" min="0" placeholder="0.00">
+          <small style="font-size:0.7rem; color:#6b7280;">*Set max discount amount for percentage offers</small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" name="start_date" id="startDate">
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" name="end_date" id="endDate">
+            <div class="field-error" id="dateError"></div>
+          </div>
+        </div>
+
+        <div class="active-toggle-wrap">
+          <div class="toggle-info">
+            <h4>Active</h4>
+            <p>Enable this offer immediately</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" name="status" value="active" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-submit">Save Offer</button>
+          <button type="button" class="btn-cancel" id="closeAddModalBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── DELETE MODAL ── -->
+  <div class="modal-overlay" id="delModal">
+    <div class="delete-modal-card">
+      <h3 class="del-title">Delete Offer</h3>
+      <p class="del-desc">
+        Are you sure you want to delete this offer? This action <strong>cannot be undone</strong> and the promotional campaign will be permanently removed from the system.
+      </p>
+      <form method="POST" id="delForm">
+        <button type="submit" class="btn-del-confirm">&#9003; Confirm Deletion</button>
+        <button type="button" class="btn-cancel" id="closeDelModalBtn">Cancel Action</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Modal open / close
+    const addModal = document.getElementById('addOfferModal');
+    const openAddBtn = document.getElementById('openAddModalBtn');
+    const closeAddBtn = document.getElementById('closeAddModalBtn');
+
+    if (openAddBtn) openAddBtn.addEventListener('click', () => addModal.classList.add('open'));
+    if (closeAddBtn) closeAddBtn.addEventListener('click', () => addModal.classList.remove('open'));
+
+    // Del modal
+    const delModal = document.getElementById('delModal');
+    const delForm = document.getElementById('delForm');
+    const closeDelBtn = document.getElementById('closeDelModalBtn');
+
+    document.querySelectorAll('.btn-open-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        delForm.action = `/admin/offers/${id}/delete`;
+        delModal.classList.add('open');
+      });
+    });
+    if (closeDelBtn) closeDelBtn.addEventListener('click', () => delModal.classList.remove('open'));
+
+    // Dynamic Apply To selector
+    const applyToRadios = document.querySelectorAll('input[name="apply_to"]');
+    const targetSelect = document.getElementById('targetSelect');
+    const targetLabel  = document.getElementById('targetSelectLabel');
+
+    applyToRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        const val = radio.value;
+        targetLabel.textContent = val === 'product' ? 'Select Product *' : 'Select Category *';
+        targetSelect.value = '';
+        Array.from(targetSelect.options).forEach(opt => {
+          if (!opt.value) return;
+          opt.style.display = opt.dataset.type === val ? '' : 'none';
+        });
+      });
+    });
+
+    // Discount type toggle
+    const discRadios = document.querySelectorAll('input[name="discount_type"]');
+    const discLabel  = document.getElementById('discountValLabel');
+    const discInput  = document.getElementById('discountValue');
+    const maxDiscGroup = document.getElementById('maxDiscountGroup');
+
+    discRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.value === 'percentage') {
+          discLabel.textContent = 'Discount Value (%) *';
+          discInput.max = '90';
+          maxDiscGroup.style.display = '';
+        } else {
+          discLabel.textContent = 'Discount Value (₹) *';
+          discInput.removeAttribute('max');
+          maxDiscGroup.style.display = 'none';
+        }
+      });
+    });
+
+    // Toggle status live
+    document.querySelectorAll('.toggle-status').forEach(toggle => {
+      toggle.addEventListener('change', async function() {
+        const id = this.dataset.id;
+        try {
+          const res = await fetch(`/admin/offers/${id}/toggle`, { method: 'POST' });
+          const data = await res.json();
+          if (!data.success) {
+            this.checked = !this.checked;
+          } else {
+            window.location.reload();
+          }
+        } catch (e) {
+          this.checked = !this.checked;
+        }
+      });
+    });
+
+    // Client-side validation
+    document.getElementById('addOfferForm').addEventListener('submit', function(e) {
+      let hasErr = false;
+      const name = document.getElementById('offerName').value.trim();
+      const nameErr = document.getElementById('nameError');
+      if (!name) {
+        nameErr.textContent = 'Offer name cannot be blank';
+        nameErr.style.display = 'block';
+        hasErr = true;
+      } else {
+        nameErr.style.display = 'none';
+      }
+
+      const target = document.getElementById('targetSelect').value;
+      const targetErr = document.getElementById('targetError');
+      if (!target) {
+        targetErr.textContent = 'Please select a product or category';
+        targetErr.style.display = 'block';
+        hasErr = true;
+      } else {
+        targetErr.style.display = 'none';
+      }
+
+      const sDate = document.getElementById('startDate').value;
+      const eDate = document.getElementById('endDate').value;
+      const dateErr = document.getElementById('dateError');
+      if (sDate && eDate && new Date(eDate) < new Date(sDate)) {
+        dateErr.textContent = 'End date cannot be earlier than start date';
+        dateErr.style.display = 'block';
+        hasErr = true;
+      } else {
+        dateErr.style.display = 'none';
+      }
+
+      if (hasErr) e.preventDefault();
+    });
+  </script>
+</body>
+</html>

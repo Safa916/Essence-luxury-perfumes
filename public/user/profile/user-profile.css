@@ -171,29 +171,66 @@
 .referral-body {
   font-size: 0.97rem;
   color: var(--ink-soft);
-  margin: 0;
+  margin: 0 0 1rem;
   max-width: 420px;
   line-height: 1.5;
 }
 
+.referral-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.ref-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.ref-stat-num {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: var(--font-display);
+}
+
+.ref-stat-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
 .referral-action {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.75rem;
   flex-shrink: 0;
 }
 
 .referral-code {
-  padding: 0.85rem 1.4rem;
-  border: 1px solid var(--line);
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  font-weight: 500;
+  padding: 0.75rem 1.25rem;
+  border: 1px dashed var(--line);
+  background: var(--bg-soft, #faf9f6);
+  font-size: 0.88rem;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--ink);
   white-space: nowrap;
 }
 
-.referral-share {
+.referral-btns {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.referral-share,
+.referral-link-btn {
   white-space: nowrap;
+  font-size: 0.75rem;
+  padding: 0.65rem 1.1rem;
 }
 
 /* ---- Personal details ---- */

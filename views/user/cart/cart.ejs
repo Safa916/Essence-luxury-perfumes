@@ -6,13 +6,13 @@
   <title>My Bag — Essence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?familya=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/user/common.css">
   <link rel="stylesheet" href="/user/cart/cart.css">
 </head>
 <body>
 
-  <%- include('../partials/header', { activePage: 'cart', user: typeof user !== 'undefined' ? user : null }) %>
+  <%- include('../partials/header', { activePage: 'cart', user: typeof user !== 'undefined' ? user : null, cartCount: typeof totalItems !== 'undefined' ? totalItems : (typeof cartCount !== 'undefined' ? cartCount : 0) }) %>
 
   <main class="cart-page">
     <p class="eyebrow">Your Selection</p>
@@ -65,7 +65,15 @@
                 </div>
                 <div class="cart-item-price">
                   <span class="item-total">₹<%= item.total_price.toLocaleString('en-IN') %></span>
-                  <button type="button" class="cart-item-remove">Remove</button>
+                  <% if (item.hasOffer) { %>
+                    <span style="display:block; font-size:0.75rem; text-decoration:line-through; color:#9ca3af; margin-top:2px;">
+                      ₹<%= (item.original_price * item.quantity).toLocaleString('en-IN') %>
+                    </span>
+                    <span style="display:inline-block; font-size:0.65rem; font-weight:700; color:#16a34a; background:#f0fdf4; padding:0.1rem 0.35rem; border-radius:2px; margin-top:2px;">
+                      <%= item.offerPercentage %>% OFF
+                    </span>
+                  <% } %>
+                  <button type="button" class="cart-item-remove" style="margin-top:0.4rem;">Remove</button>
                 </div>
               </div>
             <% }); %>

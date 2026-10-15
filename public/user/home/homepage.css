@@ -14,36 +14,60 @@ html { scroll-behavior: smooth; }
 .hero {
   max-width: var(--container);
   margin: 0 auto;
-  padding: 3.5rem 2rem 4.5rem;
+  padding: 3.5rem 2rem 4rem;
   display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  gap: 3.5rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
   align-items: center;
 }
 
 .hero-copy {
-  max-width: 420px;
+  max-width: 480px;
+}
+
+.hero-copy .eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold, #B8860B);
+  margin-bottom: 1.25rem;
 }
 
 .hero-quote {
-  margin: 0 0 2rem;
+  margin: 0 0 2.25rem;
   font-family: var(--font-display);
-  font-size: 2rem;
-  line-height: 1.35;
+  font-size: 2.15rem;
+  line-height: 1.32;
   font-weight: 500;
   color: var(--ink);
 }
 
 .hero-image {
   overflow: hidden;
-  aspect-ratio: 4 / 5;
+  border-radius: 6px;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  max-width: 580px;
+  justify-self: end;
   background: var(--cream-deep);
+  box-shadow: 0 20px 50px -15px rgba(28, 28, 30, 0.14);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
 .hero-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-image:hover img {
+  transform: scale(1.035);
 }
 
 /* ===== Split banner (For Her / For Him) ===== */
@@ -84,13 +108,7 @@ html { scroll-behavior: smooth; }
   text-transform: uppercase;
 }
 
-/* ===== New Arrivals ===== */
 
-.new-arrivals {
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: 4.5rem 2rem 3.5rem;
-}
 
 .section-heading {
   display: flex;
@@ -210,6 +228,12 @@ html { scroll-behavior: smooth; }
 
   .hero-copy { max-width: 100%; }
 
+  .hero-image {
+    max-width: 100%;
+    max-height: 480px;
+    justify-self: center;
+  }
+
   .split-banner { grid-template-columns: 1fr; }
 
   .product-grid { grid-template-columns: repeat(2, 1fr); }
@@ -221,7 +245,6 @@ html { scroll-behavior: smooth; }
 
 @media (max-width: 520px) {
   .hero,
-  .new-arrivals,
   .houses { padding-left: 1.25rem; padding-right: 1.25rem; }
 
   .hero-quote { font-size: 1.6rem; }

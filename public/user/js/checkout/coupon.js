@@ -53,9 +53,15 @@
     if (data.discount > 0) {
       if (discountLabel) discountLabel.textContent = `Coupon Discount (${data.couponCode || ''})`;
       if (discountVal)   discountVal.textContent   = `−${fmt(data.discount)}`;
-      if (discountRow)   discountRow.style.display = '';
+      if (discountRow) {
+        discountRow.style.display = '';
+        discountRow.dataset.discount = data.discount; // keep in sync for qty recalc
+      }
     } else {
-      if (discountRow) discountRow.style.display = 'none';
+      if (discountRow) {
+        discountRow.style.display = 'none';
+        discountRow.dataset.discount = 0;
+      }
     }
 
     if (taxEl)      taxEl.textContent      = fmt(data.tax);
@@ -156,17 +162,91 @@
     }
   }
 
+  // ── Sync coupon cards state ───────────────────────────────────────────────
+  function syncCouponCards(appliedCouponCode) {
+    document.querySelectorAll('.co-coupon-card').forEach((card) => {
+      const code = card.dataset.code;
+      const rightCol = card.querySelector('.co-coupon-right');
+      if (!rightCol) return;
+
+      if (appliedCouponCode && code === appliedCouponCode) {
+        card.classList.add('is-applied');
+        rightCol.innerHTML = '<span class="co-coupon-applied-pill">Applied ✓</span>';
+      } else {
+        card.classList.remove('is-applied');
+        if (card.classList.contains('is-eligible')) {
+          rightCol.innerHTML = `<button type="button" class="btn-quick-apply" data-code="${code}">Apply</button>`;
+        } else {
+          rightCol.innerHTML = `<button type="button" class="btn-quick-copy" data-code="${code}">Copy</button>`;
+        }
+      }
+    });
+  }
+
   // ── Event listeners ────────────────────────────────────────────────────────
 
   if (applyBtn)  applyBtn.addEventListener('click', handleApply);
-  if (removeBtn) removeBtn.addEventListener('click', handleRemove);
+  if (removeBtn) {
+    removeBtn.addEventListener('click', async () => {
+      await handleRemove();
+      syncCouponCards(null);
+    });
+  }
+
+  // Quick apply & copy buttons delegated on container
+  const couponsWrap = document.getElementById('availableCouponsWrap');
+  if (couponsWrap) {
+    couponsWrap.addEventListener('click', (e) => {
+      const applyTrigger = e.target.closest('.btn-quick-apply');
+      if (applyTrigger) {
+        const code = applyTrigger.dataset.code;
+        if (code && input) {
+          input.value = code;
+          handleApply().then(() => {
+            const currentApplied = document.getElementById('couponAppliedCode');
+            if (currentApplied && currentApplied.textContent) {
+              syncCouponCards(currentApplied.textContent.trim());
+            }
+          });
+        }
+        return;
+      }
+
+      const copyTrigger = e.target.closest('.btn-quick-copy');
+      if (copyTrigger) {
+        const code = copyTrigger.dataset.code;
+        if (code && navigator.clipboard) {
+          navigator.clipboard.writeText(code).then(() => {
+            essToast(`Copied code: ${code}`, 'success');
+          }).catch(() => {
+            if (input) input.value = code;
+            essToast(`Code ${code} selected`, 'info');
+          });
+        }
+      }
+    });
+  }
+
+  // Toggle available coupons list
+  const toggleBtn = document.getElementById('toggleCouponsBtn');
+  if (toggleBtn && couponsWrap) {
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = couponsWrap.style.display === 'none';
+      couponsWrap.style.display = isHidden ? 'block' : 'none';
+    });
+  }
 
   // Allow pressing Enter inside the coupon input to apply
   if (input) {
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleApply();
+        handleApply().then(() => {
+          const currentApplied = document.getElementById('couponAppliedCode');
+          if (currentApplied && currentApplied.textContent) {
+            syncCouponCards(currentApplied.textContent.trim());
+          }
+        });
       }
     });
     // Auto uppercase as user types

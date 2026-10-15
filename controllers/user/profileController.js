@@ -3,6 +3,7 @@ const OTP = require('../../models/OTP');
 const { sendOTPEmail } = require('../../services/emailService');
 const { generateOTPCode } = require('../../utils/otp');
 const { isValidName, isValidPassword } = require('../../utils/validators');
+const referralService = require('../../services/referralService');
 
 const formatRelativeTime = (date) => {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -23,7 +24,7 @@ const formatRelativeTime = (date) => {
 // Shapes a raw Mongoose user document into exactly what the profile EJS
 // templates expect — renamed fields, computed fields, and authProvider
 // (used to hide the Change Password option for Google-authenticated accounts).
-const formatUserForProfile = (user) => ({
+const formatUserForProfile = (user, referralCode, referralStats) => ({
   id: user._id.toString(),
   fullName: user.full_name,
   email: user.email,
@@ -31,20 +32,22 @@ const formatUserForProfile = (user) => ({
   avatar: user.profile_picture || null,
   authProvider: user.auth_provider || 'local',
   memberSince: (user.created_at || user.createdAt).getFullYear().toString(),
-  referralCode: `ESSENCE-${user.full_name.split(' ')[0].toUpperCase()}-${user._id
-    .toString()
-    .slice(-4)
-    .toUpperCase()}`,
+  referralCode: referralCode || user.referral_code || '',
+  referralStats: referralStats || { total: 0, rewarded: 0, pending: 0 },
   passwordUpdated: user.password_changed_at
     ? `Last updated ${formatRelativeTime(user.password_changed_at)}`
     : 'Password never changed',
 });
 
 
-exports.getProfile = (req, res) => {
+exports.getProfile = async (req, res) => {
   try {
+    // Ensure the user has a referral code (generates one if missing)
+    const referralCode = await referralService.getOrCreateCode(req.user._id);
+    const referralStats = await referralService.getUserReferralStats(req.user._id);
+
     res.render('user/profile/user-profile', {
-      user: formatUserForProfile(req.user),
+      user: formatUserForProfile(req.user, referralCode, referralStats),
       passwordChanged: req.query.passwordChanged === 'true',
     });
   } catch (error) {
@@ -56,7 +59,7 @@ exports.getProfile = (req, res) => {
 exports.getEditProfileForm = (req, res) => {
   try {
     res.render('user/profile/edit-profile', {
-      user: formatUserForProfile(req.user),
+      user: formatUserForProfile(req.user, req.user.referral_code, null),
       errors: req.query.error ? [req.query.error] : [],
     });
   } catch (error) {

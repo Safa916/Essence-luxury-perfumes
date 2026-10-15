@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Referral Management — Essence Admin</title>
+  <link rel="stylesheet" href="/admin/dashboard.css">
+  <link rel="stylesheet" href="/admin/partials/sidebar.css">
+  <style>
+    /* ── page-specific extras ── */
+    .ref-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:2rem; gap:1rem; flex-wrap:wrap; }
+    .page-title { font-size:2rem; font-weight:700; letter-spacing:-0.02em; margin:0 0 0.25rem; text-transform:uppercase; color:#111; }
+    .page-sub   { font-size:0.85rem; color:#6b7280; margin:0; line-height:1.5; }
+
+    .stat-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:2rem; }
+    .stat-card  { background:#fff; border:1px solid #e5e7eb; border-radius:4px; padding:1.2rem 1.5rem; }
+    .stat-card .sc-label { font-size:0.72rem; color:#6b7280; letter-spacing:.06em; text-transform:uppercase; font-weight:600; }
+    .stat-card .sc-value { font-size:1.8rem; font-weight:700; margin-top:.35rem; color:#111; }
+
+    /* Settings form */
+    .settings-card { background:#fff; border:1px solid #e5e7eb; border-radius:4px; padding:1.5rem 1.8rem; margin-bottom:2rem; }
+    .settings-card h2 { font-size:0.95rem; font-weight:700; margin:0 0 1rem; text-transform:uppercase; letter-spacing:0.04em; color:#111; }
+    .settings-row { display:flex; gap:1.5rem; align-items:flex-end; flex-wrap:wrap; }
+    .settings-field { display:flex; flex-direction:column; gap:.4rem; }
+    .settings-field label { font-size:.78rem; color:#374151; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; }
+    .settings-field input[type="number"] {
+      border:1px solid #d1d5db; border-radius:2px; padding:.65rem .85rem;
+      font-size:.95rem; width:160px; outline:none; background:#f9fafb;
+    }
+    .settings-field input:focus { border-color:#111; background:#fff; }
+    .btn-save { background:#111; color:#fff; border:none; border-radius:2px; padding:.7rem 1.6rem; font-size:.8rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; }
+    .btn-save:hover { background:#333; }
+
+    /* Table */
+    .table-card { background:#fff; border:1px solid #e5e7eb; border-radius:4px; overflow:hidden; }
+    .table-card table { width:100%; border-collapse:collapse; font-size:.88rem; }
+    .table-card th { background:#f9fafb; text-align:left; padding:.85rem 1rem; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6b7280; border-bottom:1px solid #e5e7eb; }
+    .table-card td { padding:.9rem 1rem; border-bottom:1px solid #f3f4f6; vertical-align:middle; }
+    .table-card tr:last-child td { border-bottom:none; }
+    .table-card tr:hover td { background:#fafafa; }
+
+    .badge { display:inline-block; padding:.25rem .7rem; border-radius:20px; font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+    .badge-rewarded { background:#d1fae5; color:#065f46; }
+    .badge-pending  { background:#fef3c7; color:#92400e; }
+
+    .alert { padding:.8rem 1.1rem; border-radius:4px; margin-bottom:1.5rem; font-size:.85rem; font-weight:500; }
+    .alert-success { background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; }
+    .alert-error   { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+
+    .pagination { display:flex; gap:.4rem; justify-content:center; padding:1.2rem; }
+    .pagination a, .pagination span { padding:.35rem .8rem; border-radius:3px; font-size:.85rem; text-decoration:none; color:#374151; border:1px solid #e5e7eb; }
+    .pagination a:hover { background:#f3f4f6; }
+    .pagination .current { background:#111; color:#fff; border-color:#111; }
+
+    .ref-link { font-size:.78rem; color:#6b7280; margin-top:2px; }
+    .user-name { font-weight:600; color:#111; }
+    .user-email { font-size:.78rem; color:#6b7280; }
+
+    .reward-amount { font-size:.88rem; color:#374151; }
+    .reward-amount strong { color:#111; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar', { activePage: 'referrals' }) %>
+
+  <main class="main-content">
+    <div style="padding:2rem 2.5rem;">
+
+      <div class="ref-header">
+        <div>
+          <h1 class="page-title">Referral Management</h1>
+          <p class="page-sub">Configure reward amounts, monitor referral signups, and track wallet payouts.</p>
+        </div>
+      </div>
+
+      <% if (typeof query !== 'undefined' && query && query.success === 'settings_saved') { %>
+        <div class="alert alert-success">✓ Reward amounts updated successfully.</div>
+      <% } else if (typeof query !== 'undefined' && query && query.error) { %>
+        <div class="alert alert-error">✗ Error: <%= query.error.replace(/_/g,' ') %></div>
+      <% } %>
+
+      <!-- Stats cards -->
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="sc-label">Total Referrals</div>
+          <div class="sc-value"><%= totalReferrals %></div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Rewarded</div>
+          <div class="sc-value"><%= totalRewarded %></div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Pending</div>
+          <div class="sc-value"><%= totalPending %></div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Referrer Reward</div>
+          <div class="sc-value">₹<%= settings.referrer_reward %></div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">New User Reward</div>
+          <div class="sc-value">₹<%= settings.referee_reward %></div>
+        </div>
+      </div>
+
+      <!-- Settings form -->
+      <div class="settings-card">
+        <h2>Configure Reward Amounts</h2>
+        <form method="POST" action="/admin/referrals/settings">
+          <div class="settings-row">
+            <div class="settings-field">
+              <label for="referrer_reward">Referrer Gets (₹)</label>
+              <input type="number" id="referrer_reward" name="referrer_reward"
+                     value="<%= settings.referrer_reward %>" min="0" step="1" required>
+            </div>
+            <div class="settings-field">
+              <label for="referee_reward">New User Gets (₹)</label>
+              <input type="number" id="referee_reward" name="referee_reward"
+                     value="<%= settings.referee_reward %>" min="0" step="1" required>
+            </div>
+            <div class="settings-field">
+              <label>&nbsp;</label>
+              <button type="submit" class="btn-save">Save</button>
+            </div>
+          </div>
+          <p style="font-size:.8rem;color:#6b7280;margin-top:.75rem;">
+            ⚠ Changes apply to new referrals only — existing pending referrals keep their original amounts.
+          </p>
+        </form>
+      </div>
+
+      <!-- Referral table -->
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Referrer</th>
+              <th>New User (Referee)</th>
+              <th>Referrer Reward</th>
+              <th>New User Reward</th>
+              <th>Status</th>
+              <th>Joined At</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (referrals.length === 0) { %>
+              <tr><td colspan="7" style="text-align:center;color:#6b7280;padding:2rem;">No referrals recorded yet.</td></tr>
+            <% } %>
+            <% referrals.forEach(function(r, i) { %>
+              <tr>
+                <td style="color:#9ca3af;"><%= (currentPage-1)*20 + i + 1 %></td>
+                <td>
+                  <% if (r.referrer_id) { %>
+                    <div class="user-name"><%= r.referrer_id.full_name %></div>
+                    <div class="user-email"><%= r.referrer_id.email %></div>
+                    <div class="ref-link">Code: <strong><%= r.referrer_id.referral_code %></strong></div>
+                  <% } else { %>
+                    <span style="color:#9ca3af;">—</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (r.referee_id) { %>
+                    <div class="user-name"><%= r.referee_id.full_name %></div>
+                    <div class="user-email"><%= r.referee_id.email %></div>
+                  <% } else { %>
+                    <span style="color:#9ca3af;">—</span>
+                  <% } %>
+                </td>
+                <td><div class="reward-amount">₹<strong><%= r.referrer_reward %></strong></div></td>
+                <td><div class="reward-amount">₹<strong><%= r.referee_reward %></strong></div></td>
+                <td>
+                  <span class="badge badge-<%= r.status %>"><%= r.status %></span>
+                </td>
+                <td style="color:#6b7280;font-size:.82rem;">
+                  <%= r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '—' %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+        <div class="pagination">
+          <% for (let p = 1; p <= totalPages; p++) { %>
+            <% if (p === currentPage) { %>
+              <span class="current"><%= p %></span>
+            <% } else { %>
+              <a href="?page=<%= p %>"><%= p %></a>
+            <% } %>
+          <% } %>
+        </div>
+        <% } %>
+      </div>
+
+    </div>
+  </main>
+</body>
+</html>

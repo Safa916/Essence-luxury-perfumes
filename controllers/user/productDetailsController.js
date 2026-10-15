@@ -40,8 +40,8 @@ exports.renderProductDetails = async (req, res) => {
     const { slug } = req.params;
 
     const product = await Product.findOne({ slug })
-      .populate('brand_id', 'name slug')
-      .populate('category_id', 'name slug')
+      .populate('brand_id', 'name slug is_active')
+      .populate('category_id', 'name slug is_active')
       .lean();
 
     // Product doesn't exist, OR exists but is blocked/unlisted/deleted —
@@ -57,6 +57,12 @@ exports.renderProductDetails = async (req, res) => {
       return res.redirect('/shop?notice=unavailable');
     }
 
+    // If the product's brand has been deactivated by an admin, treat the
+    // product as unavailable on the user-facing store.
+    if (product.brand_id && product.brand_id.is_active === false) {
+      return res.redirect('/shop?notice=unavailable');
+    }
+
     const variantsRaw = await Variant.find({
       product_id: product._id,
       deleted_at: null,
@@ -65,11 +71,29 @@ exports.renderProductDetails = async (req, res) => {
       .sort({ size_ml: 1 })
       .lean();
 
-    const variants = variantsRaw.map((v) => ({
-      ...v,
-      price: toNumber(v.price) ?? 0,
-      compare_at_price: toNumber(v.compare_at_price),
-    }));
+    const offerService = require('../../services/offerService');
+    const activeOffers = await offerService.getActiveOffers();
+
+    const variants = variantsRaw.map((v) => {
+      const basePrice = toNumber(v.price) ?? 0;
+      const offerCalc = offerService.calculateProductDiscount({
+        productId: product._id,
+        categoryId: product.category_id?._id || product.category_id,
+        price: basePrice,
+        activeOffers,
+      });
+
+      return {
+        ...v,
+        original_price: basePrice,
+        price: offerCalc.finalPrice,
+        compare_at_price: offerCalc.discount > 0 ? basePrice : (toNumber(v.compare_at_price) || null),
+        hasOffer: offerCalc.discount > 0,
+        offerDiscount: offerCalc.discount,
+        offerPercentage: offerCalc.discountPercentage,
+        appliedOffer: offerCalc.appliedOffer,
+      };
+    });
 
     const inStock = variants.some((v) => v.quantity > 0);
 

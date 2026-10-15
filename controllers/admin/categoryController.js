@@ -39,6 +39,7 @@ const INVALID_NAME_MSG = 'Category name must contain at least one letter or numb
 exports.listCategories = async (req, res) => {
   try {
     const search = (req.query.search || '').trim();
+    req.query.limit = req.query.limit || 10;
     const baseFilter = { is_deleted: false };
 
     const features = new APIFeatures(Category.find(baseFilter), req.query)

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : (brand.name + ' — Essence') %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <style>
+    :root {
+      --brand-text-dark: #111111;
+      --brand-border: #eeeeee;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: #111111;
+      font-family: 'Jost', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ===== Full Black Luxury Hero ===== */
+    .brand-hero {
+      width: 100%;
+      min-height: 380px;
+      background: #000000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4.5rem 2rem;
+      box-sizing: border-box;
+      margin-bottom: 4rem;
+    }
+
+    .brand-hero-title {
+      font-family: 'Jost', sans-serif;
+      font-size: 4.2rem;
+      font-weight: 300;
+      letter-spacing: 0.18em;
+      text-transform: lowercase;
+      color: #ffffff;
+      margin: 0 0 1.25rem;
+      line-height: 1;
+    }
+
+    .brand-hero-tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.35rem;
+      font-style: italic;
+      color: #a3a3a3;
+      max-width: 540px;
+      margin: 0;
+      letter-spacing: 0.05em;
+      line-height: 1.6;
+    }
+
+    /* ===== Elite Selections Header ===== */
+    .brand-content {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 0 2rem 5rem;
+    }
+
+    .elite-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      border-bottom: 1px solid #111;
+      padding-bottom: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .elite-title-group h2 {
+      font-family: 'Jost', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin: 0 0 0.35rem;
+      color: #111;
+    }
+
+    .elite-subtitle {
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #767676;
+      margin: 0;
+    }
+
+    .elite-filter-btn {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #111;
+      text-decoration: none;
+      border-bottom: 1px solid #111;
+      padding-bottom: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .elite-filter-btn:hover {
+      opacity: 0.7;
+    }
+
+    /* ===== Product Grid ===== */
+    .brand-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .brand-card {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      background: #ffffff;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .brand-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .brand-card-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1.05;
+      background: #fafafa;
+      border: 1px solid var(--brand-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 1.5rem;
+      box-sizing: border-box;
+      transition: border-color 0.25s ease;
+    }
+
+    .brand-card:hover .brand-card-frame {
+      border-color: #111;
+    }
+
+    .brand-card-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: #111;
+      color: #fff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      z-index: 2;
+    }
+
+    .brand-card-frame img {
+      max-width: 82%;
+      max-height: 82%;
+      object-fit: contain;
+      transition: transform 0.4s ease;
+    }
+
+    .brand-card:hover .brand-card-frame img {
+      transform: scale(1.06);
+    }
+
+    .brand-card-meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-top: 1rem;
+    }
+
+    .brand-card-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #111;
+      margin: 0;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .brand-card-price {
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: #111;
+      white-space: nowrap;
+      margin: 0;
+    }
+
+    .brand-card-desc {
+      font-size: 0.72rem;
+      color: #888;
+      margin: 0.3rem 0 0;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ===== Empty State ===== */
+    .brand-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 5rem 1rem;
+      background: #fafafa;
+      border: 1px dashed #d1d5db;
+    }
+
+    .brand-empty h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 400;
+      margin: 0 0 0.5rem;
+    }
+
+    .brand-empty p {
+      color: #6b7280;
+      font-size: 0.88rem;
+      margin: 0 0 1.5rem;
+    }
+
+    .brand-empty a {
+      display: inline-block;
+      background: #111;
+      color: #fff;
+      padding: 0.75rem 1.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 960px) {
+      .brand-hero {
+        min-height: 300px;
+        padding: 3.5rem 1.5rem;
+      }
+      .brand-hero-title {
+        font-size: 3.2rem;
+      }
+      .brand-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .brand-hero {
+        min-height: 240px;
+        padding: 2.5rem 1rem;
+      }
+      .brand-hero-title {
+        font-size: 2.4rem;
+        letter-spacing: 0.12em;
+      }
+      .brand-hero-tagline {
+        font-size: 1.1rem;
+      }
+      .brand-content {
+        padding: 0 1rem 3.5rem;
+      }
+      .brand-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <%- include('../partials/header', { activePage: 'brands', user: typeof user !== 'undefined' ? user : null }) %>
+
+  <main>
+    <!-- ===== Full Black Luxury Hero with Brand Name Text ===== -->
+    <section class="brand-hero">
+      <h1 class="brand-hero-title"><%= brand.name %></h1>
+      <% if (brand.tagline && brand.tagline.trim()) { %>
+        <p class="brand-hero-tagline"><%= brand.tagline %></p>
+      <% } %>
+    </section>
+
+    <!-- ===== Products Section ===== -->
+    <div class="brand-content">
+      <header class="elite-header">
+        <div class="elite-title-group">
+          <h2>Elite Selections</h2>
+          <p class="elite-subtitle"><%= products.length %> ITEM<%= products.length !== 1 ? 'S' : '' %> | LATEST DROP</p>
+        </div>
+        <a href="/shop?brand=<%= brand._id %>" class="elite-filter-btn">
+          Filter
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </a>
+      </header>
+
+      <section class="brand-grid">
+        <% if (products && products.length > 0) { %>
+          <% products.forEach(function(product) { %>
+            <a href="/product/<%= product.slug %>" class="brand-card">
+              <div class="brand-card-frame">
+                <% if (product.isNew) { %>
+                  <span class="brand-card-badge">New</span>
+                <% } %>
+                <img src="<%= product.image %>" alt="<%= product.name %>" loading="lazy">
+              </div>
+              <div class="brand-card-meta">
+                <h3 class="brand-card-name"><%= product.name %></h3>
+                <p class="brand-card-price">₹ <%= product.price ? product.price.toLocaleString('en-IN') : '0' %></p>
+              </div>
+              <% if (product.short_description) { %>
+                <p class="brand-card-desc"><%= product.short_description %></p>
+              <% } %>
+            </a>
+          <% }); %>
+        <% } else { %>
+          <div class="brand-empty">
+            <h3>No Creations Released Yet</h3>
+            <p>We are currently curating the fragrance archives for <%= brand.name %>.</p>
+            <a href="/shop">Explore All Fragrances</a>
+          </div>
+        <% } %>
+      </section>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+  <%- include('../partials/logout-modal') %>
+
+</body>
+</html>

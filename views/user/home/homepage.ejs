@@ -26,14 +26,14 @@
         <a href="/collections" class="btn btn-dark">Explore the Fragrances</a>
       </div>
       <div class="hero-image">
-        <img src="/user/images/Luxury Perfume Advertising Ideas _ AI Fashion & Beauty Campaign Visuals.jpg" alt="Chanel N°5 Eau de Parfum on a marble pedestal">
+        <img src="/user/images/hero-banner.jpg" alt="Essence Haute Parfumerie Collection">
       </div>
     </section>
 
     <!-- ===== For Her / For Him ===== -->
   <section class="split-banner">
     <a href="<%= categoryForHer ? '/shop?category=' + categoryForHer._id : '/categories' %>" class="banner-card">
-      <img src="<%= (categoryForHer && categoryForHer.banner_url) || '/images/for-her.jpg' %>" alt="Shop the For Her collection">
+      <img src="<%= (categoryForHer && categoryForHer.banner_url) || '/user/images/for-her.jpg' %>" alt="Shop the For Her collection">
       <span class="banner-label">For Her</span>
     </a>
     <a href="<%= categoryForHim ? '/shop?category=' + categoryForHim._id : '/categories' %>" class="banner-card">
@@ -42,44 +42,17 @@
     </a>
   </section>
 
-    <!-- ===== New Arrivals ===== -->
-    <section class="new-arrivals">
-      <div class="section-heading">
-        <h2>New Arrivals</h2>
-        <a href="/collections/new" class="view-all">View All</a>
-      </div>
-
-      <div class="product-grid">
-        <% var products = typeof products !== 'undefined' ? products : [
-          { name: 'Santal 33', house: 'Le Labo', price: '245.00', image: '/images/product-1.jpg' },
-          { name: 'Nightfall',  house: 'Byredo', price: '210.00', image: '/images/product-2.jpg' },
-          { name: 'Malabah',    house: 'Prada',  price: '198.00', image: '/images/product-3.jpg' },
-          { name: 'Sauvage',    house: 'Dior',   price: '175.00', image: '/images/product-4.jpg' }
-        ]; %>
-        <% products.forEach(function(product) { %>
-          <a href="/product/<%= product.name.toLowerCase().replace(/\s+/g, '-') %>" class="product-card">
-            <div class="product-image">
-              <img src="<%= product.image %>" alt="<%= product.name %> by <%= product.house %>">
-            </div>
-            <p class="product-house"><%= product.house %></p>
-            <p class="product-name"><%= product.name %></p>
-            <p class="product-price">$<%= product.price %></p>
-          </a>
-        <% }); %>
-      </div>
-    </section>
-
-    <!-- ===== The Houses ===== -->
+    <!-- ===== The Houses / Brands ===== -->
     <section class="houses">
       <h2 class="houses-title">The Houses</h2>
       <ul class="houses-list">
-        <% var houses = typeof houses !== 'undefined' ? houses : [
-          'Chanel', 'Dior', 'Byredo', 'Gucci', 'Prada',
-          'Le Labo', 'Creed', 'Tom Ford', 'Loewe', 'Aesop'
-        ]; %>
-        <% houses.forEach(function(house) { %>
-          <li><a href="/houses/<%= house.toLowerCase().replace(/\s+/g, '-') %>"><%= house %></a></li>
-        <% }); %>
+        <% if (typeof brands !== 'undefined' && brands.length) { %>
+          <% brands.forEach(function(brand) { %>
+            <li><a href="/brands/<%= brand.slug %>"><%= brand.name %></a></li>
+          <% }); %>
+        <% } else { %>
+          <li><span style="color:#888; font-size:0.9rem;">No brands available</span></li>
+        <% } %>
       </ul>
     </section>
 

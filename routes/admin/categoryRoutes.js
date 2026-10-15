@@ -9,8 +9,9 @@ router.get('/', categoryController.listCategories);
 // POST /admin/categories/add          -> handle Add modal submit
 router.post('/add', uploadCategoryImage, categoryController.createCategory);
 
-// PUT /admin/categories/:id/edit      -> handle Edit modal submit (via _method=PUT)
+// PUT or POST /admin/categories/:id/edit -> handle Edit modal submit
 router.put('/:id/edit', uploadCategoryImage, categoryController.updateCategory);
+router.post('/:id/edit', uploadCategoryImage, categoryController.updateCategory);
 
 // PATCH /admin/categories/:id/status  -> toggle active/inactive (via _method=PATCH)
 router.patch('/:id/status', categoryController.toggleStatus);

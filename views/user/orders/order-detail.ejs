@@ -179,8 +179,8 @@
                     </span>
                   <% } %>
                   <% if (itemCanCancel) { %>
-                    <form method="POST" action="/orders/<%= o._id %>/cancel?itemId=<%= it._id %>" style="display:inline-block;">
-                      <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Are you sure you want to cancel this item? This action cannot be undone.')">
+                    <form method="POST" action="/orders/<%= o._id %>/cancel?itemId=<%= it._id %>" style="display:inline-block;" class="cancel-item-form">
+                      <button type="button" class="btn btn-small btn-danger cancel-item-btn">
                         Cancel Item
                       </button>
                     </form>
@@ -281,6 +281,16 @@
         });
       }, 4000);
     }
+
+    // ── Cancel item — branded confirm dialog ─────────────────────────────────
+    document.querySelectorAll('.cancel-item-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const form = btn.closest('.cancel-item-form');
+        essConfirm('Are you sure you want to cancel this item? This action cannot be undone.').then(function(confirmed) {
+          if (confirmed) form.submit();
+        });
+      });
+    });
 
     // ── Cancel modal backdrop close ───────────────────────────────────────────
     const cancelModal = document.getElementById('cancelModal');

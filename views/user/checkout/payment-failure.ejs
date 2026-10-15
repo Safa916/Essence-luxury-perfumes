@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payment Failed | Essence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/user/common.css">
+  <link rel="stylesheet" href="/user/checkout/order-success.css">
+  <style>
+    .failure-icon {
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #fecaca;
+      border-radius: 999px;
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    .failure-title {
+      font-family: var(--font-display, 'Cormorant Garamond', Georgia, serif);
+      font-size: 2.25rem;
+      font-weight: 500;
+      color: #1f2937;
+      margin: 0 0 12px;
+    }
+    .failure-subtitle {
+      font-size: 0.95rem;
+      color: #6b7280;
+      max-width: 520px;
+      margin: 0 auto 36px;
+      line-height: 1.6;
+    }
+    .failure-card {
+      max-width: 540px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid var(--border, #eadfdb);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+    }
+    .reason-box {
+      background: #fef2f2;
+      border: 1px dashed #fca5a5;
+      padding: 14px 18px;
+      border-radius: 8px;
+      color: #991b1b;
+      font-size: 0.88rem;
+      margin-bottom: 28px;
+    }
+    .failure-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="success-page">
+    <div class="failure-card">
+      <div class="failure-icon" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+      </div>
+
+      <h1 class="failure-title">Payment Unsuccessful</h1>
+      <p class="failure-subtitle">
+        <%= typeof reason !== 'undefined' && reason ? reason : 'Your payment transaction could not be processed at this moment. No amount was charged from your account.' %>
+      </p>
+
+      <div class="reason-box">
+        <strong>Status:</strong> Payment Failed or Cancelled
+      </div>
+
+      <div class="failure-actions">
+        <a href="/checkout" class="btn btn-dark" style="padding: 12px 28px; background: #111; color: #fff; text-decoration: none; border-radius: 4px; font-weight: 500;">
+          Retry Payment
+        </a>
+        <a href="/cart" class="btn btn-outline" style="padding: 12px 28px; border: 1px solid #d1d5db; color: #374151; text-decoration: none; border-radius: 4px; font-weight: 500;">
+          Return to Cart
+        </a>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

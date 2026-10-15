@@ -101,11 +101,21 @@
         <div class="referral-card">
           <div class="referral-copy">
             <p class="referral-headline">Share the luxury.</p>
-            <p class="referral-body">Invite your friends to Essence. They get 15% off their first order, and you get $50 credit for every successful referral.</p>
+            <p class="referral-body">Invite friends to Essence. They get a welcome wallet credit, and you earn a reward for every successful referral.</p>
+            <% if (user.referralStats) { %>
+            <div class="referral-stats">
+              <div class="ref-stat"><span class="ref-stat-num"><%= user.referralStats.total %></span><span class="ref-stat-label">Invited</span></div>
+              <div class="ref-stat"><span class="ref-stat-num"><%= user.referralStats.rewarded %></span><span class="ref-stat-label">Rewarded</span></div>
+              <div class="ref-stat"><span class="ref-stat-num"><%= user.referralStats.pending %></span><span class="ref-stat-label">Pending</span></div>
+            </div>
+            <% } %>
           </div>
           <div class="referral-action">
-            <span class="referral-code"><%= user.referralCode %></span>
-            <button type="button" class="btn btn-dark referral-share" data-code="<%= user.referralCode %>">Share Code</button>
+            <span class="referral-code" id="refCodeDisplay"><%= user.referralCode %></span>
+            <div class="referral-btns">
+              <button type="button" class="btn btn-dark referral-share" id="copyCodeBtn" data-code="<%= user.referralCode %>">Copy Code</button>
+              <button type="button" class="btn btn-outline referral-link-btn" id="copyLinkBtn" data-code="<%= user.referralCode %>">Copy Link</button>
+            </div>
           </div>
         </div>
       </section>
@@ -151,17 +161,29 @@
 
   <script>
     // Copy referral code to clipboard
-    var shareBtn = document.querySelector('.referral-share');
-    if (shareBtn) {
-      shareBtn.addEventListener('click', function () {
-        var code = shareBtn.getAttribute('data-code');
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(code).then(function () {
-            var original = shareBtn.textContent;
-            shareBtn.textContent = 'Copied!';
-            setTimeout(function () { shareBtn.textContent = original; }, 1800);
-          });
-        }
+    var copyCodeBtn = document.getElementById('copyCodeBtn');
+    if (copyCodeBtn) {
+      copyCodeBtn.addEventListener('click', function () {
+        var code = copyCodeBtn.getAttribute('data-code');
+        navigator.clipboard && navigator.clipboard.writeText(code).then(function () {
+          var orig = copyCodeBtn.textContent;
+          copyCodeBtn.textContent = 'Copied!';
+          setTimeout(function () { copyCodeBtn.textContent = orig; }, 1800);
+        });
+      });
+    }
+
+    // Copy full referral link to clipboard
+    var copyLinkBtn = document.getElementById('copyLinkBtn');
+    if (copyLinkBtn) {
+      copyLinkBtn.addEventListener('click', function () {
+        var code = copyLinkBtn.getAttribute('data-code');
+        var link = window.location.origin + '/auth/user-signup?ref=' + encodeURIComponent(code);
+        navigator.clipboard && navigator.clipboard.writeText(link).then(function () {
+          var orig = copyLinkBtn.textContent;
+          copyLinkBtn.textContent = 'Link Copied!';
+          setTimeout(function () { copyLinkBtn.textContent = orig; }, 1800);
+        });
       });
     }
 

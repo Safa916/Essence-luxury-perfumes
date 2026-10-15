@@ -22,6 +22,8 @@ const wishlistRoutes  = require('./routes/user/wishlistRoutes');
 const checkoutRoutes  = require('./routes/user/checkoutRoutes');
 const orderRoutes     = require('./routes/user/orderRoutes');
 const couponRoutes    = require('./routes/user/couponRoutes');
+const walletRoutes    = require('./routes/user/walletRoutes');
+const userBrandRoutes = require('./routes/user/brandRoutes');
 
 
 
@@ -62,12 +64,18 @@ app.use('/wishlist', wishlistRoutes);
 app.use('/checkout', checkoutRoutes);
 app.use('/orders', orderRoutes);
 app.use('/coupon', couponRoutes);
+app.use('/coupons', couponRoutes);
+app.use('/wallet', walletRoutes);
+app.use('/brands', userBrandRoutes);
+app.use('/brand', userBrandRoutes);
+app.use('/houses', userBrandRoutes);
 
 
 
 
 
 
+// Server entry - running
 app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
 
 

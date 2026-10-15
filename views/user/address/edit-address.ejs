@@ -142,5 +142,47 @@
     </div>
   </div>
 
+<script>
+  (function () {
+    // For every input/select/textarea inside the form,
+    // clear the error message and red border as soon as the user types something valid.
+    var form = document.querySelector('.address-form');
+    if (!form) return;
+
+    var fields = form.querySelectorAll('input, select, textarea');
+
+    fields.forEach(function (field) {
+      field.addEventListener('input', function () {
+        if (field.value.trim() !== '') {
+          // Remove red border class
+          field.classList.remove('input-invalid');
+
+          // Remove the sibling error span right after this field
+          var next = field.nextElementSibling;
+          if (next && next.classList.contains('field-error')) {
+            next.textContent = '';
+            next.style.display = 'none';
+          }
+        }
+      });
+
+      // Also handle radio buttons (Address Type)
+      if (field.type === 'radio') {
+        field.addEventListener('change', function () {
+          // Clear type error if any radio is chosen
+          var typeGroup = form.querySelector('.type-toggle');
+          if (typeGroup) {
+            var err = typeGroup.nextElementSibling;
+            if (err && err.classList.contains('field-error')) {
+              err.textContent = '';
+              err.style.display = 'none';
+            }
+          }
+        });
+      }
+    });
+  })();
+</script>
+
 </body>
 </html>
