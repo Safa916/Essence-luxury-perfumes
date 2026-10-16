@@ -486,15 +486,19 @@ exports.logoutUser = async (req, res) => {
   }
 };
 
- exports.searchUser=async (req,res)=>{
+ exports.searchUser = async (req, res) => {
+  try {
+    const search = req.query.search || '';
+    const users = await User.find({
+      $or: [
+        { full_name: { $regex: search, $options: 'i' } },
+        { email:     { $regex: search, $options: 'i' } },
+      ],
+    }).lean();
 
-  const search = req.query.search ||" ";
-  const users = await  userService.searchUsers(search)
-
-    res.render("admin/users",{
-      users,
-      search
-    })
-
-
+    res.render('admin/users', { users, search });
+  } catch (error) {
+    console.error('searchUser error:', error.message);
+    res.status(500).send('Server error');
+  }
  }
