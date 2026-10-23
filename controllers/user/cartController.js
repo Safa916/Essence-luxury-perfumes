@@ -4,6 +4,7 @@ const CartItem = require('../../models/cartItem');
 const Product = require('../../models/product');
 const Variant = require('../../models/variant');
 const WishlistItem = require('../../models/wishlistItems');
+const User = require('../../models/user');
 
 const MAX_QTY_PER_ITEM = 10;
 
@@ -26,6 +27,23 @@ async function recalcCartSubtotal(cartId) {
   const subtotal = items.reduce((sum, item) => sum + toNumber(item.total_price), 0);
   await Cart.findByIdAndUpdate(cartId, { subtotal });
   return subtotal;
+}
+
+// Clear any applied coupon when the cart value changes.
+// Returns true if a coupon was actually cleared, false if there was nothing to clear.
+// This is best-effort — a failure here must never break the cart operation.
+async function clearAppliedCoupon(cartId) {
+  try {
+    const cart = await Cart.findById(cartId).select('applied_coupon').lean();
+    if (!cart || !cart.applied_coupon || !cart.applied_coupon.code) return false;
+    await Cart.findByIdAndUpdate(cartId, {
+      $set: { applied_coupon: { code: null, discount_value: null } },
+    });
+    return true;
+  } catch (err) {
+    console.warn('clearAppliedCoupon: could not clear coupon for cart', cartId, err.message);
+    return false;
+  }
 }
 
 async function getOrCreateCart(userId) {
@@ -132,6 +150,8 @@ exports.addToCart = async (req, res) => {
     await WishlistItem.deleteMany({ user_id: userId, product_id: product._id });
 
     const subtotal = await recalcCartSubtotal(cart._id);
+    // Reset any applied coupon — cart value has changed
+    const couponCleared = buyNow ? false : await clearAppliedCoupon(cart._id);
     const itemCount = await CartItem.countDocuments({ cart_id: cart._id });
 
     if (buyNow) {
@@ -144,7 +164,7 @@ exports.addToCart = async (req, res) => {
       });
     }
 
-    res.json({ success: true, message: 'Added to your bag', itemCount, subtotal });
+    res.json({ success: true, message: 'Added to your bag', itemCount, subtotal, couponCleared });
   } catch (err) {
     console.error('addToCart error:', err);
     res.status(500).json({ success: false, message: 'Could not add to cart.' });
@@ -294,12 +314,15 @@ exports.updateQuantity = async (req, res) => {
     await item.save();
 
     const subtotal = await recalcCartSubtotal(item.cart_id);
+    // Reset any applied coupon — cart value has changed
+    const couponCleared = await clearAppliedCoupon(item.cart_id);
 
     res.json({
       success: true,
       quantity: newQty,
       total_price: toNumber(item.total_price),
       subtotal,
+      couponCleared,
       maxReached: newQty >= maxQty,
       minReached: newQty <= 1,
     });
@@ -320,11 +343,21 @@ exports.removeItem = async (req, res) => {
     await Cart.findByIdAndUpdate(cartId, { $pull: { items: item._id } });
 
     const subtotal = await recalcCartSubtotal(cartId);
+    // Reset any applied coupon — cart value has changed
+    const couponCleared = await clearAppliedCoupon(cartId);
     const itemCount = await CartItem.countDocuments({ cart_id: cartId });
 
-    res.json({ success: true, subtotal, itemCount });
+    res.json({ success: true, subtotal, itemCount, couponCleared });
   } catch (err) {
     console.error('removeItem error:', err);
     res.status(500).json({ success: false, message: 'Could not remove item.' });
+
+
+
   }
 };
+
+
+
+
+

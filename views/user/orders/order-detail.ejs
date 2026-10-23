@@ -30,6 +30,8 @@
     const isReturnRequested = o.isReturnRequested  || false;
     const canCancel         = o.canCancel          || false;
     const canReturn         = o.canReturn          || false;
+    const hasCancellableItems = (o.items || []).some(it => ['placed', 'processing'].includes(it.item_status || 'placed'));
+    const canCancelAny      = canCancel || hasCancellableItems;
     const steps       = ['Order Placed', 'Shipped', 'Delivered'];
     const progress    = [0, 50, 100][stepIndex] || 0;
   %>
@@ -50,27 +52,34 @@
             <h1 class="page-title">Order Details</h1>
             <p class="detail-ref">Reference #<%= o.orderId %></p>
           </div>
-          <!-- Invoice button: show for active orders (not cancelled) -->
-          <% if (!isCancelled) { %>
-            <a href="/orders/<%= o._id %>/invoice"
-               class="btn-invoice"
-               id="invoiceBtn"
-               target="_blank">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Download Invoice
-            </a>
-          <% } %>
+          <div class="detail-head-actions">
+            <% if (canCancel) { %>
+              <button type="button" class="btn btn-cancel-order" id="openCancelOrderBtn">
+                Cancel Order
+              </button>
+            <% } %>
+            <!-- Invoice button: show for active orders (not cancelled) -->
+            <% if (!isCancelled) { %>
+              <a href="/orders/<%= o._id %>/invoice"
+                 class="btn-invoice"
+                 id="invoiceBtn"
+                 target="_blank">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download Invoice
+              </a>
+            <% } %>
+          </div>
         </div>
       </header>
 
       <!-- Flash banners (auto-dismiss in 4s + URL cleaned so refresh won't re-show) -->
       <% if (typeof query !== 'undefined' && query && query.cancelled) { %>
         <div class="detail-flash detail-flash--success js-flash" role="alert">
-          ✦ Your order has been successfully cancelled.
+          ✦ Cancellation completed successfully.<% if (query.refunded) { %> Refund has been credited to your wallet.<% } %>
         </div>
       <% } %>
       <% if (typeof query !== 'undefined' && query && query.returned) { %>
@@ -78,9 +87,21 @@
           ✦ Return request submitted. Our team will process it within 2–3 business days.
         </div>
       <% } %>
-      <% if (typeof query !== 'undefined' && query && query.error === 'not_cancellable') { %>
+      <% if (typeof query !== 'undefined' && query && query.error === 'reason_required') { %>
         <div class="detail-flash detail-flash--error js-flash" role="alert">
-          This order can no longer be cancelled (status: <%= o.status_label %>).
+          Please select a cancellation reason before proceeding.
+        </div>
+      <% } else if (typeof query !== 'undefined' && query && query.error === 'comment_required') { %>
+        <div class="detail-flash detail-flash--error js-flash" role="alert">
+          Please enter at least 5 characters for your reason when selecting "Other".
+        </div>
+      <% } else if (typeof query !== 'undefined' && query && query.error === 'not_cancellable') { %>
+        <div class="detail-flash detail-flash--error js-flash" role="alert">
+          This order or item can no longer be cancelled (status: <%= o.status_label %>).
+        </div>
+      <% } else if (typeof query !== 'undefined' && query && query.error === 'cancel_failed') { %>
+        <div class="detail-flash detail-flash--error js-flash" role="alert">
+          Something went wrong while processing the cancellation. Please try again.
         </div>
       <% } %>
 
@@ -179,11 +200,18 @@
                     </span>
                   <% } %>
                   <% if (itemCanCancel) { %>
-                    <form method="POST" action="/orders/<%= o._id %>/cancel?itemId=<%= it._id %>" style="display:inline-block;" class="cancel-item-form">
-                      <button type="button" class="btn btn-small btn-danger cancel-item-btn">
-                        Cancel Item
-                      </button>
-                    </form>
+                    <button type="button"
+                            class="btn btn-small btn-danger cancel-item-btn"
+                            data-item-id="<%= it._id %>"
+                            data-item-name="<%= it.name %>">
+                      Cancel Item
+                    </button>
+                  <% } %>
+                  <% if (itemSt === 'cancelled' && (it.cancel_reason || o.cancel_reason)) { %>
+                    <div class="item-cancel-reason-note">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      <span>Reason: <strong><%= it.cancel_reason || o.cancel_reason %></strong></span>
+                    </div>
                   <% } %>
                 </div>
               </div>
@@ -233,32 +261,71 @@
   <%- include('../partials/footer') %>
   <%- include('../partials/logout-modal') %>
 
-  <!-- ── Cancel Order Modal ─────────────────────────────────────────────── -->
-  <% if (canCancel) { %>
+  <!-- ── Cancel Modal (Whole Order or Single Item) ─────────────────────── -->
+  <% if (canCancelAny) { %>
   <dialog id="cancelModal" class="cancel-modal">
     <div class="cancel-modal-inner">
-      <h2 class="cancel-modal-title">Cancel this order?</h2>
-      <p class="cancel-modal-sub">This action cannot be undone. Your stock will be restored immediately.</p>
+      <h2 class="cancel-modal-title" id="cancelModalTitle">Cancel this order?</h2>
+      <p class="cancel-modal-sub" id="cancelModalSub">This action cannot be undone. Please select a reason for cancellation.</p>
 
-      <form method="POST" action="/orders/<%= o._id %>/cancel">
-        <div class="cancel-reason-field">
-          <label for="cancelReasonInput" class="cancel-reason-label">Reason <span class="optional">(optional)</span></label>
-          <textarea
-            id="cancelReasonInput"
-            name="cancel_reason"
-            class="cancel-reason-textarea"
-            rows="3"
-            maxlength="300"
-            placeholder="e.g. Changed my mind, ordered wrong size..."
-          ></textarea>
+      <div id="cancelItemPreview" class="cancel-item-preview" style="display:none;">
+        <span class="cancel-item-preview-label">Item to cancel:</span>
+        <strong id="cancelItemPreviewName"></strong>
+      </div>
+
+      <form method="POST" action="/orders/<%= o._id %>/cancel" id="cancelForm">
+        <div class="cancel-reason-section">
+          <label class="cancel-reason-label">Reason for cancellation <span class="required-star">*</span></label>
+          <div class="cancel-reasons-list" id="cancelReasonsList">
+            <% (o.cancellationReasons || [
+              'Ordered by mistake',
+              'Found a better price elsewhere',
+              'Delayed delivery / Takes too long',
+              'Need to change shipping address',
+              'Need to change payment method',
+              'Changed my mind / No longer needed',
+              'Other'
+            ]).forEach(function(reason, idx) { %>
+              <label class="cancel-reason-item" id="cancelReasonItem-<%= idx %>">
+                <input
+                  type="radio"
+                  name="cancel_reason"
+                  value="<%= reason %>"
+                  class="cancel-reason-radio"
+                  id="cancelReason-<%= idx %>"
+                  required
+                >
+                <span class="cancel-reason-dot"></span>
+                <span class="cancel-reason-text"><%= reason %></span>
+              </label>
+            <% }); %>
+          </div>
         </div>
 
+        <div class="cancel-comment-field" id="cancelCommentField">
+          <label for="cancelCommentInput" class="cancel-reason-label" id="cancelCommentLabel">
+            Additional Comments <span class="optional" id="commentOptionalTag">(optional)</span>
+          </label>
+          <textarea
+            id="cancelCommentInput"
+            name="cancel_comment"
+            class="cancel-reason-textarea"
+            rows="2"
+            maxlength="250"
+            placeholder="Provide any additional details..."
+          ></textarea>
+          <div class="cancel-char-count"><span id="cancelCharCount">0</span> / 250</div>
+        </div>
+
+        <div class="modal-form-error" id="modalFormError" style="display:none;" role="alert"></div>
+
         <div class="cancel-modal-actions">
-          <button type="button" class="btn btn-outline-modal"
-            onclick="document.getElementById('cancelModal').close()">
+          <button type="button" class="btn btn-outline-modal" id="cancelModalCloseBtn">
             Keep Order
           </button>
-          <button type="submit" class="btn btn-danger-modal">Yes, Cancel Order</button>
+          <button type="submit" class="btn btn-danger-modal" id="cancelSubmitBtn">
+            Confirm Cancellation
+          </button>
         </div>
       </form>
     </div>
@@ -269,10 +336,7 @@
     // ── Auto-dismiss flash banners + clean URL so refresh won't re-show ──────
     const flashes = document.querySelectorAll('.js-flash');
     if (flashes.length) {
-      // Clean query params from URL immediately (prevents re-show on refresh)
       history.replaceState(null, '', window.location.pathname);
-
-      // Fade out after 4 seconds
       setTimeout(function() {
         flashes.forEach(function(el) {
           el.style.transition = 'opacity 0.5s ease';
@@ -282,21 +346,160 @@
       }, 4000);
     }
 
-    // ── Cancel item — branded confirm dialog ─────────────────────────────────
+    // ── Cancellation modal management ──────────────────────────────────────────
+    const cancelModal           = document.getElementById('cancelModal');
+    const cancelForm            = document.getElementById('cancelForm');
+    const cancelModalTitle      = document.getElementById('cancelModalTitle');
+    const cancelModalSub        = document.getElementById('cancelModalSub');
+    const cancelItemPreview     = document.getElementById('cancelItemPreview');
+    const cancelItemPreviewName = document.getElementById('cancelItemPreviewName');
+    const cancelModalCloseBtn   = document.getElementById('cancelModalCloseBtn');
+    const cancelCommentInput    = document.getElementById('cancelCommentInput');
+    const commentOptionalTag    = document.getElementById('commentOptionalTag');
+    const cancelCharCount       = document.getElementById('cancelCharCount');
+    const modalFormError        = document.getElementById('modalFormError');
+    const cancelSubmitBtn       = document.getElementById('cancelSubmitBtn');
+
+    function resetCancelModal() {
+      if (!cancelForm) return;
+      cancelForm.reset();
+      document.querySelectorAll('.cancel-reason-item').forEach(function(l) {
+        l.classList.remove('is-selected');
+      });
+      if (cancelCommentInput) {
+        cancelCommentInput.required = false;
+        cancelCommentInput.placeholder = 'Provide any additional details...';
+      }
+      if (commentOptionalTag) {
+        commentOptionalTag.textContent = '(optional)';
+        commentOptionalTag.style.color = '';
+      }
+      if (cancelCharCount) cancelCharCount.textContent = '0';
+      if (modalFormError) {
+        modalFormError.style.display = 'none';
+        modalFormError.textContent = '';
+      }
+      if (cancelSubmitBtn) {
+        cancelSubmitBtn.disabled = false;
+        cancelSubmitBtn.textContent = 'Confirm Cancellation';
+      }
+    }
+
+    // Cancel entire order button
+    const openCancelOrderBtn = document.getElementById('openCancelOrderBtn');
+    if (openCancelOrderBtn && cancelModal) {
+      openCancelOrderBtn.addEventListener('click', function() {
+        resetCancelModal();
+        cancelForm.action = '/orders/<%= o._id %>/cancel';
+        cancelModalTitle.textContent = 'Cancel Entire Order?';
+        cancelModalSub.textContent = 'This action cannot be undone. All active items will be cancelled and restocked.';
+        if (cancelItemPreview) cancelItemPreview.style.display = 'none';
+        cancelModal.showModal();
+      });
+    }
+
+    // Cancel individual item button
     document.querySelectorAll('.cancel-item-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        const form = btn.closest('.cancel-item-form');
-        essConfirm('Are you sure you want to cancel this item? This action cannot be undone.').then(function(confirmed) {
-          if (confirmed) form.submit();
-        });
+        if (!cancelModal) return;
+        resetCancelModal();
+        const itemId = btn.dataset.itemId;
+        const itemName = btn.dataset.itemName || 'this item';
+        cancelForm.action = '/orders/<%= o._id %>/cancel?itemId=' + encodeURIComponent(itemId);
+        cancelModalTitle.textContent = 'Cancel Item?';
+        cancelModalSub.textContent = 'This action cannot be undone. Stock will be restored and payment refunded if prepaid.';
+        if (cancelItemPreview && cancelItemPreviewName) {
+          cancelItemPreviewName.textContent = itemName;
+          cancelItemPreview.style.display = 'block';
+        }
+        cancelModal.showModal();
       });
     });
 
-    // ── Cancel modal backdrop close ───────────────────────────────────────────
-    const cancelModal = document.getElementById('cancelModal');
+    if (cancelModalCloseBtn && cancelModal) {
+      cancelModalCloseBtn.addEventListener('click', function() {
+        cancelModal.close();
+      });
+    }
+
     if (cancelModal) {
       cancelModal.addEventListener('click', function(e) {
         if (e.target === cancelModal) cancelModal.close();
+      });
+    }
+
+    // Highlight selected radio reason & toggle comments requirement
+    document.querySelectorAll('.cancel-reason-radio').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        document.querySelectorAll('.cancel-reason-item').forEach(function(l) {
+          l.classList.remove('is-selected');
+        });
+        if (this.checked) {
+          this.closest('.cancel-reason-item').classList.add('is-selected');
+        }
+        if (modalFormError) modalFormError.style.display = 'none';
+
+        if (this.value === 'Other') {
+          if (cancelCommentInput) {
+            cancelCommentInput.required = true;
+            cancelCommentInput.placeholder = 'Please specify the exact reason (min 5 characters)...';
+            cancelCommentInput.focus();
+          }
+          if (commentOptionalTag) {
+            commentOptionalTag.textContent = '(required - min 5 chars)';
+            commentOptionalTag.style.color = 'var(--red)';
+          }
+        } else {
+          if (cancelCommentInput) {
+            cancelCommentInput.required = false;
+            cancelCommentInput.placeholder = 'Provide any additional details...';
+          }
+          if (commentOptionalTag) {
+            commentOptionalTag.textContent = '(optional)';
+            commentOptionalTag.style.color = '';
+          }
+        }
+      });
+    });
+
+    // Character counter for comment
+    if (cancelCommentInput && cancelCharCount) {
+      cancelCommentInput.addEventListener('input', function() {
+        cancelCharCount.textContent = this.value.length;
+        if (modalFormError) modalFormError.style.display = 'none';
+      });
+    }
+
+    // Form submission validation
+    if (cancelForm) {
+      cancelForm.addEventListener('submit', function(e) {
+        const checkedRadio = document.querySelector('input[name="cancel_reason"]:checked');
+        if (!checkedRadio) {
+          e.preventDefault();
+          if (modalFormError) {
+            modalFormError.textContent = 'Please select a reason for cancellation.';
+            modalFormError.style.display = 'block';
+          }
+          return;
+        }
+
+        if (checkedRadio.value === 'Other') {
+          const commentVal = (cancelCommentInput ? cancelCommentInput.value : '').trim();
+          if (commentVal.length < 5) {
+            e.preventDefault();
+            if (modalFormError) {
+              modalFormError.textContent = 'Please specify a reason of at least 5 characters for "Other".';
+              modalFormError.style.display = 'block';
+            }
+            if (cancelCommentInput) cancelCommentInput.focus();
+            return;
+          }
+        }
+
+        if (cancelSubmitBtn) {
+          cancelSubmitBtn.disabled = true;
+          cancelSubmitBtn.textContent = 'Cancelling...';
+        }
       });
     }
 

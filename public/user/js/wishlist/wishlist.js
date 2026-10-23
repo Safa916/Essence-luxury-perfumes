@@ -322,6 +322,58 @@
   }
 
   /* ============================================================
+     REMOVE CONFIRMATION MODAL
+     Shown before removing an item from the wishlist
+  ============================================================ */
+
+  function showRemoveConfirm(productName, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.className = 'essence-size-modal-overlay';
+
+    overlay.innerHTML = `
+      <div class="essence-size-modal" role="dialog" aria-modal="true" aria-labelledby="removeConfirmTitle">
+        <button class="essence-size-modal__close" aria-label="Close">&times;</button>
+        <p class="essence-size-modal__eyebrow">Remove from Wishlist</p>
+        <h2 class="essence-size-modal__title" id="removeConfirmTitle">Are you sure?</h2>
+        <p class="essence-size-modal__body">
+          <strong>${productName}</strong> will be removed from your wishlist.<br>You can always add it back later.
+        </p>
+        <div class="essence-size-modal__actions">
+          <button class="essence-size-modal__btn essence-size-modal__btn--primary js-confirm-remove">Yes, Remove</button>
+          <button class="essence-size-modal__btn essence-size-modal__btn--secondary js-cancel-remove">Keep It</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => overlay.classList.add('visible'));
+    });
+
+    function closeModal() {
+      overlay.classList.remove('visible');
+      document.body.style.overflow = '';
+      overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+    }
+
+    overlay.querySelector('.js-confirm-remove').addEventListener('click', () => {
+      closeModal();
+      onConfirm();
+    });
+
+    overlay.querySelector('.js-cancel-remove').addEventListener('click', closeModal);
+    overlay.querySelector('.essence-size-modal__close').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+    const handleKey = (e) => {
+      if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', handleKey); }
+    };
+    document.addEventListener('keydown', handleKey);
+  }
+
+  /* ============================================================
      WISHLIST GRID EVENTS
   ============================================================ */
 
@@ -336,29 +388,35 @@
     // ===== Remove =====
     if (e.target.classList.contains('wishlist-remove-btn')) {
       const removeBtn = e.target;
-      removeBtn.disabled = true;
-      try {
-        const res = await fetch(`/wishlist/remove/${wishlistItemId}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (data.success) {
-          // Animate card out
-          card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-          card.style.opacity = '0';
-          card.style.transform = 'scale(0.95)';
-          setTimeout(() => {
-            card.remove();
-            if (grid.querySelectorAll('.wishlist-card').length === 0) window.location.reload();
-          }, 300);
-          showToast('Item removed from your wishlist.', 'info');
-        } else {
-          showToast(data.message || 'Could not remove item.', 'error');
+
+      // Get product name for the confirmation message
+      const productName = card.querySelector('.wishlist-name')?.textContent?.trim() || 'this item';
+
+      // Show branded confirmation modal before deleting
+      showRemoveConfirm(productName, async () => {
+        removeBtn.disabled = true;
+        try {
+          const res = await fetch(`/wishlist/remove/${wishlistItemId}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (data.success) {
+            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+              card.remove();
+              if (grid.querySelectorAll('.wishlist-card').length === 0) window.location.reload();
+            }, 300);
+            showToast('Removed from your wishlist.', 'info');
+          } else {
+            showToast(data.message || 'Could not remove item.', 'error');
+            removeBtn.disabled = false;
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('Something went wrong. Please try again.', 'error');
           removeBtn.disabled = false;
         }
-      } catch (err) {
-        console.error(err);
-        showToast('Something went wrong. Please try again.', 'error');
-        removeBtn.disabled = false;
-      }
+      });
       return;
     }
 

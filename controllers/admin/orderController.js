@@ -1,5 +1,9 @@
 const Order = require('../../models/order');
 const User  = require('../../models/user');
+const Product = require('../../models/product');
+const Variant = require('../../models/variant');
+const walletService = require('../../services/walletService');
+const mongoose = require('mongoose');
 
 const PER_PAGE = 10;
 
@@ -81,12 +85,14 @@ exports.listOrders = async (req, res) => {
       }));
 
       return {
-        _id     : o._id,
-        orderId : o.order_number,
-        createdAt: o.placed_at || o.created_at,
-        status  : o.order_status,
-        total   : toNum(o.total_amount),
-        customer: { name: user.full_name || user.email || 'Unknown', email: user.email || '' },
+        _id            : o._id,
+        orderId        : o.order_number,
+        createdAt      : o.placed_at || o.created_at,
+        status         : o.order_status,
+        total          : toNum(o.total_amount),
+        payment_method : o.payment_method || 'cod',
+        payment_status : o.payment_status || 'pending',
+        customer       : { name: user.full_name || user.email || 'Unknown', email: user.email || '' },
         items,
       };
     });
@@ -160,6 +166,8 @@ exports.renderOrderDetail = async (req, res) => {
         image       : i.image || (p.images && p.images[0]) || '',
         item_status : istatus,
         item_status_label: istatus.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        cancel_reason: i.cancel_reason || (istatus === 'cancelled' ? order.cancel_reason : null),
+        cancelled   : istatus === 'cancelled',
         next_statuses: ITEM_NEXT[istatus] || [],
       };
     });
@@ -205,6 +213,7 @@ exports.renderOrderDetail = async (req, res) => {
         _id           : order._id,
         orderId       : order.order_number,
         status        : order.order_status,
+        cancel_reason : order.cancel_reason || null,
         dateStr,
         customer      : { name: userName, email: user.email || '' },
         paymentMethod : order.payment_method || 'Cash on Delivery',
@@ -240,15 +249,14 @@ exports.renderOrderDetail = async (req, res) => {
 // ─── POST /admin/orders/:id/status ───────────────────────────────────────────
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, cancel_reason, internal_notes } = req.body;
     const allowed = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
 
     if (!allowed.includes(status)) {
       return res.redirect(`/admin/orders/${req.params.id}?flash=invalid_status`);
     }
 
-    // Fetch the current order to enforce terminal-state guard
-    const order = await Order.findById(req.params.id).select('order_status').lean();
+    const order = await Order.findById(req.params.id);
     if (!order) return res.redirect('/admin/orders');
 
     const terminal = ['cancelled', 'returned', 'delivered'];
@@ -256,7 +264,50 @@ exports.updateOrderStatus = async (req, res) => {
       return res.redirect(`/admin/orders/${req.params.id}?flash=invalid_status`);
     }
 
-    await Order.findByIdAndUpdate(req.params.id, { order_status: status });
+    if (status === 'cancelled') {
+      const reason = (cancel_reason || internal_notes || 'Cancelled by Admin').trim();
+      let totalRefundAmt = 0;
+
+      for (const item of order.items) {
+        const itemSt = item.item_status || 'placed';
+        if (itemSt !== 'cancelled' && itemSt !== 'returned') {
+          // Restore stock
+          await Variant.findByIdAndUpdate(item.variant_id, { $inc: { quantity: item.quantity } });
+          await Product.findByIdAndUpdate(item.product_id, { $inc: { stock: item.quantity } });
+
+          item.item_status = 'cancelled';
+          item.cancel_reason = reason;
+          item.cancelled_at = new Date();
+          totalRefundAmt += parseFloat(item.price_at_purchase.toString()) * item.quantity;
+        }
+      }
+
+      order.order_status = 'cancelled';
+      order.cancel_reason = reason;
+
+      const isPrepaid = (order.payment_method === 'Wallet' || order.payment_method === 'Online Payment') && order.payment_status === 'paid';
+      if (isPrepaid && totalRefundAmt > 0) {
+        await walletService.creditWallet({
+          userId         : order.user_id,
+          amount         : totalRefundAmt,
+          category       : 'refund',
+          description    : `Refund for cancelled order #${order.order_number}`,
+          relatedOrderId : order._id,
+        });
+        order.payment_status = 'refunded';
+      }
+
+      if (internal_notes) {
+        order.internal_notes = internal_notes;
+      }
+
+      await order.save();
+    } else {
+      order.order_status = status;
+      if (internal_notes) order.internal_notes = internal_notes;
+      if (req.body.tracking_number) order.tracking_number = req.body.tracking_number;
+      await order.save();
+    }
 
     res.redirect(`/admin/orders/${req.params.id}?flash=status_updated`);
   } catch (err) {
@@ -266,42 +317,63 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 // ─── POST /admin/orders/:id/items/:itemId/status ─────────────────────────────
-const mongoose = require('mongoose');
 exports.updateItemStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, cancel_reason, internal_notes } = req.body;
     const allowed = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
 
     if (!allowed.includes(status)) {
       return res.redirect(`/admin/orders/${req.params.id}?flash=invalid_status`);
     }
 
-    // Update the specific item's status and return the updated order document
-    const order = await Order.findOneAndUpdate(
-      { _id: req.params.id, 'items._id': new mongoose.Types.ObjectId(req.params.itemId) },
-      { $set: { 'items.$.item_status': status } },
-      { returnDocument: 'after' }
-    );
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.redirect('/admin/orders');
 
-    if (order) {
-     
-      const activeItems = order.items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
-      let newOrderStatus = 'placed';
-      
-      if (activeItems.length === 0) {
-      
-        newOrderStatus = 'cancelled';
-      } else {
-        const statuses = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
-          const minIndex = Math.min(...activeItems.map(i => statuses.indexOf(i.item_status) !== -1 ? statuses.indexOf(i.item_status) : 0));
-        newOrderStatus = statuses[minIndex] || 'placed';
+    const item = order.items.id(req.params.itemId);
+    if (!item) return res.redirect(`/admin/orders/${req.params.id}?flash=error`);
+
+    if (status === 'cancelled') {
+      const reason = (cancel_reason || internal_notes || 'Cancelled by Admin').trim();
+      const prevStatus = item.item_status || 'placed';
+
+      if (prevStatus !== 'cancelled' && prevStatus !== 'returned') {
+        // Restore stock
+        await Variant.findByIdAndUpdate(item.variant_id, { $inc: { quantity: item.quantity } });
+        await Product.findByIdAndUpdate(item.product_id, { $inc: { stock: item.quantity } });
+
+        item.item_status = 'cancelled';
+        item.cancel_reason = reason;
+        item.cancelled_at = new Date();
+
+        const isPrepaid = (order.payment_method === 'Wallet' || order.payment_method === 'Online Payment') && order.payment_status === 'paid';
+        if (isPrepaid) {
+          const itemRefund = parseFloat(item.price_at_purchase.toString()) * item.quantity;
+          await walletService.creditWallet({
+            userId         : order.user_id,
+            amount         : itemRefund,
+            category       : 'refund',
+            description    : `Refund for cancelled item in order #${order.order_number}`,
+            relatedOrderId : order._id,
+          });
+        }
       }
-      
-      if (order.order_status !== newOrderStatus) {
-        order.order_status = newOrderStatus;
-        await order.save();
-      }
+    } else {
+      item.item_status = status;
     }
+
+    const activeItems = order.items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
+    if (activeItems.length === 0) {
+      order.order_status = 'cancelled';
+      if (!order.cancel_reason) {
+        order.cancel_reason = item.cancel_reason || 'Cancelled by Admin';
+      }
+    } else {
+      const statuses = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
+      const minIndex = Math.min(...activeItems.map(i => statuses.indexOf(i.item_status) !== -1 ? statuses.indexOf(i.item_status) : 0));
+      order.order_status = statuses[minIndex] || 'placed';
+    }
+
+    await order.save();
 
     const referer = req.get('Referrer') || `/admin/orders/${req.params.id}`;
     res.redirect(`${referer}${referer.includes('?') ? '&' : '?'}flash=item_status_updated`);

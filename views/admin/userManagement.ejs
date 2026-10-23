@@ -103,6 +103,7 @@
                         <th class="col-status">Status</th>
                         <th class="col-joined">Joined At</th>
                         <th class="col-actions">Actions</th>
+
                     </tr>
                 </thead>
                 <tbody>
@@ -121,6 +122,7 @@
                             <% const redirectTo = `/admin/users?search=${encodeURIComponent(search)}&page=${page}`; %>
                             <tr class="<%= !user.is_active ? 'row-blocked' : '' %>">
                                 <td class="col-sl"><%= String(serial).padStart(2, '0') %></td>
+                                
                                 <td class="col-user">
                                     <div class="user-cell">
                                         <div class="avatar-placeholder <%= !user.is_active ? 'muted' : '' %>"><%= initials %></div>

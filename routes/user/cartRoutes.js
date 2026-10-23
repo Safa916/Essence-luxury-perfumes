@@ -6,7 +6,8 @@ const {
   renderCart,
   updateQuantity,
   removeItem,
-  requireAuthApi,
+  requireAuthApi
+ 
 } = require('../../controllers/user/cartController');
 
 // Full page — redirects to login if not authenticated
@@ -16,5 +17,6 @@ router.get('/', requireAuth, renderCart);
 router.post('/add', checkUser, requireAuthApi, addToCart);
 router.patch('/update', checkUser, requireAuthApi, updateQuantity);
 router.delete('/remove/:cartItemId', checkUser, requireAuthApi, removeItem);
+
 
 module.exports = router;

@@ -5,6 +5,8 @@ const app =express()
 const path = require("path");
 app.set("view engine", "ejs");
 
+const Order = require('./models/order');
+
 
 const connectDB=require('./db/connectDB');
 const cookieParser = require('cookie-parser');
@@ -52,6 +54,28 @@ const PORT = process.env.PORT || 3002;
 app.get('/',checkUser,renderHome)
 
 
+
+
+app.get('/test-orders-by-date', async (req, res) => {
+  try {
+    const { from, to } = req.query;     // /test-orders-by-date?from=2026-10-01&to=2026-10-17
+
+    const start = new Date(from);
+    start.setHours(0, 0, 0, 0);          // start of the first day
+
+    const end = new Date(to);
+    end.setHours(23, 59, 59, 999);       // end of the last day
+
+    const orders = await Order.find({
+      created_at: { $gte: start, $lte: end }
+    });
+
+    res.send(orders);
+  } catch (err) {
+    res.send(err.message);
+  }
+});
+
 app.use('/auth', userRoutes);
 app.use('/address', addressRoutes);
 app.use('/profile', profileRoutes);
@@ -72,6 +96,8 @@ app.use('/houses', userBrandRoutes);
 
 
 
+
+ 
 
 
 

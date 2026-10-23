@@ -66,6 +66,15 @@ const orderSchema = new mongoose.Schema(
           enum: ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
           default: 'placed',
         },
+        cancel_reason: {
+          type: String,
+          default: null,
+          trim: true,
+        },
+        cancelled_at: {
+          type: Date,
+          default: null,
+        },
       },
     ],
     subtotal: {
@@ -85,6 +94,7 @@ const orderSchema = new mongoose.Schema(
       default: 0,
     },
     total_amount: {
+      
       type: mongoose.Schema.Types.Decimal128,
       required: true,
     },

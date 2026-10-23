@@ -698,3 +698,60 @@ body { font-family: 'Space Grotesk', sans-serif; background: #f8f8f8; color: #11
   .aod-item-sub  { grid-column: 2; }
   .aod-item-status-col { grid-column: 2; }
 }
+
+/* Cancel callout */
+.aod-cancel-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem;
+  background: #fee2e2;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+  margin-bottom: 1.5rem;
+  border-radius: 2px;
+}
+
+.aod-cancel-callout svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.aod-cancel-callout-title {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.aod-cancel-callout-sub {
+  font-size: 0.8rem;
+  color: #7f1d1d;
+  line-height: 1.4;
+}
+
+.aod-cancel-callout-sub span {
+  font-weight: 600;
+}
+
+/* Item cancellation reason */
+.aod-item-reason {
+  font-size: 0.68rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  border: 1px solid #fecaca;
+  margin-top: 0.4rem;
+  max-width: 170px;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.aod-item-reason em {
+  font-style: normal;
+  font-weight: 600;
+}
+

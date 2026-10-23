@@ -298,6 +298,8 @@ exports.deleteCategory = async (req, res) => {
     res.redirect('/admin/categories');
   } catch (err) {
     console.error('Error deleting category:', err);
+
+    
     res.redirect('/admin/categories');
   }
 };

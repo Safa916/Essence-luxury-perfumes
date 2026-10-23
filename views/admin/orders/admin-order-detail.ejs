@@ -71,6 +71,16 @@
       <% } %>
     </section>
 
+    <% if (o.status === 'cancelled') { %>
+      <div class="aod-cancel-callout">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <div>
+          <strong class="aod-cancel-callout-title">Order Cancelled</strong>
+          <p class="aod-cancel-callout-sub">Cancellation Reason: <span><%= o.cancel_reason || 'No specific reason provided' %></span></p>
+        </div>
+      </div>
+    <% } %>
+
     <div class="aod-body">
 
       <!-- LEFT COLUMN -->
@@ -146,12 +156,17 @@
                 <span class="aod-item-badge aod-item-badge--<%= orderReturned ? 'returned' : item.item_status %>">
                   <%= orderReturned ? 'Returned' : item.item_status_label %>
                 </span>
+                <% if (item.item_status === 'cancelled' && (item.cancel_reason || o.cancel_reason)) { %>
+                  <p class="aod-item-reason" title="<%= item.cancel_reason || o.cancel_reason %>">
+                    Reason: <em><%= item.cancel_reason || o.cancel_reason %></em>
+                  </p>
+                <% } %>
                 <% if (!orderReturned && !itemTerminal && item.next_statuses && item.next_statuses.length) { %>
                   <form method="POST"
                         action="/admin/orders/<%= o._id %>/items/<%= item._id %>/status"
                         class="aod-item-status-form">
                     <select name="status" class="aod-item-select"
-                            onchange="this.form.submit()" title="Update item status">
+                            onchange="handleItemStatusChange(this)" title="Update item status">
                       <option value="" disabled selected>Move to…</option>
                       <% item.next_statuses.forEach(function(ns) { %>
                         <option value="<%= ns %>">
@@ -278,12 +293,18 @@
 
       <form method="POST" action="/admin/orders/<%= o._id %>/status" id="statusForm">
         <div class="aod-field">
-          <label class="aod-field-label" for="statusSelect">Current Status</label>
+          <label class="aod-field-label" for="statusSelect">Target Status</label>
           <select name="status" id="statusSelect" class="aod-select" required>
             <% o.nextStatuses.forEach(function(ns) { %>
               <option value="<%= ns %>"><%= ns.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) %></option>
             <% }); %>
           </select>
+        </div>
+
+        <div class="aod-field" id="adminCancelReasonGroup" style="display:none;">
+          <label class="aod-field-label" for="adminCancelReason">Cancellation Reason <span style="color:#ef4444;">*</span></label>
+          <input type="text" id="adminCancelReason" name="cancel_reason" class="aod-tracking-input"
+            placeholder="e.g. Out of stock, customer requested, suspect order...">
         </div>
 
         <div class="aod-field">
@@ -328,6 +349,50 @@
     if (openBtn && modal) {
       openBtn.addEventListener('click', () => modal.showModal());
       modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+    }
+
+    // Toggle reason field if status is cancelled in modal
+    const statusSelect = document.getElementById('statusSelect');
+    const adminCancelReasonGroup = document.getElementById('adminCancelReasonGroup');
+    const adminCancelReason = document.getElementById('adminCancelReason');
+    if (statusSelect && adminCancelReasonGroup) {
+      function checkStatusSelect() {
+        if (statusSelect.value === 'cancelled') {
+          adminCancelReasonGroup.style.display = 'block';
+          if (adminCancelReason) adminCancelReason.required = true;
+        } else {
+          adminCancelReasonGroup.style.display = 'none';
+          if (adminCancelReason) {
+            adminCancelReason.required = false;
+            adminCancelReason.value = '';
+          }
+        }
+      }
+      statusSelect.addEventListener('change', checkStatusSelect);
+      checkStatusSelect();
+    }
+
+    // Handle single item status change
+    function handleItemStatusChange(select) {
+      if (select.value === 'cancelled') {
+        const reason = prompt('Please enter a cancellation reason for this item:');
+        if (reason === null) {
+          select.value = '';
+          return;
+        }
+        const form = select.closest('form');
+        let input = form.querySelector('input[name="cancel_reason"]');
+        if (!input) {
+          input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'cancel_reason';
+          form.appendChild(input);
+        }
+        input.value = reason.trim() || 'Cancelled by Admin';
+        form.submit();
+      } else if (select.value) {
+        select.closest('form').submit();
+      }
     }
 
     if (window.location.hash) {

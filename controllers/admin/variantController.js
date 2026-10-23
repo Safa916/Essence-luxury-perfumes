@@ -234,6 +234,10 @@ async function recalcProductPrice(productId) {
   }, null);
   await Product.findByIdAndUpdate(productId, { price: lowest });
 }
+
+
+
+ 
 module.exports.nextVariantSku = nextVariantSku;
 module.exports.recalcProductStock = recalcProductStock;
 module.exports.recalcProductPrice = recalcProductPrice;

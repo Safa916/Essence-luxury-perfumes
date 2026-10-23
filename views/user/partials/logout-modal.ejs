@@ -19,22 +19,48 @@
     if (event.persisted) window.location.reload();
   });
 
-  const logoutBtn = document.getElementById('logoutBtn');
-  const logoutModal = document.getElementById('logoutModal');
-  const cancelLogout = document.getElementById('cancelLogout');
-  const confirmLogout = document.getElementById('confirmLogout');
+  (function () {
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelLogout = document.getElementById('cancelLogout');
+    const confirmLogout = document.getElementById('confirmLogout');
 
-  logoutBtn?.addEventListener('click', () => {
-    logoutModal.style.display = 'flex';
-  });
+    function openLogoutModal() {
+      if (logoutModal) logoutModal.style.display = 'flex';
+    }
 
-  cancelLogout?.addEventListener('click', () => {
-    logoutModal.style.display = 'none';
-  });
+    function closeLogoutModal() {
+      if (logoutModal) logoutModal.style.display = 'none';
+    }
 
-  confirmLogout?.addEventListener('click', async () => {
-    await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
-    localStorage.removeItem('token');
-    window.location.href = '/auth/login';
-  });
+    // Delegate clicks so all logout buttons (navbar, mobile drawer, user profile page, etc.) trigger the modal
+    document.addEventListener('click', function (e) {
+      const trigger = e.target.closest('#logoutBtn, #profileLogoutBtn, #mobileLogoutBtn, .btn-logout, .profile-logout-btn, [data-logout-btn]');
+      if (trigger) {
+        e.preventDefault();
+        openLogoutModal();
+      }
+    });
+
+    cancelLogout?.addEventListener('click', closeLogoutModal);
+
+    logoutModal?.addEventListener('click', function (e) {
+      if (e.target === logoutModal) closeLogoutModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && logoutModal && logoutModal.style.display === 'flex') {
+        closeLogoutModal();
+      }
+    });
+
+    confirmLogout?.addEventListener('click', async () => {
+      try {
+        await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+      localStorage.removeItem('token');
+      window.location.href = '/auth/login';
+    });
+  })();
 </script>

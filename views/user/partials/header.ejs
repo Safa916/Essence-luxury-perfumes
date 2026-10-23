@@ -76,6 +76,22 @@
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
+
+  <!-- Mobile search bar -->
+  <div class="mobile-nav-search">
+    <input
+      type="text"
+      id="mobileSearchInput"
+      class="mobile-search-input"
+      placeholder="Search fragrances..."
+      aria-label="Search fragrances"
+      autocomplete="off"
+    >
+    <button type="button" class="mobile-search-btn" id="mobileSearchBtn" aria-label="Search">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+  </div>
+
   <div class="mobile-nav-links">
     <a href="/" class="mobile-nav-link <%= _active === 'home' ? 'is-active' : '' %>">Home</a>
     <a href="/categories" class="mobile-nav-link <%= _active === 'categories' ? 'is-active' : '' %>">Categories</a>
@@ -88,7 +104,6 @@
       <a href="/orders" class="mobile-nav-link">My Orders</a>
       <a href="/wallet" class="mobile-nav-link">My Wallet</a>
       <a href="/coupon" class="mobile-nav-link">My Coupons</a>
-      <a href="/wishlist" class="mobile-nav-link">Wishlist</a>
       <button type="button" id="mobileLogoutBtn" class="mobile-nav-link mobile-logout-btn">Logout</button>
     <% } else { %>
       <a href="/auth/login" class="btn btn-dark mobile-signin-btn">Sign In</a>
@@ -201,6 +216,22 @@
         var desktopLogout = document.getElementById('logoutBtn');
         if (desktopLogout) desktopLogout.click();
         else window.location.href = '/auth/logout';
+      });
+    }
+
+    // ── Mobile search ──
+    var mobileSearchInput = document.getElementById('mobileSearchInput');
+    var mobileSearchBtn   = document.getElementById('mobileSearchBtn');
+
+    function doMobileSearch() {
+      var q = mobileSearchInput ? mobileSearchInput.value.trim() : '';
+      window.location.href = q ? '/shop?search=' + encodeURIComponent(q) : '/shop';
+    }
+
+    if (mobileSearchBtn) mobileSearchBtn.addEventListener('click', doMobileSearch);
+    if (mobileSearchInput) {
+      mobileSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); doMobileSearch(); }
       });
     }
 

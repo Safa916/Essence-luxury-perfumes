@@ -61,3 +61,5 @@ exports.updateSettings = async (req, res) => {
     res.redirect('/admin/referrals?error=server_error');
   }
 };
+
+ 

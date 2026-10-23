@@ -23,12 +23,15 @@ const STATUS_LABEL = {
   returned        : 'Returned',
 };
 
-
-
-
-
-
-
+const CANCELLATION_REASONS = [
+  'Ordered by mistake',
+  'Found a better price elsewhere',
+  'Delayed delivery / Takes too long',
+  'Need to change shipping address',
+  'Need to change payment method',
+  'Changed my mind / No longer needed',
+  'Other',
+];
 // ─── GET /orders ──────────────────────────────────────────────────────────────
 exports.listOrders = async (req, res) => {
   try {
@@ -171,6 +174,8 @@ exports.getOrderDetail = async (req, res) => {
         price    : toNum(i.price_at_purchase),
         total    : toNum(i.price_at_purchase) * i.quantity,
         item_status: i.item_status || 'placed',
+        cancel_reason: i.cancel_reason || null,
+        cancelled_at: i.cancelled_at || null,
       };
     });
 
@@ -246,6 +251,7 @@ exports.getOrderDetail = async (req, res) => {
         stepIndex,
         isCancelled      : st === 'cancelled',
         isReturned       : st === 'returned',
+        cancellationReasons: CANCELLATION_REASONS,
       },
     });
   } catch (err) {
@@ -265,11 +271,27 @@ exports.cancelOrder = async (req, res) => {
     if (!order) return res.redirect('/orders');
 
     const itemId = req.query.itemId;
-    const reason = (req.body.cancel_reason || '').trim();
-    let refunded = false;
-    let totalRefundAmt = 0;
+    const selectedReason = (req.body.cancel_reason || '').trim();
+    const comment = (req.body.cancel_comment || '').trim();
+
+    // 1. Mandatory Reason Validation
+    if (!selectedReason) {
+      return res.redirect(`/orders/${req.params.id}?error=reason_required${itemId ? '&itemId=' + itemId : ''}`);
+    }
+
+    let finalReason = selectedReason;
+    if (selectedReason === 'Other') {
+      if (!comment || comment.length < 5) {
+        return res.redirect(`/orders/${req.params.id}?error=comment_required${itemId ? '&itemId=' + itemId : ''}`);
+      }
+      finalReason = `Other: ${comment}`;
+    } else if (comment) {
+      finalReason = `${selectedReason} (${comment})`;
+    }
 
     const cancellable = ['placed', 'processing'];
+    let totalRefundAmt = 0;
+    let itemsCancelledCount = 0;
 
     for (const item of order.items) {
       if (itemId && item._id.toString() !== itemId) continue;
@@ -282,15 +304,19 @@ exports.cancelOrder = async (req, res) => {
       await Product.findByIdAndUpdate(item.product_id, { $inc: { stock: item.quantity } });
       
       item.item_status = 'cancelled';
+      item.cancel_reason = finalReason;
+      item.cancelled_at = new Date();
+      itemsCancelledCount++;
       totalRefundAmt += parseFloat(item.price_at_purchase.toString()) * item.quantity;
     }
 
-    if (totalRefundAmt === 0) {
+    if (itemsCancelledCount === 0) {
       return res.redirect(`/orders/${req.params.id}?error=not_cancellable`);
     }
 
     const isPrepaid = (order.payment_method === 'Wallet' || order.payment_method === 'Online Payment') && order.payment_status === 'paid';
-    if (isPrepaid) {
+    let refunded = false;
+    if (isPrepaid && totalRefundAmt > 0) {
       await walletService.creditWallet({
         userId         : req.user._id,
         amount         : totalRefundAmt,
@@ -305,7 +331,7 @@ exports.cancelOrder = async (req, res) => {
     const activeItems = order.items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
     if (activeItems.length === 0) {
       order.order_status = 'cancelled';
-      order.cancel_reason = reason || null;
+      order.cancel_reason = finalReason;
       if (refunded) order.payment_status = 'refunded';
     } else {
       const statusWeights = { placed: 0, processing: 1, shipped: 2, out_for_delivery: 3, delivered: 4 };
@@ -319,6 +345,9 @@ exports.cancelOrder = async (req, res) => {
         }
       });
       order.order_status = globalStatus;
+      if (!order.cancel_reason) {
+        order.cancel_reason = finalReason;
+      }
     }
 
     await order.save();

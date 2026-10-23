@@ -8,10 +8,14 @@ const {
   createRazorpayOrder,
   verifyRazorpayPayment,
   renderPaymentFailure,
+  getCheckoutSummary,
 } = require('../../controllers/user/checkoutController');
 
 // GET  /checkout                     — render checkout page (login required)
 router.get('/',                       requireAuth, renderCheckout);
+
+// GET  /checkout/summary             — JSON: fresh totals for stale-tab detection
+router.get('/summary',                requireAuth, getCheckoutSummary);
 
 // POST /checkout                     — place COD order
 router.post('/',                      requireAuth, placeOrder);

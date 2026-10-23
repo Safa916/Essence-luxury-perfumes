@@ -36,6 +36,9 @@
         row.querySelector('.qty-decrease').disabled = data.minReached;
         row.querySelector('.qty-increase').disabled = data.maxReached;
         if (cartSubtotalEl) cartSubtotalEl.textContent = formatINR(data.subtotal);
+        if (data.couponCleared) {
+          essToast('Applied coupon was removed because your cart value changed.', 'info');
+        }
       } catch (err) {
         console.error(err);
         essToast('Something went wrong updating quantity.', 'error');
@@ -55,6 +58,9 @@
 
         row.remove();
         if (cartSubtotalEl) cartSubtotalEl.textContent = formatINR(data.subtotal);
+        if (data.couponCleared) {
+          essToast('Applied coupon was removed because your cart changed.', 'info');
+        }
         if (window.updateCartBadge && data.itemCount !== undefined) {
           window.updateCartBadge(data.itemCount);
         }

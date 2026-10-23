@@ -138,8 +138,7 @@ async function updateSettings({ referrer_reward, referee_reward }) {
     { upsert: true, new: true }
   );
 }
-
-// ── Stats helpers ─────────────────────────────────────────────────────────────
+ 
 
 /**
  * Returns referral statistics for a given user.

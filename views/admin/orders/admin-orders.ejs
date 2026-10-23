@@ -127,14 +127,16 @@
             <th>Date</th>
             <th>Customer</th>
             <th>Items</th>
-            <th>Status</th>
+            <th>Order Status</th>
+            <th>Payment</th>
+            <th>Pay Status</th>
             <th>Total</th>
             <th class="th-actions">Actions</th>
           </tr>
         </thead>
         <tbody>
           <% if (list.length === 0) { %>
-            <tr><td colspan="7" class="empty-row">No orders found</td></tr>
+            <tr><td colspan="9" class="empty-row">No orders found</td></tr>
           <% } %>
 
           <% list.forEach(function (o) {
@@ -194,6 +196,21 @@
               </td>
 
               <td class="cell-total"><%= inr(it.price * it.quantity) %></td>
+
+              <%
+                const pmRaw = (o.payment_method || 'cod').toLowerCase();
+                const pmLabel = { cod: 'COD', online: 'Online', razorpay: 'Online', wallet: 'Wallet' };
+                const pmDisplay = pmLabel[pmRaw] || o.payment_method || 'COD';
+                const psRaw = (o.payment_status || 'pending').toLowerCase();
+                const psClass = { paid: 'pay-paid', pending: 'pay-pending', failed: 'pay-failed', refunded: 'pay-refunded' }[psRaw] || 'pay-pending';
+                const psLabel = psRaw.charAt(0).toUpperCase() + psRaw.slice(1);
+              %>
+              <td class="cell-payment">
+                <span class="pay-method"><%= pmDisplay %></span>
+              </td>
+              <td class="cell-paystatus">
+                <span class="pay-badge <%= psClass %>"><%= psLabel %></span>
+              </td>
 
               <td class="cell-actions">
                 <div class="pop-wrap">

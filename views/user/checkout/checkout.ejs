@@ -566,5 +566,78 @@
 
   <script src="/user/js/checkout/coupon.js"></script>
 
+  <script>
+    // ── Stale checkout detector ───────────────────────────────────────────────
+    // When the user switches back to this tab after making changes in another tab
+    // (e.g. quantity change that cleared a coupon), silently re-fetch the current
+    // server totals and warn if they no longer match what the page shows.
+    (function () {
+      const EPSILON = 1; // ₹1 tolerance for floating-point rounding
+      let warningShown = false;
+
+      function getDisplayedTotal() {
+        const el = document.getElementById('co-total');
+        if (!el) return null;
+        // Strip currency symbol and commas, parse float
+        return parseFloat(el.textContent.replace(/[₹,]/g, '').trim()) || 0;
+      }
+
+      function showStaleWarning(serverTotal) {
+        if (warningShown) return;
+        warningShown = true;
+
+        // Disable Place Order button
+        const btn = document.getElementById('placeOrderBtn');
+        if (btn) btn.disabled = true;
+
+        // Build banner
+        const banner = document.createElement('div');
+        banner.id = 'staleCheckoutBanner';
+        banner.style.cssText = [
+          'position:fixed', 'top:0', 'left:0', 'right:0', 'z-index:9999',
+          'background:#8b5e3c', 'color:#fff', 'padding:14px 20px',
+          'display:flex', 'align-items:center', 'justify-content:space-between',
+          'font-family:Jost,sans-serif', 'font-size:14px', 'gap:12px',
+          'box-shadow:0 2px 12px rgba(0,0,0,.25)',
+        ].join(';');
+
+        banner.innerHTML = `
+          <span>⚠️ Your cart changed in another tab. The order total has been updated to
+            <strong>₹${Number(serverTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>.
+            Please review before placing your order.
+          </span>
+          <button onclick="location.reload()"
+            style="background:#fff;color:#8b5e3c;border:none;padding:8px 16px;
+                   border-radius:4px;cursor:pointer;font-weight:600;white-space:nowrap;">
+            Refresh &amp; Review
+          </button>`;
+
+        document.body.prepend(banner);
+      }
+
+      async function checkFreshTotals() {
+        try {
+          const res  = await fetch('/checkout/summary');
+          const data = await res.json();
+          if (!data.success) return;
+
+          const displayed = getDisplayedTotal();
+          if (displayed === null) return;
+
+          if (Math.abs(data.total - displayed) > EPSILON) {
+            showStaleWarning(data.total);
+          }
+        } catch (_) { /* silently ignore network errors */ }
+      }
+
+      // Fire on tab focus (visibilitychange covers tab switches)
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+          checkFreshTotals();
+        }
+      });
+    })();
+  </script>
+
 </body>
 </html>

@@ -122,6 +122,54 @@ exports.renderCheckout = async (req, res) => {
   }
 };
 
+// ─── GET /checkout/summary  (JSON — re-validate stale checkout UI) ────────────
+exports.getCheckoutSummary = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const cart = await Cart.findOne({ user_id: userId }).lean();
+    if (!cart) return res.json({ success: false, message: 'Cart not found.' });
+
+    const rawItems = await CartItem.find({ cart_id: cart._id })
+      .populate('product_id').populate('variant_id').lean();
+
+    const offerService = require('../../services/offerService');
+    const activeOffers = await offerService.getActiveOffers();
+
+    const subtotal = rawItems
+      .filter(i => i.product_id && i.variant_id)
+      .reduce((s, i) => {
+        const basePrice = toNum(i.variant_id.price) || toNum(i.unit_price);
+        const offerCalc = offerService.calculateProductDiscount({
+          productId: i.product_id._id,
+          categoryId: i.product_id.category_id,
+          price: basePrice,
+          activeOffers,
+        });
+        return s + offerCalc.finalPrice * i.quantity;
+      }, 0);
+
+    const coupon   = cart.applied_coupon?.code ? cart.applied_coupon : null;
+    const discount = coupon ? toNum(cart.applied_coupon.discount_value) : 0;
+    const taxable  = Math.max(subtotal - discount, 0);
+    const tax      = parseFloat((taxable * GST_RATE).toFixed(2));
+    const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
+    const total    = parseFloat((taxable + tax + shipping).toFixed(2));
+
+    return res.json({
+      success    : true,
+      subtotal   : parseFloat(subtotal.toFixed(2)),
+      discount,
+      couponCode : coupon ? coupon.code.toString() : null,
+      tax,
+      shipping,
+      total,
+    });
+  } catch (err) {
+    console.error('getCheckoutSummary error:', err);
+    return res.status(500).json({ success: false });
+  }
+};
+
 // ─── POST /checkout ───────────────────────────────────────────────────────────
 exports.placeOrder = async (req, res) => {
   try {
@@ -208,12 +256,12 @@ exports.placeOrder = async (req, res) => {
         if (usedCount >= userLimit) {
           coupon = null;
           discount = 0;
-          await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: null } });
+          await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: { code: null, discount_value: null } } });
         }
       } else {
         coupon = null;
         discount = 0;
-        await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: null } });
+        await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: { code: null, discount_value: null } } });
       }
     }
 
@@ -308,7 +356,7 @@ exports.placeOrder = async (req, res) => {
 
     // 10. Clear the cart
     await CartItem.deleteMany({ cart_id: cart._id });
-    await Cart.findByIdAndUpdate(cart._id, { $set: { items: [], applied_coupon: null } });
+    await Cart.findByIdAndUpdate(cart._id, { $set: { items: [], applied_coupon: { code: null, discount_value: null } } });
 
     res.redirect(`/checkout/success/${order._id}`);
   } catch (err) {
@@ -425,12 +473,12 @@ exports.createRazorpayOrder = async (req, res) => {
         if (usedCount >= userLimit) {
           coupon = null;
           discount = 0;
-          await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: null } });
+          await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: { code: null, discount_value: null } } });
         }
       } else {
         coupon = null;
         discount = 0;
-        await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: null } });
+        await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: { code: null, discount_value: null } } });
       }
     }
 
@@ -580,12 +628,12 @@ exports.verifyRazorpayPayment = async (req, res) => {
         if (usedCount >= userLimit) {
           coupon = null;
           discount = 0;
-          await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: null } });
+          await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: { code: null, discount_value: null } } });
         }
       } else {
         coupon = null;
         discount = 0;
-        await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: null } });
+        await Cart.findByIdAndUpdate(cart._id, { $set: { applied_coupon: { code: null, discount_value: null } } });
       }
     }
 
@@ -667,7 +715,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
 
     // 10. Clear cart
     await CartItem.deleteMany({ cart_id: cart._id });
-    await Cart.findByIdAndUpdate(cart._id, { $set: { items: [], applied_coupon: null } });
+    await Cart.findByIdAndUpdate(cart._id, { $set: { items: [], applied_coupon: { code: null, discount_value: null } } });
 
     return res.json({
       success: true,

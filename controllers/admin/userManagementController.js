@@ -54,6 +54,7 @@ exports.getUsersPage = async (req, res) => {
       totalUsersAll,
       totalActive,
       totalPages,
+      
       joined, // <-- new: pass this to the view so the <select> shows the right selected option
     });
   } catch (err) {
@@ -82,7 +83,9 @@ exports.toggleBlockUser = async (req, res) => {
 
 };
 
- 
+
+
+
 
 
 

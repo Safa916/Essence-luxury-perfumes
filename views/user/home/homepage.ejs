@@ -23,7 +23,7 @@
         <blockquote class="hero-quote">
           &ldquo;A fragrance is a silent poem, an invisible layer of luxury that lingers long after a presence has faded.&rdquo;
         </blockquote>
-        <a href="/collections" class="btn btn-dark">Explore the Fragrances</a>
+        <a href="/shop" class="btn btn-dark">Explore the Fragrances</a>
       </div>
       <div class="hero-image">
         <img src="/user/images/hero-banner.jpg" alt="Essence Haute Parfumerie Collection">
@@ -32,11 +32,11 @@
 
     <!-- ===== For Her / For Him ===== -->
   <section class="split-banner">
-    <a href="<%= categoryForHer ? '/shop?category=' + categoryForHer._id : '/categories' %>" class="banner-card">
+    <a href="/categories" class="banner-card" aria-label="Browse Categories - For Her">
       <img src="<%= (categoryForHer && categoryForHer.banner_url) || '/user/images/for-her.jpg' %>" alt="Shop the For Her collection">
       <span class="banner-label">For Her</span>
     </a>
-    <a href="<%= categoryForHim ? '/shop?category=' + categoryForHim._id : '/categories' %>" class="banner-card">
+    <a href="/categories" class="banner-card" aria-label="Browse Categories - For Him">
       <img src="<%= (categoryForHim && categoryForHim.banner_url) || '/user/images/for-him.jpg' %>" alt="Shop the For Him collection">
       <span class="banner-label">For Him</span>
     </a>
