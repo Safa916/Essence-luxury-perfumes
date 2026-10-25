@@ -334,4 +334,329 @@
   }
 
   bindGridEvents();
+
+  // =============================================
+  //  MOBILE FILTER & SORT DRAWER SYSTEM
+  // =============================================
+
+  const mobileFilterBar  = document.getElementById('mobileFilterBar');
+  const mobileFilterBtn  = document.getElementById('mobileFilterBtn');
+  const mobileSortBtn    = document.getElementById('mobileSortBtn');
+  const mobileSortLabel  = document.getElementById('mobileSortLabel');
+  const mobileFilterCount = document.getElementById('mobileFilterCount');
+
+  const filterDrawer     = document.getElementById('filterDrawer');
+  const filterDrawerClose = document.getElementById('filterDrawerClose');
+  const filterDrawerBody  = document.getElementById('filterDrawerBody');
+  const drawerApplyBtn   = document.getElementById('drawerApplyBtn');
+  const drawerClearBtn   = document.getElementById('drawerClearBtn');
+  const drawerOverlay    = document.getElementById('filterDrawerOverlay');
+
+  const sortDrawer       = document.getElementById('sortDrawer');
+  const sortDrawerClose  = document.getElementById('sortDrawerClose');
+  const sortOptionBtns   = document.querySelectorAll('.sort-option-btn');
+
+  const activeChipsContainer = document.getElementById('activeFilterChips');
+
+  // Sort label mapping
+  const sortLabels = {
+    newest:          'Curated',
+    price_low_high:  'Price ↑',
+    price_high_low:  'Price ↓',
+    name_a_z:        'A – Z',
+    name_z_a:        'Z – A',
+  };
+
+  // ---- Drawer open/close helpers ----
+  function openDrawer(drawer) {
+    closeAllDrawers();
+    drawerOverlay.classList.add('is-open');
+    drawer.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAllDrawers() {
+    drawerOverlay.classList.remove('is-open');
+    if (filterDrawer) filterDrawer.classList.remove('is-open');
+    if (sortDrawer)   sortDrawer.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  // ---- Sync the sidebar filterForm into the drawer ----
+  function syncFilterDrawer() {
+    if (!filterDrawerBody || !filterForm) return;
+
+    // Clone the filterForm's inner content (groups only, not the buttons)
+    const groups = filterForm.querySelectorAll('.filter-group');
+    filterDrawerBody.innerHTML = '';
+    groups.forEach(group => {
+      filterDrawerBody.appendChild(group.cloneNode(true));
+    });
+
+    // Sync checked states from the sidebar form into drawer
+    ['category', 'brand', 'concentration', 'size'].forEach(name => {
+      const checkedVals = getCheckedValues(name);
+      filterDrawerBody.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+        input.checked = checkedVals.includes(input.value);
+      });
+    });
+
+    // Sync price slider values
+    const drawerMinRange = filterDrawerBody.querySelector('#priceMinRange');
+    const drawerMaxRange = filterDrawerBody.querySelector('#priceMaxRange');
+    const drawerMinLabel = filterDrawerBody.querySelector('#priceMinLabel');
+    const drawerMaxLabel = filterDrawerBody.querySelector('#priceMaxLabel');
+    const drawerMinInput = filterDrawerBody.querySelector('#minPriceInput');
+    const drawerMaxInput = filterDrawerBody.querySelector('#maxPriceInput');
+
+    if (drawerMinRange && minRange) {
+      drawerMinRange.value = minRange.value;
+      if (drawerMinLabel) drawerMinLabel.textContent = minPriceLabel.textContent;
+    }
+    if (drawerMaxRange && maxRange) {
+      drawerMaxRange.value = maxRange.value;
+      if (drawerMaxLabel) drawerMaxLabel.textContent = maxPriceLabel.textContent;
+    }
+    if (drawerMinInput && minPriceInput) drawerMinInput.value = minPriceInput.value;
+    if (drawerMaxInput && maxPriceInput) drawerMaxInput.value = maxPriceInput.value;
+
+    // Wire up price range sliders inside drawer
+    if (drawerMinRange && drawerMaxRange) {
+      function syncDrawerPrice() {
+        let minVal = parseInt(drawerMinRange.value, 10);
+        let maxVal = parseInt(drawerMaxRange.value, 10);
+        if (minVal > maxVal) [minVal, maxVal] = [maxVal, minVal];
+        if (drawerMinLabel) drawerMinLabel.textContent = `₹${minVal.toLocaleString('en-IN')}`;
+        if (drawerMaxLabel) drawerMaxLabel.textContent = `₹${maxVal.toLocaleString('en-IN')}`;
+        if (drawerMinInput) drawerMinInput.value = minVal;
+        if (drawerMaxInput) drawerMaxInput.value = maxVal;
+      }
+      drawerMinRange.addEventListener('input', syncDrawerPrice);
+      drawerMaxRange.addEventListener('input', syncDrawerPrice);
+    }
+  }
+
+  // ---- Count active filters ----
+  function countActiveFilters() {
+    let count = 0;
+    ['category', 'brand', 'concentration', 'size'].forEach(name => {
+      count += getCheckedValues(name).length;
+    });
+    const globalMin = minRange ? parseInt(minRange.min, 10) : 0;
+    const globalMax = maxRange ? parseInt(maxRange.max, 10) : 0;
+    const curMin = parseInt((minPriceInput ? minPriceInput.value : 0), 10);
+    const curMax = parseInt((maxPriceInput ? maxPriceInput.value : 0), 10);
+    if (curMin > globalMin || curMax < globalMax) count++;
+    return count;
+  }
+
+  // ---- Update mobile filter count badge ----
+  function updateFilterBadge() {
+    if (!mobileFilterCount) return;
+    const count = countActiveFilters();
+    mobileFilterCount.textContent = count;
+    mobileFilterCount.style.display = count > 0 ? 'inline-block' : 'none';
+  }
+
+  // ---- Render active filter chips (below toolbar) ----
+  function renderActiveChips() {
+    if (!activeChipsContainer) return;
+    activeChipsContainer.innerHTML = '';
+
+    const addChip = (label, onRemove) => {
+      const chip = document.createElement('span');
+      chip.className = 'filter-chip';
+      chip.innerHTML = `${label}<span class="filter-chip-remove" aria-hidden="true">×</span>`;
+      chip.addEventListener('click', () => {
+        onRemove();
+        updateFilterBadge();
+        renderActiveChips();
+        // Auto-apply on chip remove
+        currentState.category      = getCheckedValues('category');
+        currentState.brand         = getCheckedValues('brand');
+        currentState.concentration = getCheckedValues('concentration');
+        currentState.size          = getCheckedValues('size');
+        currentState.minPrice      = minPriceInput ? minPriceInput.value : '';
+        currentState.maxPrice      = maxPriceInput ? maxPriceInput.value : '';
+        currentState.page          = 1;
+        fetchProducts();
+      });
+      activeChipsContainer.appendChild(chip);
+    };
+
+    // Category chips
+    filterForm && filterForm.querySelectorAll('input[name="category"]:checked').forEach(input => {
+      const label = input.nextElementSibling ? input.nextElementSibling.textContent.trim() : input.value;
+      addChip(label, () => { input.checked = false; });
+    });
+
+    // Brand chips
+    filterForm && filterForm.querySelectorAll('input[name="brand"]:checked').forEach(input => {
+      const label = input.nextElementSibling ? input.nextElementSibling.textContent.trim() : input.value;
+      addChip(label, () => { input.checked = false; });
+    });
+
+    // Concentration chips
+    filterForm && filterForm.querySelectorAll('input[name="concentration"]:checked').forEach(input => {
+      addChip(input.value, () => { input.checked = false; });
+    });
+
+    // Size chips
+    filterForm && filterForm.querySelectorAll('input[name="size"]:checked').forEach(input => {
+      addChip(`${input.value}ml`, () => { input.checked = false; });
+    });
+
+    // Price chip
+    const globalMin = minRange ? parseInt(minRange.min, 10) : 0;
+    const globalMax = maxRange ? parseInt(maxRange.max, 10) : 0;
+    const curMin = parseInt((minPriceInput ? minPriceInput.value : 0), 10);
+    const curMax = parseInt((maxPriceInput ? maxPriceInput.value : 0), 10);
+    if (curMin > globalMin || curMax < globalMax) {
+      addChip(`₹${curMin.toLocaleString('en-IN')} – ₹${curMax.toLocaleString('en-IN')}`, () => {
+        if (minRange && maxRange) {
+          minRange.value = minRange.min;
+          maxRange.value = maxRange.max;
+          syncPriceLabels();
+        }
+      });
+    }
+  }
+
+  // ---- Update sort label on mobile ----
+  function updateMobileSortLabel(sortVal) {
+    if (mobileSortLabel) {
+      mobileSortLabel.textContent = sortLabels[sortVal] || 'Sort';
+    }
+    // Highlight active sort option
+    sortOptionBtns.forEach(btn => {
+      btn.classList.toggle('is-selected', btn.dataset.sort === sortVal);
+    });
+  }
+
+  // ---- Open filter drawer ----
+  if (mobileFilterBtn) {
+    mobileFilterBtn.addEventListener('click', () => {
+      syncFilterDrawer();
+      openDrawer(filterDrawer);
+    });
+  }
+
+  // ---- Close filter drawer ----
+  if (filterDrawerClose) {
+    filterDrawerClose.addEventListener('click', closeAllDrawers);
+  }
+
+  // ---- Drawer Apply ----
+  if (drawerApplyBtn) {
+    drawerApplyBtn.addEventListener('click', () => {
+      // Push drawer values back into the sidebar form
+      if (filterForm && filterDrawerBody) {
+        ['category', 'brand', 'concentration', 'size'].forEach(name => {
+          const drawerChecked = Array.from(
+            filterDrawerBody.querySelectorAll(`input[name="${name}"]:checked`)
+          ).map(el => el.value);
+
+          filterForm.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+            input.checked = drawerChecked.includes(input.value);
+          });
+        });
+
+        // Push price
+        const dMin = filterDrawerBody.querySelector('#minPriceInput');
+        const dMax = filterDrawerBody.querySelector('#maxPriceInput');
+        const dMinRange = filterDrawerBody.querySelector('#priceMinRange');
+        const dMaxRange = filterDrawerBody.querySelector('#priceMaxRange');
+
+        if (dMin && minPriceInput) {
+          minPriceInput.value = dMin.value;
+          if (minRange && dMinRange) minRange.value = dMinRange.value;
+          if (minPriceLabel) minPriceLabel.textContent = `₹${parseInt(dMin.value, 10).toLocaleString('en-IN')}`;
+        }
+        if (dMax && maxPriceInput) {
+          maxPriceInput.value = dMax.value;
+          if (maxRange && dMaxRange) maxRange.value = dMaxRange.value;
+          if (maxPriceLabel) maxPriceLabel.textContent = `₹${parseInt(dMax.value, 10).toLocaleString('en-IN')}`;
+        }
+      }
+
+      currentState.category      = getCheckedValues('category');
+      currentState.brand         = getCheckedValues('brand');
+      currentState.concentration = getCheckedValues('concentration');
+      currentState.size          = getCheckedValues('size');
+      currentState.minPrice      = minPriceInput ? minPriceInput.value : '';
+      currentState.maxPrice      = maxPriceInput ? maxPriceInput.value : '';
+      currentState.page          = 1;
+
+      closeAllDrawers();
+      updateFilterBadge();
+      renderActiveChips();
+      fetchProducts();
+    });
+  }
+
+  // ---- Drawer Clear ----
+  if (drawerClearBtn) {
+    drawerClearBtn.addEventListener('click', () => {
+      if (filterDrawerBody) {
+        filterDrawerBody.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; });
+        const dMinRange = filterDrawerBody.querySelector('#priceMinRange');
+        const dMaxRange = filterDrawerBody.querySelector('#priceMaxRange');
+        const dMinLabel = filterDrawerBody.querySelector('#priceMinLabel');
+        const dMaxLabel = filterDrawerBody.querySelector('#priceMaxLabel');
+        const dMinInput = filterDrawerBody.querySelector('#minPriceInput');
+        const dMaxInput = filterDrawerBody.querySelector('#maxPriceInput');
+        if (dMinRange) { dMinRange.value = dMinRange.min; if (dMinLabel) dMinLabel.textContent = `₹${parseInt(dMinRange.min, 10).toLocaleString('en-IN')}`; if (dMinInput) dMinInput.value = dMinRange.min; }
+        if (dMaxRange) { dMaxRange.value = dMaxRange.max; if (dMaxLabel) dMaxLabel.textContent = `₹${parseInt(dMaxRange.max, 10).toLocaleString('en-IN')}`; if (dMaxInput) dMaxInput.value = dMaxRange.max; }
+      }
+    });
+  }
+
+  // ---- Open sort drawer ----
+  if (mobileSortBtn) {
+    mobileSortBtn.addEventListener('click', () => {
+      updateMobileSortLabel(currentState.sort || 'newest');
+      openDrawer(sortDrawer);
+    });
+  }
+
+  // ---- Sort option selected ----
+  sortOptionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sortVal = btn.dataset.sort;
+      currentState.sort = sortVal;
+      currentState.page = 1;
+      if (sortSelect) sortSelect.value = sortVal;
+      updateMobileSortLabel(sortVal);
+      closeAllDrawers();
+      fetchProducts();
+    });
+  });
+
+  // ---- Close sort drawer ----
+  if (sortDrawerClose) {
+    sortDrawerClose.addEventListener('click', closeAllDrawers);
+  }
+
+  // ---- Overlay click closes any drawer ----
+  if (drawerOverlay) {
+    drawerOverlay.addEventListener('click', closeAllDrawers);
+  }
+
+  // ---- Init ----
+  updateFilterBadge();
+  renderActiveChips();
+  updateMobileSortLabel(currentState.sort || 'newest');
+
+  // Re-render chips after main apply/clear buttons too
+  const origApply = applyFiltersBtn;
+  if (origApply) {
+    origApply.addEventListener('click', () => {
+      setTimeout(() => { updateFilterBadge(); renderActiveChips(); }, 100);
+    });
+  }
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', () => {
+      setTimeout(() => { updateFilterBadge(); renderActiveChips(); }, 100);
+    });
+  }
 })();

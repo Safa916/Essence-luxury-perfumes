@@ -14,6 +14,41 @@
 
   <%- include('../partials/header', { activePage: 'shop', user: typeof user !== 'undefined' ? user : null }) %>
 
+  <!-- ===== Mobile Filter Drawer ===== -->
+  <div class="filter-drawer-overlay" id="filterDrawerOverlay"></div>
+  <div class="filter-drawer" id="filterDrawer" role="dialog" aria-modal="true" aria-label="Filters">
+    <div class="filter-drawer-header">
+      <span class="filter-drawer-title">Filters</span>
+      <button class="filter-drawer-close" id="filterDrawerClose" aria-label="Close filters">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="filter-drawer-body" id="filterDrawerBody">
+      <!-- Filter content cloned via JS -->
+    </div>
+    <div class="filter-drawer-footer">
+      <button type="button" id="drawerClearBtn" class="filter-drawer-clear">Clear All</button>
+      <button type="button" id="drawerApplyBtn" class="filter-drawer-apply">Apply Filters</button>
+    </div>
+  </div>
+
+  <!-- ===== Mobile Sort Drawer ===== -->
+  <div class="sort-drawer" id="sortDrawer" role="dialog" aria-modal="true" aria-label="Sort options">
+    <div class="filter-drawer-header">
+      <span class="filter-drawer-title">Sort By</span>
+      <button class="filter-drawer-close" id="sortDrawerClose" aria-label="Close sort">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sort-drawer-options" id="sortDrawerOptions">
+      <button class="sort-option-btn" data-sort="newest">Curated Selection</button>
+      <button class="sort-option-btn" data-sort="price_low_high">Price: Low to High</button>
+      <button class="sort-option-btn" data-sort="price_high_low">Price: High to Low</button>
+      <button class="sort-option-btn" data-sort="name_a_z">Name: A to Z</button>
+      <button class="sort-option-btn" data-sort="name_z_a">Name: Z to A</button>
+    </div>
+  </div>
+
   <main class="shop-page">
 
     <div class="shop-header">
@@ -127,6 +162,8 @@
               </select>
             </div>
           </div>
+        <!-- Active filter chips (mobile) -->
+        <div class="active-filter-chips" id="activeFilterChips"></div>
 
         <div id="productGridWrapper">
           <%- include('./partials/productGrid', { products, totalProducts, currentPage, totalPages, limit, query }) %>
@@ -138,6 +175,20 @@
 
   <%- include('../partials/logout-modal') %>
 <%- include('../partials/footer') %>
+
+  <!-- ===== Mobile sticky filter/sort bar ===== -->
+  <div class="mobile-filter-bar" id="mobileFilterBar">
+    <button class="mobile-bar-btn" id="mobileFilterBtn" aria-label="Open filters">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+      <span>Filter</span>
+      <span class="mobile-filter-count" id="mobileFilterCount" style="display:none">0</span>
+    </button>
+    <div class="mobile-bar-divider"></div>
+    <button class="mobile-bar-btn" id="mobileSortBtn" aria-label="Open sort">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+      <span id="mobileSortLabel">Sort</span>
+    </button>
+  </div>
 
  <script>
   window.IS_LOGGED_IN = <%= user ? 'true' : 'false' %>;

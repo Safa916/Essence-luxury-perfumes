@@ -43,56 +43,64 @@
             <h2 class="coupons-section-title">Active Offers Ready to Use (<%= availableCoupons.length %>)</h2>
           </div>
           <div class="coupons-grid">
-            <% availableCoupons.forEach(function (c) { %>
+            <% availableCoupons.forEach(function (c) {
+               const isPercent = c.discount_type === 'percentage';
+               const valueLabel = isPercent ? c.discount_value + '%' : '₹' + c.discount_value;
+               const typeLabel  = isPercent ? 'Off' : 'Flat Off';
+            %>
               <div class="coupon-box is-active-coupon" data-code="<%= c.code %>">
-                <div class="coupon-box-top">
-                  <div class="coupon-badge-wrap">
-                    <span class="coupon-discount-tag">
-                      <%= c.discount_type === 'percentage' ? c.discount_value + '% OFF' : '₹' + c.discount_value + ' FLAT OFF' %>
-                    </span>
+
+                <!-- Left accent strip -->
+                <div class="coupon-accent">
+                  <span class="coupon-accent-value"><%= valueLabel %></span>
+                  <span class="coupon-accent-type"><%= typeLabel %></span>
+                </div>
+
+                <!-- Right body -->
+                <div class="coupon-body">
+                  <div class="coupon-body-top">
+                    <div class="coupon-code-chip" title="Click to copy" onclick="copyCouponCode('<%= c.code %>')">
+                      <span class="chip-code"><%= c.code %></span>
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                      </svg>
+                    </div>
                   </div>
-                  <div class="coupon-code-chip" title="Click to copy" onclick="copyCouponCode('<%= c.code %>')">
-                    <span class="chip-code"><%= c.code %></span>
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                    </svg>
+
+                  <h3 class="coupon-title"><%= c.description %></h3>
+
+                  <ul class="coupon-rules">
+                    <li>
+                      <span class="rule-bullet">&bull;</span>
+                      <span>Min. purchase: <strong>₹<%= c.min_order_value.toLocaleString('en-IN') %></strong></span>
+                    </li>
+                    <% if (c.max_discount_amount && isPercent) { %>
+                      <li>
+                        <span class="rule-bullet">&bull;</span>
+                        <span>Max discount: <strong>₹<%= c.max_discount_amount.toLocaleString('en-IN') %></strong></span>
+                      </li>
+                    <% } %>
+                    <% if (c.valid_until) { %>
+                      <li>
+                        <span class="rule-bullet">&bull;</span>
+                        <span>Valid till: <strong><%= new Date(c.valid_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong></span>
+                      </li>
+                    <% } %>
+                    <li>
+                      <span class="rule-bullet">&bull;</span>
+                      <span>Uses left: <strong><%= c.userRemainingUses %> of <%= c.limitPerUser %></strong></span>
+                    </li>
+                  </ul>
+
+                  <div class="coupon-box-actions">
+                    <button type="button" class="btn-copy-code" onclick="copyCouponCode('<%= c.code %>')">
+                      Copy Code
+                    </button>
+                    <a href="/shop" class="btn-use-code">Use in Shop &rarr;</a>
                   </div>
                 </div>
 
-                <h3 class="coupon-title"><%= c.description %></h3>
-
-                <ul class="coupon-rules">
-                  <li>
-                    <span class="rule-bullet">&bull;</span>
-                    <span>Minimum purchase: <strong>₹<%= c.min_order_value.toLocaleString('en-IN') %></strong></span>
-                  </li>
-                  <% if (c.max_discount_amount && c.discount_type === 'percentage') { %>
-                    <li>
-                      <span class="rule-bullet">&bull;</span>
-                      <span>Maximum discount: <strong>₹<%= c.max_discount_amount.toLocaleString('en-IN') %></strong></span>
-                    </li>
-                  <% } %>
-                  <% if (c.valid_until) { %>
-                    <li>
-                      <span class="rule-bullet">&bull;</span>
-                      <span>Valid until: <strong><%= new Date(c.valid_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong></span>
-                    </li>
-                  <% } %>
-                  <li>
-                    <span class="rule-bullet">&bull;</span>
-                    <span>Remaining uses for you: <strong><%= c.userRemainingUses %> of <%= c.limitPerUser %></strong></span>
-                  </li>
-                </ul>
-
-                <div class="coupon-box-actions">
-                  <button type="button" class="btn-copy-code" onclick="copyCouponCode('<%= c.code %>')">
-                    Copy Code
-                  </button>
-                  <a href="/shop" class="btn-use-code">
-                    Use in Shop &rarr;
-                  </a>
-                </div>
               </div>
             <% }); %>
           </div>
@@ -104,39 +112,49 @@
             <p class="coupons-section-sub">You have already reached the maximum usage limit for these coupons.</p>
           </div>
           <div class="coupons-grid">
-            <% usedCoupons.forEach(function (c) { %>
+            <% usedCoupons.forEach(function (c) {
+               const isPercent = c.discount_type === 'percentage';
+               const valueLabel = isPercent ? c.discount_value + '%' : '₹' + c.discount_value;
+               const typeLabel  = isPercent ? 'Off' : 'Flat Off';
+            %>
               <div class="coupon-box is-used-coupon" data-code="<%= c.code %>">
-                <div class="coupon-box-top">
-                  <div class="coupon-badge-wrap">
-                    <span class="coupon-discount-tag coupon-discount-tag--muted">
-                      <%= c.discount_type === 'percentage' ? c.discount_value + '% OFF' : '₹' + c.discount_value + ' FLAT OFF' %>
-                    </span>
-                  </div>
-                  <span class="coupon-used-pill">Already Used ✓</span>
+
+                <!-- Left accent strip (muted for used) -->
+                <div class="coupon-accent">
+                  <span class="coupon-accent-value"><%= valueLabel %></span>
+                  <span class="coupon-accent-type"><%= typeLabel %></span>
                 </div>
 
-                <h3 class="coupon-title" style="color: var(--ink-soft);"><%= c.description %></h3>
+                <!-- Right body -->
+                <div class="coupon-body">
+                  <div class="coupon-body-top">
+                    <span class="coupon-used-pill">Redeemed ✓</span>
+                  </div>
 
-                <ul class="coupon-rules">
-                  <li>
-                    <span class="rule-bullet">&bull;</span>
-                    <span>Code: <strong><%= c.code %></strong></span>
-                  </li>
-                  <li>
-                    <span class="rule-bullet">&bull;</span>
-                    <span>Used: <strong><%= c.userUsageCount %> of <%= c.limitPerUser %> times</strong></span>
-                  </li>
-                  <% if (c.valid_until) { %>
+                  <h3 class="coupon-title"><%= c.description %></h3>
+
+                  <ul class="coupon-rules">
                     <li>
                       <span class="rule-bullet">&bull;</span>
-                      <span>Valid until: <strong><%= new Date(c.valid_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong></span>
+                      <span>Code: <strong><%= c.code %></strong></span>
                     </li>
-                  <% } %>
-                </ul>
+                    <li>
+                      <span class="rule-bullet">&bull;</span>
+                      <span>Used: <strong><%= c.userUsageCount %> of <%= c.limitPerUser %> times</strong></span>
+                    </li>
+                    <% if (c.valid_until) { %>
+                      <li>
+                        <span class="rule-bullet">&bull;</span>
+                        <span>Valid till: <strong><%= new Date(c.valid_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong></span>
+                      </li>
+                    <% } %>
+                  </ul>
 
-                <div class="coupon-box-actions">
-                  <span class="used-note">This offer has already been redeemed for your account.</span>
+                  <div class="coupon-box-actions">
+                    <span class="used-note">Limit reached — this offer has been fully redeemed.</span>
+                  </div>
                 </div>
+
               </div>
             <% }); %>
           </div>
