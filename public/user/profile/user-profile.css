@@ -11,6 +11,8 @@
    (address page uses white) — a valid, intentional override. */
 .account-main {
   background: var(--panel);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .section-title {

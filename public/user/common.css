@@ -117,12 +117,20 @@ img {
 
 /* ===== Header (shared by every page) ===== */
 
+:root {
+  /* Actual rendered header height — used to offset sticky sidebar */
+  --header-h: 58px;
+}
+
 .site-header {
   position: sticky;
   top: 0;
   z-index: 50;
   border-bottom: 1px solid var(--line);
   background: var(--cream);
+  /* Must stretch the full viewport — same as the page below it */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-inner {
@@ -133,8 +141,8 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  /* Prevent any single item from causing layout overflow */
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .logo {
@@ -227,15 +235,21 @@ img {
 /* ===== Account layout (sidebar + main) ===== */
 
 .account-layout {
+  /* Must be exactly viewport-wide — same as site-header */
+  width: 100%;
   max-width: var(--container);
   margin: 0 auto;
   display: grid;
   grid-template-columns: var(--sidebar-width) 1fr;
+  box-sizing: border-box;
 }
 
 .account-sidebar {
   background: var(--cream);
   padding: 2.5rem 1.5rem 2.5rem 2rem;
+  /* Prevent sidebar from stretching wider than its grid track */
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .sidebar-label {
@@ -286,6 +300,8 @@ img {
   /* Prevent inner content from bleeding past the column boundary */
   min-width: 0;
   overflow-x: hidden;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .page-title {
@@ -418,20 +434,27 @@ img {
     width: min(240px, 55vw);
   }
 
-  /* Stack account layout — sidebar becomes a tab strip above main */
+  /* Header height shrinks slightly on mobile */
+  :root { --header-h: 52px; }
+
+  /* Account layout: full-width single column */
   .account-layout {
     grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100%;  /* don't let centering add phantom width */
   }
 
   /* ─── Sticky scrollable tab-bar (Myntra / Amazon style) ─── */
   .account-sidebar {
     position: sticky;
-    top: 54px;                        /* clears the sticky site-header */
+    top: var(--header-h);  /* always matches the header height */
     z-index: 40;
     background: var(--cream);
     border-bottom: 1px solid var(--line);
     box-shadow: 0 2px 8px rgba(28,26,22,0.07);
     padding: 0;
+    width: 100%;  /* same width as the header above it */
+    box-sizing: border-box;
   }
 
   /* The "Account" label is desktop-only */
@@ -444,15 +467,17 @@ img {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;            /* Firefox: hide scrollbar */
+    scrollbar-width: none;
     gap: 0;
     padding: 0 0.5rem;
+    /* Constrain to viewport width */
+    max-width: 100vw;
   }
-  .sidebar-nav::-webkit-scrollbar { display: none; }  /* Chrome/Safari */
+  .sidebar-nav::-webkit-scrollbar { display: none; }
 
-  /* Individual tab pill */
+  /* Individual tab */
   .sidebar-link {
-    flex-shrink: 0;                   /* never compress — scroll instead */
+    flex-shrink: 0;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -470,14 +495,12 @@ img {
     transition: color 0.18s ease, border-color 0.18s ease;
   }
 
-  /* Make icons slightly bigger on mobile */
   .sidebar-link svg {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
   }
 
-  /* Active tab: gold underline + dark text */
   .sidebar-link.is-active {
     color: var(--ink);
     font-weight: 600;
@@ -486,10 +509,19 @@ img {
     background: none;
   }
 
-  .sidebar-link:hover {
-    color: var(--ink);
+  .sidebar-link:hover { color: var(--ink); }
+
+  /* Account main: full width, compact padding */
+  .account-main {
+    padding: 1.5rem 1.25rem 3rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
+
+  .page-title { font-size: 2.1rem; }
 }
+
 
 /* ===== Hamburger Button ===== */
 .hamburger {
@@ -873,41 +905,34 @@ img {
   color: var(--gold);
 }
 
-/* ── Small mobile: 640px — hide non-essential header items ── */
+/* ── Small mobile: ≤640px ── */
 @media (max-width: 640px) {
+  :root { --header-h: 48px; }
+
   .header-inner {
-    padding: 0.9rem 1.1rem;
+    padding: 0.75rem 1rem;
     gap: 0.6rem;
   }
 
-  .header-icons {
-    gap: 0.6rem;
-  }
+  .header-icons { gap: 0.6rem; }
 
-  /* Hide sign-in button text; keep icon only (via hamburger/drawer) */
-  .btn-login {
-    display: none;
-  }
+  /* Hide sign-in button on very small screens */
+  .btn-login { display: none; }
 
-  /* User-menu: keep icons tight */
-  .user-menu {
-    gap: 0.5rem;
-    padding-left: 0.5rem;
-  }
+  .user-menu { gap: 0.5rem; padding-left: 0.5rem; }
 
-  /* Collapse search panel tightly */
   .header-search.is-open .header-search-panel {
     width: min(200px, 48vw);
   }
 
-  /* Account pages */
+  /* Account pages — tighter padding on small phones */
   .account-main {
-    padding: 2rem 1.25rem 3rem;
+    padding: 1.25rem 1rem 3rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  .page-title {
-    font-size: 2.1rem;
-  }
+  .page-title { font-size: 1.9rem; }
 
   /* Footer columns stack */
   .footer-columns {
