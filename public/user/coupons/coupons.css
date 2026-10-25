@@ -6,6 +6,8 @@
 /* Override the grey background that user-profile.css sets */
 .account-main {
   background: var(--white, #fff);
+  /* Prevent coupon cards or grid from causing horizontal page scroll */
+  overflow-x: hidden;
 }
 
 /* ── Page header ── */
@@ -41,7 +43,8 @@
 /* ── Grid ── */
 .coupons-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* min() ensures the column never exceeds viewport width on mobile */
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 1.25rem;
   margin-bottom: 0.5rem;
 }
