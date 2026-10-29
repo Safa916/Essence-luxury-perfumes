@@ -1,12 +1,7 @@
-const express  = require('express');
+import express from 'express';
 const router   = express.Router();
-const { requireAuth, checkUser } = require('../../middleware/authMiddleware');
-const {
-  applyCoupon,
-  removeCoupon,
-  getAvailableCoupons,
-  renderUserCoupons,
-} = require('../../controllers/user/couponController');
+import { requireAuth, checkUser } from '../../middleware/authMiddleware.js';
+import { applyCoupon, removeCoupon, getAvailableCoupons, renderUserCoupons } from '../../controllers/user/couponController.js';
 
 // GET /coupon  — user coupons listing page
 router.get('/', checkUser, renderUserCoupons);
@@ -20,4 +15,4 @@ router.post('/apply',  requireAuth, applyCoupon);
 // DELETE /coupon/remove — remove the currently applied coupon
 router.delete('/remove', requireAuth, removeCoupon);
 
-module.exports = router;
+export default router;

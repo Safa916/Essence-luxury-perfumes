@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const Product = require('../../models/product');
-const Variant = require('../../models/variant');
+import mongoose from 'mongoose';
+import Product from '../../models/product.js';
+import Variant from '../../models/variant.js';
 
 const toDecimal = (val) => mongoose.Types.Decimal128.fromString(String(Number(val) || 0));
 
@@ -16,8 +16,7 @@ async function nextVariantSku(product) {
 }
 
 // GET /admin/variants/single/:variantId  -> prefill data for the Edit modal
-
-exports.getVariant = async (req, res) => {
+export const getVariant = async (req, res) => {
   try {
     // Use .lean() so Decimal128 fields come back as BSON Decimal128 instances
     // that have a reliable .toString() method, not raw Mongoose Document objects.
@@ -39,8 +38,7 @@ exports.getVariant = async (req, res) => {
 
 
 // POST /admin/variants/:productId  -> "Add New Variant" modal submit
-
-exports.addVariant = async (req, res) => {
+export const addVariant = async (req, res) => {
   try {
     const product = await Product.findById(req.params.productId);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
@@ -117,8 +115,7 @@ exports.addVariant = async (req, res) => {
 
 
 // PUT /admin/variants/:variantId  -> "Edit Variant" modal submit
-
-exports.updateVariant = async (req, res) => {
+export const updateVariant = async (req, res) => {
   try {
     const variant = await Variant.findById(req.params.variantId);
     if (!variant) return res.status(404).json({ success: false, message: 'Variant not found' });
@@ -195,8 +192,7 @@ exports.updateVariant = async (req, res) => {
 
 // DELETE /admin/variants/:variantId  -> "Delete Variant" confirm popup
 // (soft delete via deleted_at, matching your schema)
-
-exports.deleteVariant = async (req, res) => {
+export const deleteVariant = async (req, res) => {
   try {
     const variant = await Variant.findById(req.params.variantId);
     if (!variant) return res.status(404).json({ success: false, message: 'Variant not found' });
@@ -238,6 +234,17 @@ async function recalcProductPrice(productId) {
 
 
  
-module.exports.nextVariantSku = nextVariantSku;
-module.exports.recalcProductStock = recalcProductStock;
-module.exports.recalcProductPrice = recalcProductPrice;
+
+
+
+export { nextVariantSku, recalcProductStock, recalcProductPrice };
+
+export default {
+  getVariant,
+  addVariant,
+  updateVariant,
+  deleteVariant,
+  nextVariantSku,
+  recalcProductStock,
+  recalcProductPrice
+};

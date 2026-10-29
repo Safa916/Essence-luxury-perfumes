@@ -1,9 +1,8 @@
-const mongoose = require('mongoose');
-const WishlistItem = require('../../models/wishlistItems');
-const Product = require('../../models/product');
-const Variant = require('../../models/variant');
-
-exports.requireAuthApi = (req, res, next) => {
+import mongoose from 'mongoose';
+import WishlistItem from '../../models/wishlistItems.js';
+import Product from '../../models/product.js';
+import Variant from '../../models/variant.js';
+export const requireAuthApi = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ success: false, message: 'Please log in to continue.', redirect: '/auth/login' });
   }
@@ -16,7 +15,7 @@ function toNumber(decimal128) {
 }
 
 // GET /wishlist
-exports.renderWishlist = async (req, res) => {
+export const renderWishlist = async (req, res) => {
   try {
     const itemsRaw = await WishlistItem.find({ user_id: req.user._id })
       .sort({ added_at: -1 })
@@ -61,7 +60,7 @@ exports.renderWishlist = async (req, res) => {
 };
 
 // POST /wishlist/add  { product_id, variant_id }
-exports.addToWishlist = async (req, res) => {
+export const addToWishlist = async (req, res) => {
   try {
     const userId = req.user._id;
     const { product_id, variant_id } = req.body;
@@ -94,7 +93,7 @@ exports.addToWishlist = async (req, res) => {
 };
 
 // DELETE /wishlist/remove/:wishlistItemId
-exports.removeFromWishlist = async (req, res) => {
+export const removeFromWishlist = async (req, res) => {
   try {
     await WishlistItem.findOneAndDelete({
       _id: req.params.wishlistItemId,
@@ -108,9 +107,7 @@ exports.removeFromWishlist = async (req, res) => {
 };
 
 // DELETE /wishlist/remove-by-product/:productId
-
-
-exports.removeFromWishlistByProduct = async (req, res) => {
+export const removeFromWishlistByProduct = async (req, res) => {
   try {
     await WishlistItem.deleteMany({
       user_id: req.user._id,
@@ -121,4 +118,11 @@ exports.removeFromWishlistByProduct = async (req, res) => {
      console.error('removeFromWishlistByProduct error:', err);
     res.status(500).json({ success: false, message: 'Could not remove item.' });
   }
+};
+export default {
+  requireAuthApi,
+  renderWishlist,
+  addToWishlist,
+  removeFromWishlist,
+  removeFromWishlistByProduct
 };

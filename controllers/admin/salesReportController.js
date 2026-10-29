@@ -1,6 +1,6 @@
-const Order = require('../../models/order');
-const PDFDocument = require('pdfkit');
-const ExcelJS = require('exceljs');
+import Order from '../../models/order.js';
+import PDFDocument from 'pdfkit';
+import ExcelJS from 'exceljs';
 
 function toNum(d) {
   if (d == null) return 0;
@@ -63,7 +63,7 @@ function buildSalesFilter(query) {
 }
 
 // ── GET /admin/sales-report ──────────────────────────────────────────────────
-exports.getSalesReport = async (req, res) => {
+export const getSalesReport = async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, parseInt(req.query.limit) || 10);
@@ -197,7 +197,7 @@ exports.getSalesReport = async (req, res) => {
 };
 
 // ── GET /admin/sales-report/download/pdf ──────────────────────────────────────
-exports.downloadPdf = async (req, res) => {
+export const downloadPdf = async (req, res) => {
   try {
     const { match, filter, startDate, endDate, customFrom, customTo } = buildSalesFilter(req.query);
 
@@ -347,7 +347,7 @@ exports.downloadPdf = async (req, res) => {
 };
 
 // ── GET /admin/sales-report/download/excel (ExcelJS .xlsx) ────────────────────
-exports.downloadExcel = async (req, res) => {
+export const downloadExcel = async (req, res) => {
   try {
     const { match, filter, customFrom, customTo } = buildSalesFilter(req.query);
 
@@ -528,4 +528,10 @@ exports.downloadExcel = async (req, res) => {
     console.error('downloadExcel error:', err);
     res.status(500).send('Error generating Excel sales report');
   }
+};
+
+export default {
+  getSalesReport,
+  downloadPdf,
+  downloadExcel
 };

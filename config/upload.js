@@ -1,6 +1,8 @@
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+const __dirname = import.meta.dirname;
 
 const uploadDir = path.join(__dirname, '../public/uploads/avatars');
 
@@ -31,4 +33,4 @@ const uploadAvatar = multer({
   limits: { fileSize: 3 * 1024 * 1024 }, // 3MB max
 });
 
-module.exports = uploadAvatar;
+export default uploadAvatar;

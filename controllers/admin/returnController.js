@@ -1,9 +1,9 @@
-const Return = require('../../models/Return');
-const Order = require('../../models/order');
-const User = require('../../models/user');
-const Product = require('../../models/product');
-const Variant = require('../../models/variant');
-const walletService = require('../../services/walletService');
+import Return from '../../models/Return.js';
+import Order from '../../models/order.js';
+import User from '../../models/user.js';
+import Product from '../../models/product.js';
+import Variant from '../../models/variant.js';
+import walletService from '../../services/walletService.js';
 
 
 function toNum(d) {
@@ -11,7 +11,7 @@ function toNum(d) {
 }
 
 // ─── GET /admin/returns ───────────────────────────────────────────────────────
-exports.listReturns = async (req, res) => {
+export const listReturns = async (req, res) => {
   try {
     const { status = 'all', page = 1 } = req.query;
     const PER_PAGE = 10;
@@ -66,7 +66,7 @@ exports.listReturns = async (req, res) => {
 };
 
 // ─── POST /admin/returns/:id/approve ─────────────────────────────────────────
-exports.approveReturn = async (req, res) => {
+export const approveReturn = async (req, res) => {
   try {
     // Atomically find and mark as processing to prevent race conditions & double refunds
     const ret = await Return.findOneAndUpdate(
@@ -148,7 +148,7 @@ exports.approveReturn = async (req, res) => {
 };
 
 // ─── POST /admin/returns/:id/reject ──────────────────────────────────────────
-exports.rejectReturn = async (req, res) => {
+export const rejectReturn = async (req, res) => {
   try {
     const rejectReason = (req.body.reject_reason || '').trim();
     const ret = await Return.findOneAndUpdate(
@@ -165,4 +165,10 @@ exports.rejectReturn = async (req, res) => {
     console.error('admin rejectReturn error:', err);
     res.redirect('/admin/returns?flash=error');
   }
+};
+
+export default {
+  listReturns,
+  approveReturn,
+  rejectReturn
 };

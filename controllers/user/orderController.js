@@ -1,9 +1,10 @@
-const Order   = require('../../models/order');
-const Product = require('../../models/product');
-const Variant = require('../../models/variant');
-const Return  = require('../../models/Return');
-const walletService = require('../../services/walletService');
-const User = require('../../models/user');
+import PDFDocument from 'pdfkit';
+import Order from '../../models/order.js';
+import Product from '../../models/product.js';
+import Variant from '../../models/variant.js';
+import Return from '../../models/Return.js';
+import walletService from '../../services/walletService.js';
+import User from '../../models/user.js';
 
 const PER_PAGE = 8;
 
@@ -33,7 +34,7 @@ const CANCELLATION_REASONS = [
   'Other',
 ];
 // ─── GET /orders ──────────────────────────────────────────────────────────────
-exports.listOrders = async (req, res) => {
+export const listOrders = async (req, res) => {
   try {
     const userId = req.user._id;
     const search = (req.query.search || '').trim();
@@ -140,7 +141,7 @@ exports.listOrders = async (req, res) => {
 };
 
 // ─── GET /orders/:id ──────────────────────────────────────────────────────────
-exports.getOrderDetail = async (req, res) => {
+export const getOrderDetail = async (req, res) => {
   try {
     const order = await Order.findOne({
       _id     : req.params.id,
@@ -261,7 +262,7 @@ exports.getOrderDetail = async (req, res) => {
 };
 
 // ─── POST /orders/:id/cancel ──────────────────────────────────────────────────
-exports.cancelOrder = async (req, res) => {
+export const cancelOrder = async (req, res) => {
   try {
     const order = await Order.findOne({
       _id     : req.params.id,
@@ -359,7 +360,7 @@ exports.cancelOrder = async (req, res) => {
 };
 
 // ─── GET /orders/:id/return ──────────────────────────────────────────────
-exports.renderReturnForm = async (req, res) => {
+export const renderReturnForm = async (req, res) => {
   try {
     const order = await Order.findOne({
       _id     : req.params.id,
@@ -416,7 +417,7 @@ exports.renderReturnForm = async (req, res) => {
 };
 
 // ─── POST /orders/:id/return ──────────────────────────────────────────────
-exports.submitReturn = async (req, res) => {
+export const submitReturn = async (req, res) => {
   try {
     const order = await Order.findOne({
       _id     : req.params.id,
@@ -491,7 +492,7 @@ exports.submitReturn = async (req, res) => {
 };
 
 // ─── GET /orders/:id/invoice ─────────────────────────────────────────────────
-exports.downloadInvoice = async (req, res) => {
+export const downloadInvoice = async (req, res) => {
   try {
     const order = await Order.findOne({
       _id     : req.params.id,
@@ -501,8 +502,7 @@ exports.downloadInvoice = async (req, res) => {
       .lean();
 
     if (!order) return res.redirect('/orders');
-
-    const PDFDocument = require('pdfkit');
+// PDFDocument imported at top
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
     // HTTP headers — triggers browser "Save As" dialog
@@ -730,4 +730,13 @@ exports.downloadInvoice = async (req, res) => {
     console.error('downloadInvoice error:', err);
     res.redirect(`/orders/${req.params.id}`);
   }
+};
+
+export default {
+  listOrders,
+  getOrderDetail,
+  cancelOrder,
+  renderReturnForm,
+  submitReturn,
+  downloadInvoice
 };

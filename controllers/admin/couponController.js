@@ -1,6 +1,6 @@
-const Coupon      = require('../../models/coupon');
-const CouponUsage = require('../../models/couponUsage');
-const mongoose    = require('mongoose');
+import Coupon from '../../models/coupon.js';
+import CouponUsage from '../../models/couponUsage.js';
+import mongoose from 'mongoose';
 
 function toNum(v) {
   if (v == null) return 0;
@@ -8,7 +8,7 @@ function toNum(v) {
 }
 
 // ─── GET /admin/coupons ───────────────────────────────────────────────────────
-exports.listCoupons = async (req, res) => {
+export const listCoupons = async (req, res) => {
   try {
     const page    = Math.max(1, parseInt(req.query.page) || 1);
     const limit   = 8;
@@ -59,7 +59,7 @@ exports.listCoupons = async (req, res) => {
 };
 
 // ─── POST /admin/coupons ──────────────────────────────────────────────────────
-exports.createCoupon = async (req, res) => {
+export const createCoupon = async (req, res) => {
   try {
     const { code, description, discount_type, discount_value,
             min_order_value, max_discount_amount, valid_until,
@@ -166,7 +166,7 @@ exports.createCoupon = async (req, res) => {
 };
 
 // ─── GET /admin/coupons/:id/edit ──────────────────────────────────────────────
-exports.renderEditCoupon = async (req, res) => {
+export const renderEditCoupon = async (req, res) => {
   try {
     const coupon = await Coupon.findById(req.params.id).lean();
     if (!coupon) return res.redirect('/admin/coupons');
@@ -192,7 +192,7 @@ exports.renderEditCoupon = async (req, res) => {
 };
 
 // ─── POST /admin/coupons/:id/edit ─────────────────────────────────────────────
-exports.updateCoupon = async (req, res) => {
+export const updateCoupon = async (req, res) => {
   const couponId = req.params.id;
   try {
     const { description, discount_type, discount_value,
@@ -282,7 +282,7 @@ exports.updateCoupon = async (req, res) => {
 };
 
 // ─── DELETE /admin/coupons/:id ────────────────────────────────────────────────
-exports.deleteCoupon = async (req, res) => {
+export const deleteCoupon = async (req, res) => {
   try {
     await Coupon.findByIdAndDelete(req.params.id);
     await CouponUsage.deleteMany({ coupon_id: req.params.id });
@@ -294,7 +294,7 @@ exports.deleteCoupon = async (req, res) => {
 };
 
 // ─── POST /admin/coupons/:id/toggle ──────────────────────────────────────────
-exports.toggleCoupon = async (req, res) => {
+export const toggleCoupon = async (req, res) => {
   try {
     const coupon = await Coupon.findById(req.params.id);
     if (!coupon) return res.status(404).json({ success: false });
@@ -305,4 +305,13 @@ exports.toggleCoupon = async (req, res) => {
     console.error('toggleCoupon error:', err);
     res.status(500).json({ success: false });
   }
+};
+
+export default {
+  listCoupons,
+  createCoupon,
+  renderEditCoupon,
+  updateCoupon,
+  deleteCoupon,
+  toggleCoupon
 };

@@ -1,9 +1,9 @@
-const User = require('../../models/user');
-const OTP = require('../../models/OTP');
-const { sendOTPEmail } = require('../../services/emailService');
-const { generateOTPCode } = require('../../utils/otp');
-const { isValidName, isValidPassword } = require('../../utils/validators');
-const referralService = require('../../services/referralService');
+import User from '../../models/user.js';
+import OTP from '../../models/OTP.js';
+import { sendOTPEmail } from '../../services/emailService.js';
+import { generateOTPCode } from '../../utils/otp.js';
+import { isValidName, isValidPassword } from '../../utils/validators.js';
+import referralService from '../../services/referralService.js';
 
 const formatRelativeTime = (date) => {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -38,9 +38,7 @@ const formatUserForProfile = (user, referralCode, referralStats) => ({
     ? `Last updated ${formatRelativeTime(user.password_changed_at)}`
     : 'Password never changed',
 });
-
-
-exports.getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
     // Ensure the user has a referral code (generates one if missing)
     const referralCode = await referralService.getOrCreateCode(req.user._id);
@@ -55,8 +53,7 @@ exports.getProfile = async (req, res) => {
     res.status(500).send('Server error loading profile');
   }
 };
-
-exports.getEditProfileForm = (req, res) => {
+export const getEditProfileForm = (req, res) => {
   try {
     res.render('user/profile/edit-profile', {
       user: formatUserForProfile(req.user, req.user.referral_code, null),
@@ -67,9 +64,7 @@ exports.getEditProfileForm = (req, res) => {
     res.status(500).send('Server error loading edit profile form');
   }
 };
-
-
-exports.updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   try {
     const { fullName, phone } = req.body;
 
@@ -108,13 +103,13 @@ exports.updateProfile = async (req, res) => {
 
 
 // @route   GET /profile/security/email
-exports.getChangeEmailForm = (req, res) => {
+export const getChangeEmailForm = (req, res) => {
   res.render('user/profile/change-email', { user: formatUserForProfile(req.user) });
 };
 
 
 // @route   POST /profile/security/email
-exports.requestEmailChange = async (req, res) => {
+export const requestEmailChange = async (req, res) => {
   try {
     const { newEmail } = req.body;
 
@@ -155,9 +150,7 @@ exports.requestEmailChange = async (req, res) => {
     res.status(500).send('Server error requesting email change');
   }
 };
-
-
-exports.verifyEmailChange = async (req, res) => {
+export const verifyEmailChange = async (req, res) => {
   try {
     const { newEmail, otp } = req.body;
 
@@ -194,16 +187,13 @@ exports.verifyEmailChange = async (req, res) => {
   }
 
 };
-
-
-exports.getChangePasswordForm = (req, res) => {
+export const getChangePasswordForm = (req, res) => {
   if (req.user.auth_provider === 'google') {
     return res.redirect('/profile');
   }
   res.render('user/profile/change-password');
 };
-
-exports.updatePassword = async (req, res) => {
+export const updatePassword = async (req, res) => {
   try {
     if (req.user.auth_provider === 'google') {
       return res.redirect('/profile');
@@ -252,4 +242,14 @@ exports.updatePassword = async (req, res) => {
     console.error('Update password error:', error.message);
     res.status(500).send('Server error updating password');
   }
+};
+export default {
+  getProfile,
+  getEditProfileForm,
+  updateProfile,
+  getChangeEmailForm,
+  requestEmailChange,
+  verifyEmailChange,
+  getChangePasswordForm,
+  updatePassword
 };

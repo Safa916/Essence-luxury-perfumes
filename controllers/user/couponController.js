@@ -1,6 +1,7 @@
-const Cart       = require('../../models/cart');
-const Coupon     = require('../../models/coupon');
-const CouponUsage = require('../../models/couponUsage');
+import CartItem from '../../models/cartItem.js';
+import Cart from '../../models/cart.js';
+import Coupon from '../../models/coupon.js';
+import CouponUsage from '../../models/couponUsage.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const GST_RATE         = 0.18;
@@ -23,7 +24,7 @@ function calcTotals(subtotal, discountValue) {
 }
 
 // ─── POST /coupon/apply ───────────────────────────────────────────────────────
-exports.applyCoupon = async (req, res) => {
+export const applyCoupon = async (req, res) => {
   try {
     const userId = req.user._id;
     const code   = (req.body.code || '').trim().toUpperCase();
@@ -56,7 +57,7 @@ exports.applyCoupon = async (req, res) => {
     // (cart.items is just refs; the reliable value is in CartItem total_price sums)
     // For simplicity we use cart's stored subtotal if present, else 0
     // The renderCheckout already calculates it — we do a quick re-calc here
-    const CartItem = require('../../models/cartItem');
+// CartItem imported at top
     const rawItems = await CartItem.find({ cart_id: cart._id }).lean();
     const subtotal = rawItems.reduce((s, i) => s + toNum(i.total_price), 0);
 
@@ -130,7 +131,7 @@ exports.applyCoupon = async (req, res) => {
 };
 
 // ─── DELETE /coupon/remove ────────────────────────────────────────────────────
-exports.removeCoupon = async (req, res) => {
+export const removeCoupon = async (req, res) => {
   try {
     const userId = req.user._id;
 
@@ -145,7 +146,7 @@ exports.removeCoupon = async (req, res) => {
     });
 
     // Recalculate totals with zero discount
-    const CartItem = require('../../models/cartItem');
+// CartItem imported at top
     const rawItems = await CartItem.find({ cart_id: cart._id }).lean();
     const subtotal = rawItems.reduce((s, i) => s + toNum(i.total_price), 0);
     const totals   = calcTotals(subtotal, 0);
@@ -214,17 +215,17 @@ async function getAvailableCouponsForUser(userId, cartSubtotal = 0, includeUsed 
   }
   return results;
 }
-exports.getAvailableCouponsForUser = getAvailableCouponsForUser;
+export { getAvailableCouponsForUser };
 
 // ─── GET /coupon/available (JSON API) ──────────────────────────────────────────
-exports.getAvailableCoupons = async (req, res) => {
+export const getAvailableCoupons = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : null;
     let subtotal = 0;
     if (userId) {
       const cart = await Cart.findOne({ user_id: userId }).lean();
       if (cart) {
-        const CartItem = require('../../models/cartItem');
+// CartItem imported at top
         const rawItems = await CartItem.find({ cart_id: cart._id }).lean();
         subtotal = rawItems.reduce((s, i) => s + toNum(i.total_price), 0);
       }
@@ -238,7 +239,7 @@ exports.getAvailableCoupons = async (req, res) => {
 };
 
 // ─── GET /coupon (User Account Coupons Page) ───────────────────────────────────
-exports.renderUserCoupons = async (req, res) => {
+export const renderUserCoupons = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : null;
     const allCoupons = await getAvailableCouponsForUser(userId, 0, true);
@@ -257,4 +258,12 @@ exports.renderUserCoupons = async (req, res) => {
     console.error('renderUserCoupons error:', err);
     res.status(500).render('user/error', { message: 'Failed to load coupons.' });
   }
+};
+
+export default {
+  applyCoupon,
+  removeCoupon,
+  getAvailableCouponsForUser,
+  getAvailableCoupons,
+  renderUserCoupons
 };

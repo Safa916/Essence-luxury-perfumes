@@ -1,11 +1,9 @@
-const User = require('../../models/user');
-const APIFeatures = require('../../utils/apiFeatures');
+import User from '../../models/user.js';
+import APIFeatures from '../../utils/apiFeatures.js';
 
 
 // GET /admin/users?search=&page=&limit=
-
-
-exports.getUsersPage = async (req, res) => {
+export const getUsersPage = async (req, res) => {
   try {
     const search = (req.query.search || '').trim();
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -64,7 +62,7 @@ exports.getUsersPage = async (req, res) => {
 };
 
 // POST /admin/users/:id/toggle-block
-exports.toggleBlockUser = async (req, res) => {
+export const toggleBlockUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
@@ -99,3 +97,8 @@ exports.toggleBlockUser = async (req, res) => {
 
 
 
+
+export default {
+  getUsersPage,
+  toggleBlockUser
+};

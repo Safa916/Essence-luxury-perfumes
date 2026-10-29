@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
-const fs = require('fs');
-const path = require('path');
-const Category = require('../../models/category');
-const APIFeatures = require('../../utils/apiFeatures');
-const { toPublicPath, uploadDir } = require('../../middleware/uploadCategoryImage');
+import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
+import Category from '../../models/category.js';
+import APIFeatures from '../../utils/apiFeatures.js';
+import { toPublicPath, uploadDir } from '../../middleware/uploadCategoryImage.js';
 
 function slugify(text) {
   return text
@@ -36,7 +36,7 @@ function deleteBannerFile(bannerUrl) {
 const INVALID_NAME_MSG = 'Category name must contain at least one letter or number (a-z, 0-9).';
 
 // ===== LIST =====
-exports.listCategories = async (req, res) => {
+export const listCategories = async (req, res) => {
   try {
     const search = (req.query.search || '').trim();
     req.query.limit = req.query.limit || 10;
@@ -56,7 +56,7 @@ exports.listCategories = async (req, res) => {
     }
 
     // Count products (non-deleted) per category so the table shows accurate numbers
-    const Product = require('../../models/product');
+// Product already imported at top
     const productCounts = await Product.aggregate([
       { $match: { is_deleted: { $ne: true } } },
       { $group: { _id: '$category_id', count: { $sum: 1 } } },
@@ -103,7 +103,7 @@ exports.listCategories = async (req, res) => {
 };
 
 // ===== ADD =====
-exports.createCategory = async (req, res) => {
+export const createCategory = async (req, res) => {
   try {
     const { name, is_active } = req.body;
     const bannerFile = req.file; // set by uploadCategoryImage middleware, if a file was chosen
@@ -174,7 +174,7 @@ exports.createCategory = async (req, res) => {
 };
 
 // ===== EDIT =====
-exports.updateCategory = async (req, res) => {
+export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const bannerFile = req.file;
@@ -262,7 +262,7 @@ exports.updateCategory = async (req, res) => {
 };
 
 // ===== TOGGLE ACTIVE/INACTIVE =====
-exports.toggleStatus = async (req, res) => {
+export const toggleStatus = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -284,7 +284,7 @@ exports.toggleStatus = async (req, res) => {
 };
 
 // ===== DELETE (soft delete) =====
-exports.deleteCategory = async (req, res) => {
+export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -302,4 +302,11 @@ exports.deleteCategory = async (req, res) => {
     
     res.redirect('/admin/categories');
   }
+};
+export default {
+  listCategories,
+  createCategory,
+  updateCategory,
+  toggleStatus,
+  deleteCategory
 };

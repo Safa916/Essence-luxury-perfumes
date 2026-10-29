@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/user');
- 
-exports.protect = async (req, res, next) => {
+import Cart from '../models/cart.js';
+import jwt from 'jsonwebtoken';
+import User from '../models/user.js';
+export const protect = async (req, res, next) => {
   try {
     let token;
 
@@ -41,10 +41,8 @@ exports.protect = async (req, res, next) => {
     return res.status(401).json({ message: 'Not authorized, invalid token' });
   }
 };
-
-const Cart = require('../models/cart');
-
-exports.checkUser = async (req, res, next) => {
+// Cart imported at top
+export const checkUser = async (req, res, next) => {
   const token = req.cookies.token;
 
   res.locals.cartCount = 0; // Default
@@ -81,7 +79,7 @@ exports.checkUser = async (req, res, next) => {
 };
 
 // @desc    Require a logged-in user (cookie-based) — redirect to login if not authenticated
-exports.requireAuth = async (req, res, next) => {
+export const requireAuth = async (req, res, next) => {
   const token = req.cookies.token;
 
   res.locals.cartCount = 0; // Default
@@ -111,4 +109,9 @@ exports.requireAuth = async (req, res, next) => {
   } catch (error) {
     return res.redirect('/auth/login');
   }
+};
+export default {
+  protect,
+  checkUser,
+  requireAuth
 };

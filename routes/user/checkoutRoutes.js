@@ -1,15 +1,7 @@
-const express  = require('express');
+import express from 'express';
 const router   = express.Router();
-const { requireAuth } = require('../../middleware/authMiddleware');
-const {
-  renderCheckout,
-  placeOrder,
-  renderOrderSuccess,
-  createRazorpayOrder,
-  verifyRazorpayPayment,
-  renderPaymentFailure,
-  getCheckoutSummary,
-} = require('../../controllers/user/checkoutController');
+import { requireAuth } from '../../middleware/authMiddleware.js';
+import { renderCheckout, placeOrder, renderOrderSuccess, createRazorpayOrder, verifyRazorpayPayment, renderPaymentFailure, getCheckoutSummary } from '../../controllers/user/checkoutController.js';
 
 // GET  /checkout                     — render checkout page (login required)
 router.get('/',                       requireAuth, renderCheckout);
@@ -32,4 +24,4 @@ router.get('/failure',                requireAuth, renderPaymentFailure);
 // GET  /checkout/success/:orderId    — order confirmation page
 router.get('/success/:orderId',        requireAuth, renderOrderSuccess);
 
-module.exports = router;
+export default router;

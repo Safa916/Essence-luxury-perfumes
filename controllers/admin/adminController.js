@@ -1,12 +1,12 @@
-const jwt = require('jsonwebtoken');
-const Admin = require('../../models/admin');
-const Order = require('../../models/order');
-const Product = require('../../models/product');
-const User = require('../../models/user');
-const Category = require('../../models/category');
+import jwt from 'jsonwebtoken';
+import Admin from '../../models/admin.js';
+import Order from '../../models/order.js';
+import Product from '../../models/product.js';
+import User from '../../models/user.js';
+import Category from '../../models/category.js';
 
 // GET /admin/login
-exports.getLoginPage = (req, res) => {
+export const getLoginPage = (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
@@ -15,7 +15,7 @@ exports.getLoginPage = (req, res) => {
 };
   
 // POST /admin/login
-exports.postLogin = async (req, res) => {
+export const postLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -55,13 +55,13 @@ exports.postLogin = async (req, res) => {
 };
 
 // GET /admin/logout
-exports.logout = (req, res) => {
+export const logout = (req, res) => {
   res.clearCookie('adminToken');
   res.redirect('/admin/login');
 };
 
 // ── GET /admin/dashboard ──────────────────────────────────────────────────────
-exports.getDashboard = async (req, res) => {
+export const getDashboard = async (req, res) => {
   try {
     const match = {
       order_status: { $nin: ['cancelled', 'returned'] },
@@ -253,7 +253,7 @@ exports.getDashboard = async (req, res) => {
 };
 
 // ── GET /admin/api/dashboard/chart ───────────────────────────────────────────
-exports.getDashboardChartData = async (req, res) => {
+export const getDashboardChartData = async (req, res) => {
   try {
     const filter = (req.query.filter || 'monthly').toLowerCase();
     const now = new Date();
@@ -478,3 +478,11 @@ exports.getDashboardChartData = async (req, res) => {
   }
 };
 
+
+export default {
+  getLoginPage,
+  postLogin,
+  logout,
+  getDashboard,
+  getDashboardChartData
+};

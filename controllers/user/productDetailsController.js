@@ -1,6 +1,7 @@
-const Product = require('../../models/product');
-const Variant = require('../../models/variant');
-const Review = require('../../models/review');
+import offerService from '../../services/offerService.js';
+import Product from '../../models/product.js';
+import Variant from '../../models/variant.js';
+import Review from '../../models/review.js';
 
 function formatRelativeTime(date) {
   const now = new Date();
@@ -35,7 +36,7 @@ function toNumber(decimal128) {
 }
 
 // GET /product/:slug
-exports.renderProductDetails = async (req, res) => {
+export const renderProductDetails = async (req, res) => {
   try {
     const { slug } = req.params;
 
@@ -70,8 +71,7 @@ exports.renderProductDetails = async (req, res) => {
     })
       .sort({ size_ml: 1 })
       .lean();
-
-    const offerService = require('../../services/offerService');
+// offerService imported at top
     const activeOffers = await offerService.getActiveOffers();
 
     const variants = variantsRaw.map((v) => {
@@ -144,4 +144,8 @@ exports.renderProductDetails = async (req, res) => {
     console.error('renderProductDetails error:', err);
     res.status(500).render('user/error', { message: 'Failed to load product' });
   }
+};
+
+export default {
+  renderProductDetails
 };

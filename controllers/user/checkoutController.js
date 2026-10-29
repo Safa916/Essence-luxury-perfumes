@@ -1,17 +1,18 @@
-const mongoose    = require('mongoose');
-const Address     = require('../../models/address');
-const Cart        = require('../../models/cart');
-const CartItem    = require('../../models/cartItem');
-const Product     = require('../../models/product');
-const Variant     = require('../../models/variant');
-const Order       = require('../../models/order');
-const Coupon      = require('../../models/coupon');
-const CouponUsage = require('../../models/couponUsage');
-const Payment     = require('../../models/payment');
-const walletService = require('../../services/walletService');
-const crypto      = require('crypto');
-const { getRazorpayInstance } = require('../../config/razorpay');
-const { getAvailableCouponsForUser } = require('./couponController');
+import offerService from '../../services/offerService.js';
+import mongoose from 'mongoose';
+import Address from '../../models/address.js';
+import Cart from '../../models/cart.js';
+import CartItem from '../../models/cartItem.js';
+import Product from '../../models/product.js';
+import Variant from '../../models/variant.js';
+import Order from '../../models/order.js';
+import Coupon from '../../models/coupon.js';
+import CouponUsage from '../../models/couponUsage.js';
+import Payment from '../../models/payment.js';
+import walletService from '../../services/walletService.js';
+import crypto from 'crypto';
+import { getRazorpayInstance } from '../../config/razorpay.js';
+import { getAvailableCouponsForUser } from './couponController.js';
 
 // ─── constants ───────────────────────────────────────────────────────────────
 const GST_RATE        = 0.18;          // 18 % GST on subtotal
@@ -31,7 +32,7 @@ function generateOrderNumber() {
 }
 
 // ─── GET /checkout ────────────────────────────────────────────────────────────
-exports.renderCheckout = async (req, res) => {
+export const renderCheckout = async (req, res) => {
   try {
     const userId = req.user._id;
 
@@ -48,8 +49,7 @@ exports.renderCheckout = async (req, res) => {
       .populate('product_id')
       .populate('variant_id')
       .lean();
-
-    const offerService = require('../../services/offerService');
+// offerService imported at top
     const activeOffers = await offerService.getActiveOffers();
 
     // 3. Build items list — only available + in-stock items with live offer calculation
@@ -123,7 +123,7 @@ exports.renderCheckout = async (req, res) => {
 };
 
 // ─── GET /checkout/summary  (JSON — re-validate stale checkout UI) ────────────
-exports.getCheckoutSummary = async (req, res) => {
+export const getCheckoutSummary = async (req, res) => {
   try {
     const userId = req.user._id;
     const cart = await Cart.findOne({ user_id: userId }).lean();
@@ -131,8 +131,7 @@ exports.getCheckoutSummary = async (req, res) => {
 
     const rawItems = await CartItem.find({ cart_id: cart._id })
       .populate('product_id').populate('variant_id').lean();
-
-    const offerService = require('../../services/offerService');
+// offerService imported at top
     const activeOffers = await offerService.getActiveOffers();
 
     const subtotal = rawItems
@@ -171,7 +170,7 @@ exports.getCheckoutSummary = async (req, res) => {
 };
 
 // ─── POST /checkout ───────────────────────────────────────────────────────────
-exports.placeOrder = async (req, res) => {
+export const placeOrder = async (req, res) => {
   try {
     const userId = req.user._id;
     const { addressId, paymentMethod = 'cod' } = req.body;
@@ -217,7 +216,7 @@ exports.placeOrder = async (req, res) => {
     }
 
     // 5. Build order items snapshot with live offer pricing
-    const offerService = require('../../services/offerService');
+// offerService imported at top
     const activeOffers = await offerService.getActiveOffers();
 
     const orderItems = validItems.map(i => {
@@ -367,7 +366,7 @@ exports.placeOrder = async (req, res) => {
 
 
 // ─── GET /checkout/success/:orderId ──────────────────────────────────────────
-exports.renderOrderSuccess = async (req, res) => {
+export const renderOrderSuccess = async (req, res) => {
   try {
     const order = await Order.findOne({
       _id     : req.params.orderId,
@@ -408,7 +407,7 @@ exports.renderOrderSuccess = async (req, res) => {
 };
 
 // ─── POST /checkout/create-razorpay-order ─────────────────────────────────────
-exports.createRazorpayOrder = async (req, res) => {
+export const createRazorpayOrder = async (req, res) => {
   try {
     const userId = req.user._id;
     const { addressId } = req.body;
@@ -449,7 +448,7 @@ exports.createRazorpayOrder = async (req, res) => {
     }
 
     // 4. Calculate total with live offer pricing
-    const offerServiceRzp = require('../../services/offerService');
+    const offerServiceRzp = offerService;
     const activeOffersRzp = await offerServiceRzp.getActiveOffers();
 
     const subtotal = validItems.reduce((s, i) => {
@@ -537,7 +536,7 @@ exports.createRazorpayOrder = async (req, res) => {
 };
 
 // ─── POST /checkout/verify-razorpay-payment ───────────────────────────────────
-exports.verifyRazorpayPayment = async (req, res) => {
+export const verifyRazorpayPayment = async (req, res) => {
   try {
     const userId = req.user._id;
     const {
@@ -589,8 +588,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
     if (!validItems.length) {
       return res.status(400).json({ success: false, message: 'No valid items.' });
     }
-
-    const offerServiceVerify = require('../../services/offerService');
+    const offerServiceVerify = offerService;
     const activeOffersVerify = await offerServiceVerify.getActiveOffers();
 
     // 4. Snapshot order items with live offer pricing
@@ -728,8 +726,18 @@ exports.verifyRazorpayPayment = async (req, res) => {
 };
 
 // ─── GET /checkout/failure ────────────────────────────────────────────────────
-exports.renderPaymentFailure = (req, res) => {
+export const renderPaymentFailure = (req, res) => {
   const reason = req.query.reason || 'Your payment was not completed.';
   res.render('user/checkout/payment-failure', { reason });
 };
 
+
+export default {
+  renderCheckout,
+  getCheckoutSummary,
+  placeOrder,
+  renderOrderSuccess,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  renderPaymentFailure
+};

@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 
 // Reusable transporter — configured once, used everywhere
 const transporter = nodemailer.createTransport({
@@ -36,4 +36,9 @@ const sendOTPEmail = async (toEmail, otpCode, purpose = 'registration') => {
   console.log('✅ Email sent:', info.messageId, 'to', toEmail);
 };
 
-module.exports = { sendOTPEmail };
+export {
+  sendOTPEmail
+};
+export default {
+  sendOTPEmail
+};

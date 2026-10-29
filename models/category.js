@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const categorySchema = new mongoose.Schema(
   {
@@ -49,4 +49,4 @@ categorySchema.pre(/^find/, function () {
 });
 
 const category = mongoose.models.category || mongoose.model('category', categorySchema);
-module.exports = category;
+export default category;

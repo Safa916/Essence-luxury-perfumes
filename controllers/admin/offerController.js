@@ -1,7 +1,7 @@
-const Offer = require('../../models/offer');
-const Product = require('../../models/product');
-const Category = require('../../models/category');
-const mongoose = require('mongoose');
+import Offer from '../../models/offer.js';
+import Product from '../../models/product.js';
+import Category from '../../models/category.js';
+import mongoose from 'mongoose';
 
 function toNum(d) {
   if (d == null) return 0;
@@ -11,7 +11,7 @@ function toNum(d) {
 const PER_PAGE = 10;
 
 // ─── GET /admin/offers ────────────────────────────────────────────────────────
-exports.listOffers = async (req, res) => {
+export const listOffers = async (req, res) => {
   try {
     const { search = '', type = 'all', status = 'all', page = 1 } = req.query;
     const currentPage = Math.max(1, parseInt(page, 10) || 1);
@@ -116,7 +116,7 @@ exports.listOffers = async (req, res) => {
 };
 
 // ─── POST /admin/offers ───────────────────────────────────────────────────────
-exports.createOffer = async (req, res) => {
+export const createOffer = async (req, res) => {
   try {
     const {
       name,
@@ -193,7 +193,7 @@ exports.createOffer = async (req, res) => {
 };
 
 // ─── GET /admin/offers/:id/edit ───────────────────────────────────────────────
-exports.renderEditOffer = async (req, res) => {
+export const renderEditOffer = async (req, res) => {
   try {
     const offer = await Offer.findOne({ _id: req.params.id, deleted_at: null }).lean();
     if (!offer) {
@@ -229,7 +229,7 @@ exports.renderEditOffer = async (req, res) => {
 };
 
 // ─── POST /admin/offers/:id/edit ──────────────────────────────────────────────
-exports.updateOffer = async (req, res) => {
+export const updateOffer = async (req, res) => {
   try {
     const offer = await Offer.findOne({ _id: req.params.id, deleted_at: null });
     if (!offer) {
@@ -306,7 +306,7 @@ exports.updateOffer = async (req, res) => {
 };
 
 // ─── POST /admin/offers/:id/toggle ───────────────────────────────────────────
-exports.toggleOffer = async (req, res) => {
+export const toggleOffer = async (req, res) => {
   try {
     const offer = await Offer.findOne({ _id: req.params.id, deleted_at: null });
     if (!offer) {
@@ -324,7 +324,7 @@ exports.toggleOffer = async (req, res) => {
 };
 
 // ─── POST /admin/offers/:id/delete ────────────────────────────────────────────
-exports.deleteOffer = async (req, res) => {
+export const deleteOffer = async (req, res) => {
   try {
     const offer = await Offer.findOne({ _id: req.params.id, deleted_at: null });
     if (!offer) {
@@ -339,4 +339,13 @@ exports.deleteOffer = async (req, res) => {
     console.error('deleteOffer error:', err);
     res.redirect('/admin/offers?error=failed');
   }
+};
+
+export default {
+  listOffers,
+  createOffer,
+  renderEditOffer,
+  updateOffer,
+  toggleOffer,
+  deleteOffer
 };

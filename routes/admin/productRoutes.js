@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const productController = require('../../controllers/admin/productController');
-const { uploadProductImages, resizeProductImages } = require('../../middleware/uploadProductImages');
+import productController from '../../controllers/admin/productController.js';
+import { uploadProductImages, resizeProductImages } from '../../middleware/uploadProductImages.js';
 
 // NOTE: this router is mounted at /admin/products in adminRoutes.js,
 // and requireAdminAuth is already applied there.
@@ -40,4 +40,4 @@ router.get('/:id/variants', productController.renderVariantManager);
 
 
 
-module.exports = router;
+export default router;

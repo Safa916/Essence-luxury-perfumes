@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const offerSchema = new mongoose.Schema(
   {
@@ -81,4 +81,4 @@ const offerSchema = new mongoose.Schema(
 );
 
 const offer = mongoose.models.offer || mongoose.model('offer', offerSchema);
-module.exports = offer;
+export default offer;

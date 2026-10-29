@@ -1,5 +1,5 @@
-const Brand   = require('../../models/brands');
-const Product = require('../../models/product');
+import Brand from '../../models/brands.js';
+import Product from '../../models/product.js';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function slugify(str) {
@@ -7,7 +7,7 @@ function slugify(str) {
 }
 
 // ── GET /admin/brands ─────────────────────────────────────────────────────────
-exports.listBrands = async (req, res) => {
+export const listBrands = async (req, res) => {
   try {
     const search = (req.query.search || '').trim();
     const page   = Math.max(1, parseInt(req.query.page) || 1);
@@ -56,12 +56,12 @@ exports.listBrands = async (req, res) => {
 };
 
 // ── GET /admin/brands/add ─────────────────────────────────────────────────────
-exports.renderAdd = (req, res) => {
+export const renderAdd = (req, res) => {
   res.render('admin/brands/add', { activePage: 'brand', admin: req.admin, errors: [] });
 };
 
 // ── POST /admin/brands/add ────────────────────────────────────────────────────
-exports.createBrand = async (req, res) => {
+export const createBrand = async (req, res) => {
   try {
     const { name, tagline, is_active } = req.body;
     const errors = [];
@@ -92,7 +92,7 @@ exports.createBrand = async (req, res) => {
 };
 
 // ── GET /admin/brands/:id/edit ────────────────────────────────────────────────
-exports.renderEdit = async (req, res) => {
+export const renderEdit = async (req, res) => {
   try {
     const brand = await Brand.findById(req.params.id).lean();
     if (!brand) return res.status(404).send('Brand not found');
@@ -104,7 +104,7 @@ exports.renderEdit = async (req, res) => {
 };
 
 // ── POST /admin/brands/:id/edit ───────────────────────────────────────────────
-exports.updateBrand = async (req, res) => {
+export const updateBrand = async (req, res) => {
   try {
     const brand = await Brand.findById(req.params.id);
     if (!brand) return res.status(404).send('Brand not found');
@@ -145,7 +145,7 @@ exports.updateBrand = async (req, res) => {
 };
 
 // ── POST /admin/brands/:id/toggle ─────────────────────────────────────────────
-exports.toggleBrand = async (req, res) => {
+export const toggleBrand = async (req, res) => {
   try {
     const brand = await Brand.findById(req.params.id);
     if (!brand) return res.status(404).json({ success: false });
@@ -159,7 +159,7 @@ exports.toggleBrand = async (req, res) => {
 };
 
 // ── POST /admin/brands/:id/delete ─────────────────────────────────────────────
-exports.deleteBrand = async (req, res) => {
+export const deleteBrand = async (req, res) => {
   try {
     await Brand.findByIdAndDelete(req.params.id);
     res.redirect('/admin/brands');
@@ -167,4 +167,14 @@ exports.deleteBrand = async (req, res) => {
     console.error('deleteBrand error:', err);
     res.status(500).send('Server error');
   }
+};
+
+export default {
+  listBrands,
+  renderAdd,
+  createBrand,
+  renderEdit,
+  updateBrand,
+  toggleBrand,
+  deleteBrand
 };

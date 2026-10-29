@@ -1,5 +1,5 @@
-const Wallet            = require('../models/wallet');
-const WalletTransaction = require('../models/walletTransaction');
+import Wallet from '../models/wallet.js';
+import WalletTransaction from '../models/walletTransaction.js';
 
 function toNum(d) {
   if (d == null) return 0;
@@ -77,4 +77,9 @@ async function getBalance(userId) {
   return wallet ? toNum(wallet.balance) : 0;
 }
 
-module.exports = { creditWallet, debitWallet, getBalance };
+export {
+  creditWallet, debitWallet, getBalance
+};
+export default {
+  creditWallet, debitWallet, getBalance
+};

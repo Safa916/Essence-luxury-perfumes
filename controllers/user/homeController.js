@@ -1,8 +1,8 @@
-const Category = require('../../models/category');
-const Brand = require('../../models/brands');
+import Category from '../../models/category.js';
+import Brand from '../../models/brands.js';
 
 // GET /  (replaces the inline route currently in server.js)
-exports.renderHome = async (req, res) => {
+export const renderHome = async (req, res) => {
   try {
     const [categoryForHer, categoryForHim, brands] = await Promise.all([
       Category.findOne({
@@ -38,4 +38,7 @@ exports.renderHome = async (req, res) => {
     console.error('renderHome error:', err);
     res.status(500).render('user/error', { message: 'Failed to load home page' });
   }
+};
+export default {
+  renderHome
 };

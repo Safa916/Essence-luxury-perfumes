@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const categoryController = require('../../controllers/admin/categoryController');
-const { uploadCategoryImage } = require('../../middleware/uploadCategoryImage');
+import categoryController from '../../controllers/admin/categoryController.js';
+import { uploadCategoryImage } from '../../middleware/uploadCategoryImage.js';
 
 // GET /admin/categories               -> list (search, sort desc, paginate) + modal state
 router.get('/', categoryController.listCategories);
@@ -19,4 +19,4 @@ router.patch('/:id/status', categoryController.toggleStatus);
 // DELETE /admin/categories/:id        -> soft delete (via _method=DELETE)
 router.delete('/:id', categoryController.deleteCategory);
 
-module.exports = router;
+export default router;

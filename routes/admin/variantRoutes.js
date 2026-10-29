@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const variantController = require('../../controllers/admin/variantController');
+import variantController from '../../controllers/admin/variantController.js';
 
 // Mounted at /admin/variants in adminRoutes.js (requireAdminAuth already applied)
 //
@@ -15,4 +15,4 @@ router.post('/product/:productId',    variantController.addVariant);
 router.put('/:variantId',             variantController.updateVariant);
 router.delete('/:variantId',          variantController.deleteVariant);
 
-module.exports = router;
+export default router;

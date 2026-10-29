@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const rateLimit = require('express-rate-limit');
-const { protect,checkUser } = require('../../middleware/authMiddleware');
+import rateLimit from 'express-rate-limit';
+import { protect, checkUser } from '../../middleware/authMiddleware.js';
 
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -18,15 +18,7 @@ const loginLimiter = rateLimit({
 
 
 
-const { registerUser,
-     verifyOTP,
-     resendOTP,
-     loginUser,
-     forgotPassword,
-     verifyResetCode,
-     resetPassword,
-     logoutUser,
-     googleAuth } = require('../../controllers/user/userController');
+import { registerUser, verifyOTP, resendOTP, loginUser, forgotPassword, verifyResetCode, resetPassword, logoutUser, googleAuth } from '../../controllers/user/userController.js';
 
 
 
@@ -94,4 +86,4 @@ router.post('/logout', logoutUser);
 
 
 
-module.exports = router;
+export default router;

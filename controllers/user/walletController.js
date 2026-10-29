@@ -1,12 +1,12 @@
-const Wallet            = require('../../models/wallet');
-const WalletTransaction = require('../../models/walletTransaction');
-const Payment           = require('../../models/payment');
-const Order             = require('../../models/order');
-const CartItem          = require('../../models/cartItem');
-const Cart              = require('../../models/cart');
-const walletService     = require('../../services/walletService');
-const { getRazorpayInstance } = require('../../config/razorpay');
-const crypto            = require('crypto');
+import Wallet from '../../models/wallet.js';
+import WalletTransaction from '../../models/walletTransaction.js';
+import Payment from '../../models/payment.js';
+import Order from '../../models/order.js';
+import CartItem from '../../models/cartItem.js';
+import Cart from '../../models/cart.js';
+import walletService from '../../services/walletService.js';
+import { getRazorpayInstance } from '../../config/razorpay.js';
+import crypto from 'crypto';
 
 function toNum(d) {
   if (d == null) return 0;
@@ -14,7 +14,7 @@ function toNum(d) {
 }
 
 // ─── GET /wallet ──────────────────────────────────────────────────────────────
-exports.renderWallet = async (req, res) => {
+export const renderWallet = async (req, res) => {
   try {
     const userId = req.user._id;
     const page   = Math.max(1, parseInt(req.query.page) || 1);
@@ -80,7 +80,7 @@ exports.renderWallet = async (req, res) => {
 };
 
 // ─── POST /wallet/topup/create-order ──────────────────────────────────────────
-exports.createTopupOrder = async (req, res) => {
+export const createTopupOrder = async (req, res) => {
   try {
     const userId = req.user._id;
     const amount = parseFloat(req.body.amount);
@@ -134,7 +134,7 @@ exports.createTopupOrder = async (req, res) => {
 };
 
 // ─── POST /wallet/topup/verify ────────────────────────────────────────────────
-exports.verifyTopupPayment = async (req, res) => {
+export const verifyTopupPayment = async (req, res) => {
   try {
     const userId = req.user._id;
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
@@ -185,4 +185,10 @@ exports.verifyTopupPayment = async (req, res) => {
     console.error('verifyTopupPayment error:', err);
     return res.status(500).json({ success: false, message: 'Failed to credit wallet.' });
   }
+};
+
+export default {
+  renderWallet,
+  createTopupOrder,
+  verifyTopupPayment
 };

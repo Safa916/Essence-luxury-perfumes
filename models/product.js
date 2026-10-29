@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema(
   {
@@ -85,4 +85,4 @@ productSchema.pre(/^find/, function () {
 });
 
 const product = mongoose.models.product || mongoose.model('product', productSchema);
-module.exports = product;
+export default product;

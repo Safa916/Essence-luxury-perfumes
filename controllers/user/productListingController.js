@@ -1,9 +1,10 @@
-const mongoose = require('mongoose');
-const Product = require('../../models/product');
-const Category = require('../../models/category');
-const Brand = require('../../models/brands');
-const Variant = require('../../models/variant');
-const WishlistItem = require('../../models/wishlistItems');
+import offerService from '../../services/offerService.js';
+import mongoose from 'mongoose';
+import Product from '../../models/product.js';
+import Category from '../../models/category.js';
+import Brand from '../../models/brands.js';
+import Variant from '../../models/variant.js';
+import WishlistItem from '../../models/wishlistItems.js';
 
 const DEFAULT_LIMIT = 6;
 
@@ -222,7 +223,7 @@ async function buildProductQuery(query, userId) {
   const totalPages = Math.max(Math.ceil(totalProducts / limit), 1);
 
   // Apply offer discounts (comparing product vs category offer, taking larger)
-  const offerService = require('../../services/offerService');
+// offerService imported at top
   const activeOffers = await offerService.getActiveOffers();
 
   products = products.map((p) => {
@@ -279,8 +280,7 @@ async function getFilterOptions() {
     priceMax: priceBounds[0]?.max ?? 100000,
   };
 }
-
-exports.renderProductListing = async (req, res) => {
+export const renderProductListing = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : null;
     const [{ products, totalProducts, page, totalPages, limit }, filterOptions] = await Promise.all([
@@ -303,8 +303,7 @@ exports.renderProductListing = async (req, res) => {
     res.status(500).render('user/error', { message: 'Failed to load products' });
   }
 };
-
-exports.getProductsPartial = async (req, res) => {
+export const getProductsPartial = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : null;
     const { products, totalProducts, page, totalPages, limit } = await buildProductQuery(req.query, userId);
@@ -332,4 +331,8 @@ exports.getProductsPartial = async (req, res) => {
     console.error('getProductsPartial error:', err);
     res.status(500).json({ success: false, message: 'Failed to load products' });
   }
+};
+export default {
+  renderProductListing,
+  getProductsPartial
 };

@@ -1,10 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { checkUser } = require('../../middleware/authMiddleware');
-const {
-  renderBrandsPage,
-  renderBrandDetail,
-} = require('../../controllers/user/brandController');
+import { checkUser } from '../../middleware/authMiddleware.js';
+import { renderBrandsPage, renderBrandDetail } from '../../controllers/user/brandController.js';
 
 // GET /brands
 router.get('/', checkUser, renderBrandsPage);
@@ -12,4 +9,4 @@ router.get('/', checkUser, renderBrandsPage);
 // GET /brands/:slug
 router.get('/:slug', checkUser, renderBrandDetail);
 
-module.exports = router;
+export default router;

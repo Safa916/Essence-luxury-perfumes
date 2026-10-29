@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 /**
  * Tracks every referral event.
@@ -44,4 +44,4 @@ const referralSchema = new mongoose.Schema(
 );
 
 const Referral = mongoose.models.Referral || mongoose.model('Referral', referralSchema);
-module.exports = Referral;
+export default Referral;

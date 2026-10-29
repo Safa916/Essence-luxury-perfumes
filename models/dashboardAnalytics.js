@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const dashboardAnalyticsSchema = new mongoose.Schema(
   {
@@ -88,4 +88,4 @@ const dashboardAnalyticsSchema = new mongoose.Schema(
 );
 
 const dashboardAnalytics = mongoose.models.dashboardAnalytics || mongoose.model('dashboardAnalytics', dashboardAnalyticsSchema);
-module.exports = dashboardAnalytics;
+export default dashboardAnalytics;

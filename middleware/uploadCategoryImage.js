@@ -1,6 +1,8 @@
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+const __dirname = import.meta.dirname;
 
 const uploadDir = path.join(__dirname, '../public/uploads/categories');
 
@@ -50,4 +52,9 @@ const uploadCategoryImage = (req, res, next) => {
 const toPublicPath = (filename) => `/uploads/categories/${filename}`;
 
 
-module.exports = { uploadCategoryImage, toPublicPath, uploadDir };
+export {
+  uploadCategoryImage, toPublicPath, uploadDir
+};
+export default {
+  uploadCategoryImage, toPublicPath, uploadDir
+};

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const variantSchema = new mongoose.Schema(
   {
@@ -85,4 +85,4 @@ variantSchema.set('toJSON', {
 });
 
 const variant = mongoose.models.variant || mongoose.model('variant', variantSchema);
-module.exports = variant;
+export default variant;

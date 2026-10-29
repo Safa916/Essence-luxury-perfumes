@@ -1,19 +1,14 @@
-const User = require('../../models/user');
-const OTP = require('../../models/OTP');
-const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
-const { sendOTPEmail } = require('../../services/emailService');
-const { OAuth2Client } = require('google-auth-library');
+import User from '../../models/user.js';
+import OTP from '../../models/OTP.js';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { sendOTPEmail } from '../../services/emailService.js';
+import { OAuth2Client } from 'google-auth-library';
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const { generateOTPCode } = require('../../utils/otp');
-const { isValidName, isValidPassword, suggestEmailCorrection } = require('../../utils/validators');
-const referralService = require('../../services/referralService');
-
-
-
-
-
-exports.registerUser = async (req, res) => {
+import { generateOTPCode } from '../../utils/otp.js';
+import { isValidName, isValidPassword, suggestEmailCorrection } from '../../utils/validators.js';
+import referralService from '../../services/referralService.js';
+export const registerUser = async (req, res) => {
   try {
     const { fullName, email, password, confirmPassword } = req.body;
 
@@ -103,8 +98,7 @@ exports.registerUser = async (req, res) => {
     res.status(500).json({ message: 'Server error during registration' });
   }
 };
-
-exports.verifyOTP = async (req, res) => {
+export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
@@ -148,8 +142,7 @@ exports.verifyOTP = async (req, res) => {
     res.status(500).json({ message: 'Server error during OTP verification' });
   }
 };
-
-exports.resendOTP = async (req, res) => {
+export const resendOTP = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -193,8 +186,7 @@ exports.resendOTP = async (req, res) => {
     res.status(500).json({ message: 'Server error during OTP resend' });
   }
 };
-
-exports.loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -258,8 +250,7 @@ if (!isMatch) {
     res.status(500).json({ message: 'Server error during login' });
   }
 };
-
-exports.forgotPassword = async (req, res) => {
+export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -306,8 +297,7 @@ exports.forgotPassword = async (req, res) => {
     res.status(500).json({ message: 'Server error during forgot password' });
   }
 };
-
-exports.verifyResetCode = async (req, res) => {
+export const verifyResetCode = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
@@ -338,8 +328,7 @@ exports.verifyResetCode = async (req, res) => {
     res.status(500).json({ message: 'Server error during OTP verification' });
   }
 };
-
-exports.resetPassword = async (req, res) => {
+export const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword, confirmNewPassword } = req.body;
 
@@ -390,8 +379,7 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Server error during password reset' });
   }
 };
-
-exports.googleAuth = async (req, res) => {
+export const googleAuth = async (req, res) => {
   try {
     const { idToken } = req.body;
 
@@ -475,8 +463,7 @@ if (!user) {
     res.status(401).json({ message: 'Invalid Google token' });
   }
 };
-
-exports.logoutUser = async (req, res) => {
+export const logoutUser = async (req, res) => {
   try {
     res.clearCookie('token', { httpOnly: true });
     res.status(200).json({ message: 'Logged out successfully' });
@@ -485,8 +472,7 @@ exports.logoutUser = async (req, res) => {
     res.status(500).json({ message: 'Server error during logout' });
   }
 };
-
- exports.searchUser = async (req, res) => {
+export const searchUser = async (req, res) => {
   try {
     const search = req.query.search || '';
     const users = await User.find({
@@ -502,3 +488,15 @@ exports.logoutUser = async (req, res) => {
     res.status(500).send('Server error');
   }
  }
+export default {
+  registerUser,
+  verifyOTP,
+  resendOTP,
+  loginUser,
+  forgotPassword,
+  verifyResetCode,
+  resetPassword,
+  googleAuth,
+  logoutUser,
+  searchUser
+};

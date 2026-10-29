@@ -1,4 +1,4 @@
-const Offer = require('../models/offer');
+import Offer from '../models/offer.js';
 
 function toNum(d) {
   if (d == null) return 0;
@@ -154,7 +154,12 @@ function calculateProductDiscount({ productId, categoryId, price, activeOffers =
   };
 }
 
-module.exports = {
+export {
+  getActiveOffers,
+  calculateProductDiscount,
+  toNum,
+};
+export default {
   getActiveOffers,
   calculateProductDiscount,
   toNum,

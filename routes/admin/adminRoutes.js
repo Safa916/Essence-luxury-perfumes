@@ -1,20 +1,20 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const { getLoginPage, postLogin, logout, getDashboard, getDashboardChartData } = require('../../controllers/admin/adminController');
-const { getUsersPage, toggleBlockUser, getActiveUsers } = require('../../controllers/admin/userManagementController');
-const { listOrders, renderOrderDetail, updateOrderStatus, updateItemStatus, getProductBuyers } = require('../../controllers/admin/orderController');
-const { listReturns, approveReturn, rejectReturn } = require('../../controllers/admin/returnController');
-const { listCoupons, createCoupon, renderEditCoupon, updateCoupon, deleteCoupon, toggleCoupon } = require('../../controllers/admin/couponController');
-const { listOffers, createOffer, renderEditOffer, updateOffer, deleteOffer, toggleOffer } = require('../../controllers/admin/offerController');
-const { listReferrals, updateSettings: updateReferralSettings } = require('../../controllers/admin/referralController');
-const { getSalesReport, downloadPdf, downloadExcel } = require('../../controllers/admin/salesReportController');
-const { requireAdminAuth, redirectIfAdminLoggedIn } = require('../../middleware/adminAuth');
+import { getLoginPage, postLogin, logout, getDashboard, getDashboardChartData } from '../../controllers/admin/adminController.js';
+import { getUsersPage, toggleBlockUser } from '../../controllers/admin/userManagementController.js';
+import { listOrders, renderOrderDetail, updateOrderStatus, updateItemStatus } from '../../controllers/admin/orderController.js';
+import { listReturns, approveReturn, rejectReturn } from '../../controllers/admin/returnController.js';
+import { listCoupons, createCoupon, renderEditCoupon, updateCoupon, deleteCoupon, toggleCoupon } from '../../controllers/admin/couponController.js';
+import { listOffers, createOffer, renderEditOffer, updateOffer, deleteOffer, toggleOffer } from '../../controllers/admin/offerController.js';
+import { listReferrals, updateSettings as updateReferralSettings } from '../../controllers/admin/referralController.js';
+import { getSalesReport, downloadPdf, downloadExcel } from '../../controllers/admin/salesReportController.js';
+import { requireAdminAuth, redirectIfAdminLoggedIn } from '../../middleware/adminAuth.js';
 
-const categoryRoutes = require('./categoryRoutes');
-const productRoutes  = require('./productRoutes');
-const variantRoutes  = require('./variantRoutes');
-const brandRoutes    = require('./brandRoutes');
+import categoryRoutes from './categoryRoutes.js';
+import productRoutes from './productRoutes.js';
+import variantRoutes from './variantRoutes.js';
+import brandRoutes from './brandRoutes.js';
 
 // Auth
 router.get('/login',  redirectIfAdminLoggedIn, getLoginPage);
@@ -82,4 +82,4 @@ router.get('/sales-report',                requireAdminAuth, getSalesReport);
 router.get('/sales-report/download/pdf',   requireAdminAuth, downloadPdf);
 router.get('/sales-report/download/excel', requireAdminAuth, downloadExcel);
 
-module.exports = router;
+export default router;

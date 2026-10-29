@@ -1,24 +1,15 @@
-const fs = require('fs');
-const path = require('path');
-const mongoose = require('mongoose');
-const Product = require('../../models/product');
-const Variant = require('../../models/variant');
-const APIFeatures = require('../../utils/apiFeatures');
-const { uploadDir } = require('../../middleware/uploadProductImages');
-const { nextVariantSku } = require('./variantController');
+import Category from '../../models/category.js';
+import Brand from '../../models/brands.js';
+import fs from 'fs';
+import path from 'path';
+import mongoose from 'mongoose';
+import Product from '../../models/product.js';
+import Variant from '../../models/variant.js';
+import APIFeatures from '../../utils/apiFeatures.js';
+import { uploadDir } from '../../middleware/uploadProductImages.js';
+import { nextVariantSku } from './variantController.js';
 
-// Swap these requires for wherever your Category/Brand models actually live.
-let Category, Brand;
-try {
-  Category = require('../../models/category');
-} catch (e) {
-  Category = null;
-}
-try {
-  Brand = require('../../models/brands');
-} catch (e) {
-  Brand = null;
-}
+
 
 const slugify = (str) =>
   String(str)
@@ -66,8 +57,7 @@ function validateProductInput(data, imageCount) {
 
   return errors;
 }
-
- exports.getProductss = async (req, res) => {
+export const getProductss = async (req, res) => {
 
   try {
     const filteredProducts = await Product.find({
@@ -81,8 +71,7 @@ function validateProductInput(data, imageCount) {
     res.status(500).json({ message: 'Server error' });
   }
 };
- 
- exports.getProductts=async (req,res)=>{
+export const getProductts = async (req,res)=>{
   try{
     const filterProducts= await Product.find({
       price:{$gte:2000,$lte:6000},
@@ -101,7 +90,7 @@ function validateProductInput(data, imageCount) {
 // ---------------------------------------------------------------------------
 // GET /admin/products  -> Product Management table
 // ---------------------------------------------------------------------------
-exports.renderProductManagement = async (req, res) => {
+export const renderProductManagement = async (req, res) => {
   try {
     const baseQuery = Product.find();
 
@@ -167,7 +156,7 @@ const withSl = products.map((p, i) => {
 // ---------------------------------------------------------------------------
 // GET /admin/products/add
 // ---------------------------------------------------------------------------
-exports.renderAddProduct = async (req, res) => {
+export const renderAddProduct = async (req, res) => {
   const [categories, brands] = await Promise.all([
     Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
     Brand ? Brand.find({ is_active: true }).sort({ name: 1 }).lean() : [],
@@ -177,7 +166,7 @@ exports.renderAddProduct = async (req, res) => {
 
 
 // ---------------------------------------------------------------------------
-exports.createProduct = async (req, res) => {
+export const createProduct = async (req, res) => {
   try {
    
     const uploadedImages = req.processedImages || [];
@@ -272,7 +261,7 @@ exports.createProduct = async (req, res) => {
 // ---------------------------------------------------------------------------
 // GET /admin/products/:id/edit
 // ---------------------------------------------------------------------------
-exports.renderEditProduct = async (req, res) => {
+export const renderEditProduct = async (req, res) => {
   const product = await Product.findById(req.params.id).lean();
   if (!product) return res.status(404).render('admin/error', { message: 'Product not found' });
 
@@ -286,7 +275,7 @@ exports.renderEditProduct = async (req, res) => {
 };
 
 // ---------------------------------------------------------------------------
-exports.updateProduct = async (req, res) => {
+export const updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).render('admin/error', { message: 'Product not found' });
@@ -365,7 +354,7 @@ exports.updateProduct = async (req, res) => {
 // ---------------------------------------------------------------------------
 // DELETE /admin/products/:id  (soft delete, called via fetch from the modal)
 // ---------------------------------------------------------------------------
-exports.softDeleteProduct = async (req, res) => {
+export const softDeleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
@@ -392,7 +381,7 @@ exports.softDeleteProduct = async (req, res) => {
 // ---------------------------------------------------------------------------
 // GET /admin/products/:id  -> Core Specs page
 // ---------------------------------------------------------------------------
-exports.renderProductDetail = async (req, res) => {
+export const renderProductDetail = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate('category_id', 'name')
@@ -426,7 +415,7 @@ exports.renderProductDetail = async (req, res) => {
 // ---------------------------------------------------------------------------
 // GET /admin/products/:id/variants  -> Variant Manager page for this product
 // ---------------------------------------------------------------------------
-exports.renderVariantManager = async (req, res) => {
+export const renderVariantManager = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate('category_id', 'name')
@@ -462,4 +451,17 @@ exports.renderVariantManager = async (req, res) => {
     console.error('renderVariantManager error:', err);
     res.status(500).render('admin/error', { message: 'Failed to load product' });
   }
+};
+
+export default {
+  getProductss,
+  getProductts,
+  renderProductManagement,
+  renderAddProduct,
+  createProduct,
+  renderEditProduct,
+  updateProduct,
+  softDeleteProduct,
+  renderProductDetail,
+  renderVariantManager
 };

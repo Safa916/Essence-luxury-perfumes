@@ -1,9 +1,9 @@
-const Referral         = require('../../models/Referral');
-const User             = require('../../models/user');
-const referralService  = require('../../services/referralService');
+import Referral from '../../models/Referral.js';
+import User from '../../models/user.js';
+import referralService from '../../services/referralService.js';
 
 // ── GET /admin/referrals ──────────────────────────────────────────────────────
-exports.listReferrals = async (req, res) => {
+export const listReferrals = async (req, res) => {
   try {
     const page    = Math.max(1, parseInt(req.query.page) || 1);
     const PER_PAGE = 20;
@@ -44,7 +44,7 @@ exports.listReferrals = async (req, res) => {
 };
 
 // ── POST /admin/referrals/settings ────────────────────────────────────────────
-exports.updateSettings = async (req, res) => {
+export const updateSettings = async (req, res) => {
   try {
     const referrer_reward = parseFloat(req.body.referrer_reward);
     const referee_reward  = parseFloat(req.body.referee_reward);
@@ -63,3 +63,7 @@ exports.updateSettings = async (req, res) => {
 };
 
  
+export default {
+  listReferrals,
+  updateSettings
+};

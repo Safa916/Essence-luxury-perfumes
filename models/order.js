@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema(
   {
@@ -138,4 +138,4 @@ const orderSchema = new mongoose.Schema(
 );
 
 const order = mongoose.models.order || mongoose.model('order', orderSchema);
-module.exports = order;
+export default order;

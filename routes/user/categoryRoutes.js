@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { checkUser } = require('../../middleware/authMiddleware');
-const { renderCategoriesPage } = require('../../controllers/user/categoryController');
+import { checkUser } from '../../middleware/authMiddleware.js';
+import { renderCategoriesPage } from '../../controllers/user/categoryController.js';
 
 router.get('/', checkUser, renderCategoriesPage);
 
-module.exports = router;
+export default router;

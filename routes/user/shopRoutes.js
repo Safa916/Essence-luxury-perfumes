@@ -1,10 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { checkUser } = require('../../middleware/authMiddleware');
-const {
-  renderProductListing,
-  getProductsPartial,
-} = require('../../controllers/user/productListingController');
+import { checkUser } from '../../middleware/authMiddleware.js';
+import { renderProductListing, getProductsPartial } from '../../controllers/user/productListingController.js';
 
 // Full page load
 router.get('/', checkUser, renderProductListing);
@@ -13,5 +10,5 @@ router.get('/', checkUser, renderProductListing);
 // Called by public/user/js/shop/productListing.js on search/sort/filter/page change
 router.get('/products', checkUser, getProductsPartial);
 
-module.exports = router;
+export default router;
 

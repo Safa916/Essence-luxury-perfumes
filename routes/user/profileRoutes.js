@@ -1,17 +1,10 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { requireAuth } = require('../../middleware/authMiddleware');
-const uploadAvatar = require('../../config/upload');
-const {
-  getProfile,
-  getEditProfileForm,
-  updateProfile,
-  getChangeEmailForm,
-  requestEmailChange,
-  verifyEmailChange,
-} = require('../../controllers/user/profileController');
+import { requireAuth } from '../../middleware/authMiddleware.js';
+import uploadAvatar from '../../config/upload.js';
+import { getProfile, getEditProfileForm, updateProfile, getChangeEmailForm, requestEmailChange, verifyEmailChange } from '../../controllers/user/profileController.js';
 
-const { getChangePasswordForm, updatePassword } = require('../../controllers/user/profileController');
+import { getChangePasswordForm, updatePassword } from '../../controllers/user/profileController.js';
 
 
 router.get('/security/email', requireAuth, getChangeEmailForm);
@@ -37,7 +30,7 @@ router.post('/edit', requireAuth, (req, res, next) => {
 router.get('/security/password', requireAuth, getChangePasswordForm);
 router.post('/security/password', requireAuth, updatePassword);
 
-module.exports = router;
+export default router;
 
 
 

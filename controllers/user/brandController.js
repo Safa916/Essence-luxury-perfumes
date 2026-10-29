@@ -1,8 +1,8 @@
-const Brand = require('../../models/brands');
-const Product = require('../../models/product');
+import Brand from '../../models/brands.js';
+import Product from '../../models/product.js';
 
 // GET /brands — all active brands
-exports.renderBrandsPage = async (req, res) => {
+export const renderBrandsPage = async (req, res) => {
   try {
     const brands = await Brand.find({ is_active: true }).sort({ name: 1 }).lean();
 
@@ -35,7 +35,7 @@ exports.renderBrandsPage = async (req, res) => {
 };
 
 // GET /brands/:slug — dedicated brand showcase page
-exports.renderBrandDetail = async (req, res) => {
+export const renderBrandDetail = async (req, res) => {
   try {
     const slug = (req.params.slug || '').trim().toLowerCase();
     const brand = await Brand.findOne({
@@ -87,4 +87,9 @@ exports.renderBrandDetail = async (req, res) => {
     console.error('renderBrandDetail error:', err);
     res.status(500).render('user/error', { message: 'Failed to load brand showcase' });
   }
+};
+
+export default {
+  renderBrandsPage,
+  renderBrandDetail
 };

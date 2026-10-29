@@ -1,13 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { requireAuth, checkUser } = require('../../middleware/authMiddleware');
-const {
-  renderWishlist,
-  addToWishlist,
-  removeFromWishlist,
-  removeFromWishlistByProduct,
-  requireAuthApi,
-} = require('../../controllers/user/wishlistController');
+import { requireAuth, checkUser } from '../../middleware/authMiddleware.js';
+import { renderWishlist, addToWishlist, removeFromWishlist, removeFromWishlistByProduct, requireAuthApi } from '../../controllers/user/wishlistController.js';
 
 // Full page — redirects to login if not authenticated
 router.get('/', requireAuth, renderWishlist);
@@ -17,4 +11,4 @@ router.post('/add', checkUser, requireAuthApi, addToWishlist);
 router.delete('/remove/:wishlistItemId', checkUser, requireAuthApi, removeFromWishlist);
 router.delete('/remove-by-product/:productId', checkUser, requireAuthApi, removeFromWishlistByProduct);
 
-module.exports = router;
+export default router;

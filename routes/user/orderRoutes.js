@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router  = express.Router();
-const { requireAuth } = require('../../middleware/authMiddleware');
-const { listOrders, getOrderDetail, cancelOrder, renderReturnForm, submitReturn, downloadInvoice } = require('../../controllers/user/orderController');
+import { requireAuth } from '../../middleware/authMiddleware.js';
+import { listOrders, getOrderDetail, cancelOrder, renderReturnForm, submitReturn, downloadInvoice } from '../../controllers/user/orderController.js';
 
 // GET  /orders           — listing
 router.get('/',    requireAuth, listOrders);
@@ -21,4 +21,4 @@ router.post('/:id/return', requireAuth, submitReturn);
 // GET  /orders/:id/invoice — download PDF invoice
 router.get('/:id/invoice', requireAuth, downloadInvoice);
 
-module.exports = router;
+export default router;

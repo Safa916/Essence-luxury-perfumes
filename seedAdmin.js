@@ -1,15 +1,13 @@
-
-
-require('dotenv').config();
-const mongoose = require('mongoose');
-const Admin = require('./models/admin');
+import 'dotenv/config';
+import mongoose from 'mongoose';
+import Admin from './models/admin.js';
 
 const run = async () => {
   await mongoose.connect(process.env.MONGODB_URI);
 
   const email = 'safa@gmail.com';
-  const password = 'safa123'; 
-  
+  const password = 'safa123';
+
   const exists = await Admin.findOne({ email });
   if (exists) {
     console.log('An admin with this email already exists:', email);
@@ -19,7 +17,7 @@ const run = async () => {
   await Admin.create({
     full_name: 'Super Admin',
     email,
-    password_hash: password, // hashed automatically by the pre('save') hook in models/admin.js
+    password_hash: password,
     access_level: 'super_admin'
   });
 

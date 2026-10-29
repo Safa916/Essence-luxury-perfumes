@@ -21,7 +21,7 @@ function isValidPassword(password) {
   return passwordRegex.test(password);
 }
 
-module.exports = { isValidName, isValidPassword };
+
 
 /**
  * Detects likely typos in common email domains (gmail.com, yahoo.com, etc.)
@@ -81,4 +81,10 @@ function suggestEmailCorrection(email) {
   return null;
 }
 
-module.exports.suggestEmailCorrection = suggestEmailCorrection;
+
+export { isValidName, isValidPassword, suggestEmailCorrection };
+export default {
+  isValidName,
+  isValidPassword,
+  suggestEmailCorrection
+};

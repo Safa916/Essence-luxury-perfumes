@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 /**
  * Global referral reward configuration — admin editable.
@@ -24,4 +24,4 @@ const ReferralSettings =
   mongoose.models.ReferralSettings ||
   mongoose.model('ReferralSettings', referralSettingsSchema);
 
-module.exports = ReferralSettings;
+export default ReferralSettings;

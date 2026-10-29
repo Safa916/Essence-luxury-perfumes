@@ -1,8 +1,8 @@
-const crypto          = require('crypto');
-const User            = require('../models/user');
-const Referral        = require('../models/Referral');
-const ReferralSettings = require('../models/ReferralSettings');
-const walletService   = require('./walletService');
+import crypto from 'crypto';
+import User from '../models/user.js';
+import Referral from '../models/Referral.js';
+import ReferralSettings from '../models/ReferralSettings.js';
+import walletService from './walletService.js';
 
 // ── Code generation ──────────────────────────────────────────────────────────
 
@@ -151,7 +151,16 @@ async function getUserReferralStats(userId) {
   return { total, rewarded, pending: total - rewarded };
 }
 
-module.exports = {
+export {
+  getOrCreateCode,
+  findReferrerByCode,
+  recordPendingReferral,
+  rewardReferral,
+  getSettings,
+  updateSettings,
+  getUserReferralStats,
+};
+export default {
   getOrCreateCode,
   findReferrerByCode,
   recordPendingReferral,

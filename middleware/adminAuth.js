@@ -1,9 +1,9 @@
-const jwt = require('jsonwebtoken');
-const Admin = require('../models/admin');
+import jwt from 'jsonwebtoken';
+import Admin from '../models/admin.js';
 
 // Protects admin-only routes (dashboard, user management, etc.)
 // Reads the JWT from the "adminToken" cookie set at login.
-exports.requireAdminAuth = async (req, res, next) => {
+export const requireAdminAuth = async (req, res, next) => {
   try {
     const token = req.cookies.adminToken;
     if (!token) {
@@ -30,7 +30,7 @@ exports.requireAdminAuth = async (req, res, next) => {
 };
 
 // If an admin is already logged in, skip the login page and go straight to the dashboard
-exports.redirectIfAdminLoggedIn = (req, res, next) => {
+export const redirectIfAdminLoggedIn = (req, res, next) => {
   const token = req.cookies.adminToken;
   if (!token) return next();
 
@@ -40,4 +40,9 @@ exports.redirectIfAdminLoggedIn = (req, res, next) => {
   } catch (err) {
     return next();
   }
+};
+
+export default {
+  requireAdminAuth,
+  redirectIfAdminLoggedIn
 };

@@ -1,9 +1,9 @@
-const Order = require('../../models/order');
-const User  = require('../../models/user');
-const Product = require('../../models/product');
-const Variant = require('../../models/variant');
-const walletService = require('../../services/walletService');
-const mongoose = require('mongoose');
+import Order from '../../models/order.js';
+import User from '../../models/user.js';
+import Product from '../../models/product.js';
+import Variant from '../../models/variant.js';
+import walletService from '../../services/walletService.js';
+import mongoose from 'mongoose';
 
 const PER_PAGE = 10;
 
@@ -17,7 +17,7 @@ function toNum(d) {
 
 
 // ─── GET /admin/orders ────────────────────────────────────────────────────────
-exports.listOrders = async (req, res) => {
+export const listOrders = async (req, res) => {
   try {
     const { status = 'all', search = '', range = '30', page = 1 } = req.query;
     const currentPage = Math.max(1, parseInt(page) || 1);
@@ -119,7 +119,7 @@ exports.listOrders = async (req, res) => {
 };
 
 // ─── GET /admin/orders/:id ────────────────────────────────────────────────────
-exports.renderOrderDetail = async (req, res) => {
+export const renderOrderDetail = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('user_id', 'full_name email phone_number')
@@ -247,7 +247,7 @@ exports.renderOrderDetail = async (req, res) => {
 };
 
 // ─── POST /admin/orders/:id/status ───────────────────────────────────────────
-exports.updateOrderStatus = async (req, res) => {
+export const updateOrderStatus = async (req, res) => {
   try {
     const { status, cancel_reason, internal_notes } = req.body;
     const allowed = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
@@ -317,7 +317,7 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 // ─── POST /admin/orders/:id/items/:itemId/status ─────────────────────────────
-exports.updateItemStatus = async (req, res) => {
+export const updateItemStatus = async (req, res) => {
   try {
     const { status, cancel_reason, internal_notes } = req.body;
     const allowed = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
@@ -381,4 +381,11 @@ exports.updateItemStatus = async (req, res) => {
     console.error('admin updateItemStatus error:', err);
     res.redirect(`/admin/orders/${req.params.id}?flash=error`);
   }
+};
+
+export default {
+  listOrders,
+  renderOrderDetail,
+  updateOrderStatus,
+  updateItemStatus
 };

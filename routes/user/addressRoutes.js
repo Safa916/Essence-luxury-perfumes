@@ -1,17 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { requireAuth } = require('../../middleware/authMiddleware');
+import { requireAuth } from '../../middleware/authMiddleware.js';
 
-const {
-  listAddresses,
-  getNewAddressForm,
-  getEditAddressForm,
-  createAddress,
-  updateAddress,
-  deleteAddress,
-  getDeleteConfirmation,
-  setDefaultAddress
-} = require('../../controllers/user/addressController');
+import { listAddresses, getNewAddressForm, getEditAddressForm, createAddress, updateAddress, deleteAddress, getDeleteConfirmation, setDefaultAddress } from '../../controllers/user/addressController.js';
 
 router.get('/', requireAuth, listAddresses);
 router.get('/new', requireAuth, getNewAddressForm);
@@ -25,4 +16,4 @@ router.post('/:id/set-default', requireAuth, setDefaultAddress);
 
 
 
-module.exports = router;
+export default router;

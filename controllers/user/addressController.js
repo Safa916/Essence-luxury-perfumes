@@ -1,5 +1,5 @@
-const Address = require('../../models/address');
-const { isValidName } = require('../../utils/validators');
+import Address from '../../models/address.js';
+import { isValidName } from '../../utils/validators.js';
 
 // Helper: only allow known paths to return to (prevents open-redirect abuse)
 const getSafeReturnTo = (value) => (value === '/checkout' ? '/checkout' : '/address');
@@ -48,7 +48,7 @@ const validateAddressInput = (data) => {
 
 // List all addresses for the logged-in user
 // GET /address
-exports.listAddresses = async (req, res) => {
+export const listAddresses = async (req, res) => {
   try {
     const addresses = await Address.find({ user_id: req.user._id }).sort({ is_default: -1, created_at: -1 });
     const formatted = addresses.map(formatAddressForList);
@@ -61,7 +61,7 @@ exports.listAddresses = async (req, res) => {
 
 // Show the "Add New Address" form
 // GET /address/new
-exports.getNewAddressForm = (req, res) => {
+export const getNewAddressForm = (req, res) => {
   res.render('user/address/edit-address', {
     address: { id: 'new', type: 'home', fullName: '', line1: '', line2: '', city: '', pincode: '', phone: '' },
     returnTo: getSafeReturnTo(req.query.returnTo),
@@ -70,7 +70,7 @@ exports.getNewAddressForm = (req, res) => {
 
 // Show the "Edit Address" form for an existing address
 // GET /address/:id/edit
-exports.getEditAddressForm = async (req, res) => {
+export const getEditAddressForm = async (req, res) => {
   try {
     const addr = await Address.findOne({ _id: req.params.id, user_id: req.user._id });
     if (!addr) return res.status(404).send('Address not found');
@@ -96,7 +96,7 @@ exports.getEditAddressForm = async (req, res) => {
 
 // Show the "Delete Address" confirmation page
 // GET /address/:id/delete
-exports.getDeleteConfirmation = async (req, res) => {
+export const getDeleteConfirmation = async (req, res) => {
   try {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.set('Pragma', 'no-cache');
@@ -123,8 +123,7 @@ exports.getDeleteConfirmation = async (req, res) => {
     res.redirect('/address');
   }
 };
-
-exports.setDefaultAddress = async (req, res) => {
+export const setDefaultAddress = async (req, res) => {
   try {
     await Address.updateMany(
       { user_id: req.user._id },
@@ -143,7 +142,7 @@ exports.setDefaultAddress = async (req, res) => {
 
 // @desc    Create a new address
 // @route   POST /address/new
-exports.createAddress = async (req, res) => {
+export const createAddress = async (req, res) => {
   try {
     const { type, fullName, line1, line2, city, pincode, phone } = req.body;
     const returnTo = getSafeReturnTo(req.body.returnTo);
@@ -186,7 +185,7 @@ exports.createAddress = async (req, res) => {
 
 // @desc    Update an existing address
 // @route   POST /address/:id/edit
-exports.updateAddress = async (req, res) => {
+export const updateAddress = async (req, res) => {
   try {
     const { type, fullName, line1, line2, city, pincode, phone } = req.body;
     const returnTo = getSafeReturnTo(req.body.returnTo);
@@ -222,7 +221,7 @@ exports.updateAddress = async (req, res) => {
 
 // @desc    Delete an address
 // @route   POST /address/:id/delete
-exports.deleteAddress = async (req, res) => {
+export const deleteAddress = async (req, res) => {
   try {
     await Address.findOneAndDelete({ _id: req.params.id, user_id: req.user._id });
     res.redirect('/address');
@@ -230,4 +229,15 @@ exports.deleteAddress = async (req, res) => {
     console.error('Delete address error:', error.message);
     res.status(500).send('Server error deleting address');
   }
+};
+
+export default {
+  listAddresses,
+  getNewAddressForm,
+  getEditAddressForm,
+  getDeleteConfirmation,
+  setDefaultAddress,
+  createAddress,
+  updateAddress,
+  deleteAddress
 };

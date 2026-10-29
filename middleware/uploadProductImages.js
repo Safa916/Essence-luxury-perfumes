@@ -1,7 +1,9 @@
-const multer = require('multer');
-const sharp = require('sharp');
-const path = require('path');
-const fs = require('fs');
+import multer from 'multer';
+import sharp from 'sharp';
+import path from 'path';
+import fs from 'fs';
+
+const __dirname = import.meta.dirname;
 
 // Make sure the upload folder exists
 const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'products');
@@ -74,4 +76,9 @@ async function resizeProductImages(req, res, next) {
 // that were already written to disk if the rest of the submission turns out
 // to be invalid (resizeProductImages saves files BEFORE the controller gets
 // a chance to validate the rest of the form).
-module.exports = { uploadProductImages, resizeProductImages, uploadDir };
+export {
+  uploadProductImages, resizeProductImages, uploadDir
+};
+export default {
+  uploadProductImages, resizeProductImages, uploadDir
+};

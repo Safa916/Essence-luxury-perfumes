@@ -1,10 +1,11 @@
-const mongoose = require('mongoose');
-const Cart = require('../../models/cart');
-const CartItem = require('../../models/cartItem');
-const Product = require('../../models/product');
-const Variant = require('../../models/variant');
-const WishlistItem = require('../../models/wishlistItems');
-const User = require('../../models/user');
+import offerService from '../../services/offerService.js';
+import mongoose from 'mongoose';
+import Cart from '../../models/cart.js';
+import CartItem from '../../models/cartItem.js';
+import Product from '../../models/product.js';
+import Variant from '../../models/variant.js';
+import WishlistItem from '../../models/wishlistItems.js';
+import User from '../../models/user.js';
 
 const MAX_QTY_PER_ITEM = 10;
 
@@ -15,7 +16,7 @@ function toNumber(decimal128) {
 
 // Small auth guard for the JSON/AJAX endpoints below — page routes use the
 // existing requireAuth (redirects); these return JSON so fetch() can react.
-exports.requireAuthApi = (req, res, next) => {
+export const requireAuthApi = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ success: false, message: 'Please log in to continue.', redirect: '/auth/login' });
   }
@@ -55,7 +56,7 @@ async function getOrCreateCart(userId) {
 }
 
 // POST /cart/add  { product_id, variant_id, quantity }
-exports.addToCart = async (req, res) => {
+export const addToCart = async (req, res) => {
   try {
     // Guard: requireAuthApi is in the route chain but add an explicit check
     // here too so a misconfigured route can never crash the server.
@@ -101,7 +102,7 @@ exports.addToCart = async (req, res) => {
     }
 
     const cart = await getOrCreateCart(userId);
-    const offerService = require('../../services/offerService');
+// offerService imported at top
     const activeOffers = await offerService.getActiveOffers();
     const basePrice = toNumber(variant.price);
     const offerCalc = offerService.calculateProductDiscount({
@@ -173,8 +174,7 @@ exports.addToCart = async (req, res) => {
 
 // GET /cart  -> full cart page
 const CART_PAGE_LIMIT = 4; // items shown per page
-
-exports.renderCart = async (req, res) => {
+export const renderCart = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user_id: req.user._id }).lean();
 
@@ -203,8 +203,7 @@ exports.renderCart = async (req, res) => {
       .lean();
 
     let hasUnavailable = false;
-
-    const offerService = require('../../services/offerService');
+// offerService imported at top
     const activeOffers = await offerService.getActiveOffers();
 
     // Build the full items list (all pages) so subtotal is always accurate
@@ -288,7 +287,7 @@ exports.renderCart = async (req, res) => {
 };
 
 // PATCH /cart/update  { cart_item_id, action: 'increase' | 'decrease' }
-exports.updateQuantity = async (req, res) => {
+export const updateQuantity = async (req, res) => {
   try {
     const { cart_item_id, action } = req.body;
 
@@ -333,7 +332,7 @@ exports.updateQuantity = async (req, res) => {
 };
 
 // DELETE /cart/remove/:cartItemId
-exports.removeItem = async (req, res) => {
+export const removeItem = async (req, res) => {
   try {
     const item = await CartItem.findById(req.params.cartItemId);
     if (!item) return res.status(404).json({ success: false, message: 'Item not found.' });
@@ -361,3 +360,11 @@ exports.removeItem = async (req, res) => {
 
 
 
+
+export default {
+  requireAuthApi,
+  addToCart,
+  renderCart,
+  updateQuantity,
+  removeItem
+};

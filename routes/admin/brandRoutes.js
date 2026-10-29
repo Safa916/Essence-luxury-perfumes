@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router  = express.Router();
-const bc      = require('../../controllers/admin/brandController');
+import bc from '../../controllers/admin/brandController.js';
 
 // List
 router.get('/',                bc.listBrands);
@@ -19,4 +19,4 @@ router.post('/:id/toggle',     bc.toggleBrand);
 // Delete
 router.post('/:id/delete',     bc.deleteBrand);
 
-module.exports = router;
+export default router;

@@ -1,8 +1,8 @@
-const Category = require('../../models/category');
-const Product = require('../../models/product');
+import Category from '../../models/category.js';
+import Product from '../../models/product.js';
 
 // GET /categories — browsable grid of every active category
-exports.renderCategoriesPage = async (req, res) => {
+export const renderCategoriesPage = async (req, res) => {
   try {
     const categories = await Category.find({ is_active: true, is_deleted: { $ne: true } })
       .sort({ name: 1 })
@@ -31,4 +31,8 @@ exports.renderCategoriesPage = async (req, res) => {
     console.error('renderCategoriesPage error:', err);
     res.status(500).render('user/error', { message: 'Failed to load categories' });
   }
+};
+
+export default {
+  renderCategoriesPage
 };

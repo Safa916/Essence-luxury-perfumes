@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const homepageSettingsSchema = new mongoose.Schema(
   {
@@ -59,4 +59,4 @@ const homepageSettingsSchema = new mongoose.Schema(
 );
 
 const homepageSettings = mongoose.models.homepageSettings || mongoose.model('homepageSettings', homepageSettingsSchema);
-module.exports = homepageSettings;
+export default homepageSettings;

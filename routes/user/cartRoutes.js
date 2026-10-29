@@ -1,14 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { requireAuth, checkUser } = require('../../middleware/authMiddleware');
-const {
-  addToCart,
-  renderCart,
-  updateQuantity,
-  removeItem,
-  requireAuthApi
- 
-} = require('../../controllers/user/cartController');
+import { requireAuth, checkUser } from '../../middleware/authMiddleware.js';
+import { addToCart, renderCart, updateQuantity, removeItem, requireAuthApi } from '../../controllers/user/cartController.js';
 
 // Full page — redirects to login if not authenticated
 router.get('/', requireAuth, renderCart);
@@ -19,4 +12,4 @@ router.patch('/update', checkUser, requireAuthApi, updateQuantity);
 router.delete('/remove/:cartItemId', checkUser, requireAuthApi, removeItem);
 
 
-module.exports = router;
+export default router;
