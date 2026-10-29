@@ -1,6 +1,5 @@
 import Coupon from '../../models/coupon.js';
 import CouponUsage from '../../models/couponUsage.js';
-import mongoose from 'mongoose';
 
 function toNum(v) {
   if (v == null) return 0;

@@ -31,7 +31,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(methodOverride(function (req, res) {
+app.use(methodOverride(function (req, _res) {
   if (req.body && typeof req.body === 'object' && '_method' in req.body) {
     const method = req.body._method;
     delete req.body._method;

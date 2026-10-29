@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
 import Category from '../../models/category.js';
+import Product from '../../models/product.js';
 import APIFeatures from '../../utils/apiFeatures.js';
 import { toPublicPath, uploadDir } from '../../middleware/uploadCategoryImage.js';
 

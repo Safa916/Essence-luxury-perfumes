@@ -44,8 +44,8 @@ function evaluateOffer(offer, price) {
   }
 
   const val = toNum(offer.discount_value);
-  let discount = 0;
-  let percentage = 0;
+  let discount;
+  let percentage;
 
   if (offer.discount_type === 'percentage') {
     percentage = val;

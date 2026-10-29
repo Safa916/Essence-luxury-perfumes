@@ -4,7 +4,6 @@ import Product from '../../models/product.js';
 import Variant from '../../models/variant.js';
 import Return from '../../models/Return.js';
 import walletService from '../../services/walletService.js';
-import User from '../../models/user.js';
 
 const PER_PAGE = 8;
 

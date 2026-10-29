@@ -5,7 +5,6 @@ import CartItem from '../../models/cartItem.js';
 import Product from '../../models/product.js';
 import Variant from '../../models/variant.js';
 import WishlistItem from '../../models/wishlistItems.js';
-import User from '../../models/user.js';
 
 const MAX_QTY_PER_ITEM = 10;
 

@@ -1,9 +1,7 @@
 import jwt from 'jsonwebtoken';
 import Admin from '../../models/admin.js';
 import Order from '../../models/order.js';
-import Product from '../../models/product.js';
 import User from '../../models/user.js';
-import Category from '../../models/category.js';
 
 // GET /admin/login
 export const getLoginPage = (req, res) => {

@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import WishlistItem from '../../models/wishlistItems.js';
 import Product from '../../models/product.js';
-import Variant from '../../models/variant.js';
 export const requireAuthApi = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ success: false, message: 'Please log in to continue.', redirect: '/auth/login' });

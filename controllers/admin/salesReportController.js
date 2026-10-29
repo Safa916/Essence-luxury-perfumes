@@ -199,7 +199,7 @@ export const getSalesReport = async (req, res) => {
 // ── GET /admin/sales-report/download/pdf ──────────────────────────────────────
 export const downloadPdf = async (req, res) => {
   try {
-    const { match, filter, startDate, endDate, customFrom, customTo } = buildSalesFilter(req.query);
+    const { match, filter, customFrom, customTo } = buildSalesFilter(req.query);
 
     const ordersRaw = await Order.aggregate([
       { $match: match },

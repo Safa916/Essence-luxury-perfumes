@@ -1,7 +1,6 @@
 import Wallet from '../../models/wallet.js';
 import WalletTransaction from '../../models/walletTransaction.js';
 import Payment from '../../models/payment.js';
-import Order from '../../models/order.js';
 import CartItem from '../../models/cartItem.js';
 import Cart from '../../models/cart.js';
 import walletService from '../../services/walletService.js';

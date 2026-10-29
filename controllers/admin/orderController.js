@@ -3,7 +3,6 @@ import User from '../../models/user.js';
 import Product from '../../models/product.js';
 import Variant from '../../models/variant.js';
 import walletService from '../../services/walletService.js';
-import mongoose from 'mongoose';
 
 const PER_PAGE = 10;
 

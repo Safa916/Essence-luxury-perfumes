@@ -1,5 +1,4 @@
 import Referral from '../../models/Referral.js';
-import User from '../../models/user.js';
 import referralService from '../../services/referralService.js';
 
 // ── GET /admin/referrals ──────────────────────────────────────────────────────
