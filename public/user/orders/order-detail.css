@@ -802,4 +802,41 @@
 }
 
 .return-success-btn:hover { opacity: 0.82; color: var(--cream); }
-
+
+@media (max-width: 768px) {
+  .detail-head-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .detail-head-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .detail-head-actions .btn-cancel-order,
+  .detail-head-actions .btn-invoice {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .detail-main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+  .timeline {
+    margin: 1.5rem 0 2rem;
+    padding: 0;
+  }
+  .tl-label {
+    font-size: 0.56rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+}

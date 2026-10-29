@@ -3,11 +3,13 @@
    Premium Ticket-Style Voucher Design
    ============================================= */
 
-/* Override the grey background that user-profile.css sets */
 .account-main {
   background: var(--white, #fff);
-  /* Prevent coupon cards or grid from causing horizontal page scroll */
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* ── Page header ── */
@@ -43,23 +45,30 @@
 /* ── Grid ── */
 .coupons-grid {
   display: grid;
-  /* min() ensures the column never exceeds viewport width on mobile */
   grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 1.25rem;
   margin-bottom: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* ── Coupon ticket card ── */
 .coupon-box {
   display: flex;
-  flex-direction: row;          /* LEFT accent | RIGHT body */
+  flex-direction: row;
   background: #fff;
   border: 1px solid #e8e1d8;
   border-radius: 6px;
-  overflow: hidden;             /* clips the accent strip */
+  overflow: hidden;
   box-shadow: 0 2px 12px rgba(0,0,0,0.05);
   transition: transform 0.22s ease, box-shadow 0.22s ease;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .coupon-box:hover {
@@ -221,6 +230,8 @@
   margin-top: 0.9rem;
   padding-top: 0.75rem;
   border-top: 1px solid #ede8e0;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .btn-copy-code {
@@ -337,11 +348,21 @@
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .coupons-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .coupon-box {
+    width: 100%;
+    min-width: 0;
   }
 
   .coupon-accent {
     width: 60px;
+    padding: 1rem 0.35rem;
+  }
+
+  .coupon-box::before {
+    left: 60px;
   }
 
   .coupon-accent-value {
@@ -350,9 +371,56 @@
 
   .coupon-body {
     padding: 0.85rem 0.9rem 0.85rem 1rem;
+    min-width: 0;
   }
 
   .coupon-title {
     font-size: 0.95rem;
+  }
+
+  .coupon-box-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .btn-copy-code {
+    width: 100%;
+    text-align: center;
+  }
+
+  .btn-use-code {
+    text-align: center;
+    width: 100%;
+    padding: 0.35rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .coupon-accent {
+    width: 50px;
+    padding: 0.85rem 0.25rem;
+  }
+
+  .coupon-box::before {
+    left: 50px;
+  }
+
+  .coupon-accent-value {
+    font-size: 1.05rem;
+  }
+
+  .coupon-accent-type {
+    font-size: 0.5rem;
+  }
+
+  .coupon-body {
+    padding: 0.75rem 0.75rem 0.75rem 0.85rem;
+  }
+
+  .coupon-body-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
   }
 }

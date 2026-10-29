@@ -3,7 +3,7 @@ const Product = require('../../models/product');
 const Variant = require('../../models/variant');
 const Return  = require('../../models/Return');
 const walletService = require('../../services/walletService');
-const User = require('../../models/User');
+const User = require('../../models/user');
 
 const PER_PAGE = 8;
 

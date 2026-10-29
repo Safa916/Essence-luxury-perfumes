@@ -1,3 +1,11 @@
+.account-main {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
 .wishlist-empty {
   text-align: center;
   padding: 4rem 1rem;
@@ -7,9 +15,13 @@
 
 .wishlist-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.5rem;
   margin-top: 2rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .wishlist-card {
@@ -18,6 +30,10 @@
   border: 1px solid var(--line);
   padding-bottom: 1.5rem;
   text-align: center;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .wishlist-remove-btn {
@@ -62,6 +78,8 @@
   font-weight: 500;
   color: var(--ink);
   margin-bottom: 0.4rem;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .wishlist-price {
@@ -98,6 +116,10 @@
   text-align: center;
   padding: 2rem 1.5rem;
   min-height: 260px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .explore-icon {
@@ -122,10 +144,16 @@
   padding-bottom: 2px;
 }
 
-@media (max-width: 1000px) {
-  .wishlist-grid { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 960px) {
+  .wishlist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
 }
 
 @media (max-width: 560px) {
-  .wishlist-grid { grid-template-columns: 1fr; }
+  .wishlist-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
 }

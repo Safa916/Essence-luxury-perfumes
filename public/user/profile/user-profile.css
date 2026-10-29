@@ -12,6 +12,9 @@
 .account-main {
   background: var(--panel);
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
   box-sizing: border-box;
 }
 
@@ -35,7 +38,7 @@
 .profile-actions {
   display: flex;
   gap: 0.85rem;
-  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 /* ---- Identity + security row ---- */
@@ -75,6 +78,8 @@
   font-weight: 600;
   font-size: 1.9rem;
   margin: 0 0 0.4rem;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .identity-info p {
@@ -145,6 +150,8 @@
   font-size: 0.78rem;
   color: var(--ink-faint);
   margin: 0.6rem 0 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* ---- Referral ---- */
@@ -219,7 +226,9 @@
   letter-spacing: 0.12em;
   font-weight: 600;
   color: var(--ink);
-  white-space: nowrap;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .referral-btns {
@@ -264,6 +273,8 @@
 .detail-value {
   font-size: 0.95rem;
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* ===== Success Modal (profile-only — not in the shared partials) ===== */
@@ -334,32 +345,83 @@
 
 @media (max-width: 1000px) {
   .identity-row { grid-template-columns: 1fr; }
+  .details-grid { grid-template-columns: 1fr; gap: 1.5rem; }
 }
 
 @media (max-width: 640px) {
   .profile-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 1.25rem;
+  }
+
+  .profile-actions {
+    display: flex;
+    width: 100%;
+    gap: 0.6rem;
+  }
+
+  .profile-actions .btn {
+    flex: 1;
+    min-width: 110px;
+    text-align: center;
+    padding: 0.75rem 0.75rem;
+    font-size: 0.65rem;
   }
 
   .identity-card {
     flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-    padding: 1.75rem;
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem 1.25rem;
+    gap: 1rem;
   }
 
-  .avatar { width: 100px; height: 100px; }
+  .avatar { width: 90px; height: 90px; margin: 0 auto; }
+
+  .identity-info {
+    width: 100%;
+    text-align: center;
+  }
 
   .referral-card {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    padding: 1.5rem 1.25rem;
+    gap: 1.25rem;
   }
 
-  .referral-action { width: 100%; }
+  .referral-copy { width: 100%; }
 
-  .referral-code { flex: 1; text-align: center; }
+  .referral-stats {
+    justify-content: space-around;
+  }
 
-  .details-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .referral-action {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .referral-code {
+    width: 100%;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+
+  .referral-btns {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .referral-share,
+  .referral-link-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.65rem 0.5rem;
+    font-size: 0.7rem;
+    min-width: 0;
+  }
+
+  .details-grid { grid-template-columns: 1fr; gap: 1.25rem; }
 }

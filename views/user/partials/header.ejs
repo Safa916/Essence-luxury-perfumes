@@ -4,20 +4,20 @@
 %>
 <header class="site-header">
   <div class="header-inner">
-    <a href="/" class="logo">ESSENCE</a>
+    <a href="/" class="logo" aria-label="Essence Home">ESSENCE</a>
 
-    <nav class="main-nav">
-      <a href="/" class="nav-link <%= _active === 'home' ? 'is-active' : '' %>">Home</a>
-      <a href="/categories" class="nav-link <%= _active === 'categories' ? 'is-active' : '' %>">Categories</a>
-      <a href="/brands" class="nav-link <%= _active === 'brands' ? 'is-active' : '' %>">Brands</a>
-      <a href="/shop" class="nav-link <%= _active === 'shop' ? 'is-active' : '' %>">Shop</a>
+    <nav class="main-nav" aria-label="Main Navigation">
+      <a href="/" class="nav-link <%= _active === 'home' ? 'is-active' : '' %>" <%= _active === 'home' ? 'aria-current="page"' : '' %>>Home</a>
+      <a href="/categories" class="nav-link <%= _active === 'categories' ? 'is-active' : '' %>" <%= _active === 'categories' ? 'aria-current="page"' : '' %>>Categories</a>
+      <a href="/brands" class="nav-link <%= _active === 'brands' ? 'is-active' : '' %>" <%= _active === 'brands' ? 'aria-current="page"' : '' %>>Brands</a>
+      <a href="/shop" class="nav-link <%= _active === 'shop' ? 'is-active' : '' %>" <%= _active === 'shop' ? 'aria-current="page"' : '' %>>Shop</a>
     </nav>
 
     <div class="header-icons">
 
       <% if (_active !== 'shop') { %>
       <div class="header-search" id="headerSearch">
-        <button type="button" class="icon-btn" id="headerSearchToggle" aria-label="Search" aria-expanded="false">
+        <button type="button" class="icon-btn" id="headerSearchToggle" aria-label="Search fragrances" aria-expanded="false">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
         <div class="header-search-panel" id="headerSearchPanel">
@@ -27,16 +27,17 @@
             class="header-search-input"
             placeholder="Search fragrances..."
             aria-label="Search fragrances"
+            autocomplete="off"
           >
         </div>
       </div>
       <% } %>
 
-      <a href="/wishlist" class="icon-btn" aria-label="Wishlist">
+      <a href="/wishlist" class="icon-btn <%= _active === 'wishlist' ? 'is-active' : '' %>" aria-label="Wishlist">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20.5s-7.5-4.6-10-9.3C.5 7.8 2.4 4.5 5.8 4c2-.3 3.9.6 5.2 2.4C12.3 4.6 14.2 3.7 16.2 4c3.4.5 5.3 3.8 3.8 7.2-2.5 4.7-10 9.3-10 9.3z"/></svg>
       </a>
 
-      <a href="/cart" class="icon-btn cart-btn <%= _active === 'cart' ? 'is-active' : '' %>" aria-label="Bag" style="position: relative;">
+      <a href="/cart" class="icon-btn cart-btn <%= _active === 'cart' ? 'is-active' : '' %>" aria-label="Shopping Bag" style="position: relative;">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
         <% if (_cartCount > 0) { %>
           <span class="cart-badge"><%= _cartCount > 99 ? '99+' : _cartCount %></span>
@@ -52,14 +53,16 @@
           <button type="button" id="logoutBtn" class="btn-logout">Logout</button>
         </div>
       <% } else { %>
-        <a href="/auth/login" class="icon-btn" aria-label="Account">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-        </a>
-        <a href="/auth/login" class="btn btn-login">Sign In</a>
+        <div class="guest-menu">
+          <a href="/auth/login" class="icon-btn account-icon-btn" aria-label="Sign In or Account">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          </a>
+          <a href="/auth/login" class="btn btn-login">Sign In</a>
+        </div>
       <% } %>
 
-      <!-- Hamburger (mobile only) -->
-      <button type="button" class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
+      <!-- Hamburger Menu Toggle (Mobile & Tablet) -->
+      <button type="button" class="hamburger" id="hamburgerBtn" aria-label="Open navigation menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
 
@@ -67,17 +70,19 @@
   </div>
 </header>
 
-<!-- Mobile nav drawer -->
+<!-- Mobile Navigation Drawer Overlay -->
 <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
-<nav class="mobile-nav-drawer" id="mobileNavDrawer" aria-hidden="true">
+
+<!-- Mobile Navigation Drawer -->
+<nav class="mobile-nav-drawer" id="mobileNavDrawer" aria-label="Mobile Navigation" aria-hidden="true">
   <div class="mobile-nav-header">
-    <a href="/" class="logo">ESSENCE</a>
+    <a href="/" class="logo" aria-label="Essence Home">ESSENCE</a>
     <button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="Close menu">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
 
-  <!-- Mobile search bar -->
+  <!-- Mobile Search Form -->
   <div class="mobile-nav-search">
     <input
       type="text"
@@ -92,111 +97,201 @@
     </button>
   </div>
 
+  <!-- Mobile Menu Items -->
   <div class="mobile-nav-links">
-    <a href="/" class="mobile-nav-link <%= _active === 'home' ? 'is-active' : '' %>">Home</a>
-    <a href="/categories" class="mobile-nav-link <%= _active === 'categories' ? 'is-active' : '' %>">Categories</a>
-    <a href="/brands" class="mobile-nav-link <%= _active === 'brands' ? 'is-active' : '' %>">Brands</a>
-    <a href="/shop" class="mobile-nav-link <%= _active === 'shop' ? 'is-active' : '' %>">Shop</a>
+    <div class="mobile-nav-section-title">Navigation</div>
+    <a href="/" class="mobile-nav-link <%= _active === 'home' ? 'is-active' : '' %>" <%= _active === 'home' ? 'aria-current="page"' : '' %>>
+      <span>Home</span>
+      <% if (_active === 'home') { %><span class="active-dot" aria-hidden="true"></span><% } %>
+    </a>
+    <a href="/categories" class="mobile-nav-link <%= _active === 'categories' ? 'is-active' : '' %>" <%= _active === 'categories' ? 'aria-current="page"' : '' %>>
+      <span>Categories</span>
+      <% if (_active === 'categories') { %><span class="active-dot" aria-hidden="true"></span><% } %>
+    </a>
+    <a href="/brands" class="mobile-nav-link <%= _active === 'brands' ? 'is-active' : '' %>" <%= _active === 'brands' ? 'aria-current="page"' : '' %>>
+      <span>Brands</span>
+      <% if (_active === 'brands') { %><span class="active-dot" aria-hidden="true"></span><% } %>
+    </a>
+    <a href="/shop" class="mobile-nav-link <%= _active === 'shop' ? 'is-active' : '' %>" <%= _active === 'shop' ? 'aria-current="page"' : '' %>>
+      <span>Shop</span>
+      <% if (_active === 'shop') { %><span class="active-dot" aria-hidden="true"></span><% } %>
+    </a>
+
+    <div class="mobile-nav-divider"></div>
+    <div class="mobile-nav-section-title">Saved & Bag</div>
+
+    <a href="/wishlist" class="mobile-nav-link <%= _active === 'wishlist' ? 'is-active' : '' %>">
+      <span class="nav-link-with-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20.5s-7.5-4.6-10-9.3C.5 7.8 2.4 4.5 5.8 4c2-.3 3.9.6 5.2 2.4C12.3 4.6 14.2 3.7 16.2 4c3.4.5 5.3 3.8 3.8 7.2-2.5 4.7-10 9.3-10 9.3z"/></svg>
+        <span>Wishlist</span>
+      </span>
+      <% if (_active === 'wishlist') { %><span class="active-dot" aria-hidden="true"></span><% } %>
+    </a>
+
+    <a href="/cart" class="mobile-nav-link <%= _active === 'cart' ? 'is-active' : '' %>">
+      <span class="nav-link-with-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span>Shopping Bag</span>
+      </span>
+      <span class="mobile-cart-badge" style="<%= _cartCount > 0 ? '' : 'display:none;' %>"><%= _cartCount > 99 ? '99+' : (_cartCount > 0 ? _cartCount : '') %></span>
+    </a>
   </div>
+
+  <!-- Mobile Footer / Account Area -->
   <div class="mobile-nav-footer">
     <% if (typeof user !== 'undefined' && user) { %>
-      <a href="/profile" class="mobile-nav-link">My Profile</a>
-      <a href="/orders" class="mobile-nav-link">My Orders</a>
-      <a href="/wallet" class="mobile-nav-link">My Wallet</a>
-      <a href="/coupon" class="mobile-nav-link">My Coupons</a>
-      <button type="button" id="mobileLogoutBtn" class="mobile-nav-link mobile-logout-btn">Logout</button>
+      <div class="mobile-user-greeting">
+        <span class="greeting-sub">Signed in as</span>
+        <span class="greeting-name"><%= user.fullName || user.full_name || user.email || 'Account' %></span>
+      </div>
+      <div class="mobile-user-links">
+        <a href="/profile" class="mobile-nav-link <%= _active === 'profile' ? 'is-active' : '' %>">
+          <span class="nav-link-with-icon">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+            <span>My Profile</span>
+          </span>
+        </a>
+        <a href="/orders" class="mobile-nav-link <%= _active === 'orders' ? 'is-active' : '' %>">
+          <span class="nav-link-with-icon">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>My Orders</span>
+          </span>
+        </a>
+        <a href="/wallet" class="mobile-nav-link <%= _active === 'wallet' ? 'is-active' : '' %>">
+          <span class="nav-link-with-icon">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M16 12h.01"/></svg>
+            <span>My Wallet</span>
+          </span>
+        </a>
+        <a href="/coupon" class="mobile-nav-link <%= _active === 'coupon' ? 'is-active' : '' %>">
+          <span class="nav-link-with-icon">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/></svg>
+            <span>My Coupons</span>
+          </span>
+        </a>
+        <button type="button" id="mobileLogoutBtn" class="mobile-nav-link mobile-logout-btn">
+          <span class="nav-link-with-icon">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Logout</span>
+          </span>
+        </button>
+      </div>
     <% } else { %>
-      <a href="/auth/login" class="btn btn-dark mobile-signin-btn">Sign In</a>
+      <a href="/auth/login" class="btn btn-dark mobile-signin-btn">Sign In / Register</a>
     <% } %>
   </div>
 </nav>
 
 <script>
   (function () {
-    var wrapper = document.getElementById('headerSearch');
-     if (!wrapper) return;
-    var toggleBtn = document.getElementById('headerSearchToggle');
-    var panel = document.getElementById('headerSearchPanel');
-    var input = document.getElementById('headerSearchInput');
+    // ── Header Search Bar (Desktop & Mobile) ──
+    var searchWrapper = document.getElementById('headerSearch');
+    if (searchWrapper) {
+      var toggleBtn = document.getElementById('headerSearchToggle');
+      var panel     = document.getElementById('headerSearchPanel');
+      var input     = document.getElementById('headerSearchInput');
 
-    function openSearch() {
-      wrapper.classList.add('is-open');
-      toggleBtn.setAttribute('aria-expanded', 'true');
-      input.focus();
+      function openSearch() {
+        searchWrapper.classList.add('is-open');
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+        if (input) setTimeout(function () { input.focus(); }, 120);
+      }
+
+      function closeSearch() {
+        searchWrapper.classList.remove('is-open');
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+      }
+
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (searchWrapper.classList.contains('is-open')) {
+            if (input && input.value.trim()) {
+              window.location.href = '/shop?search=' + encodeURIComponent(input.value.trim());
+              return;
+            }
+            closeSearch();
+          } else {
+            openSearch();
+          }
+        });
+      }
+
+      if (input) {
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            var q = input.value.trim();
+            window.location.href = q ? '/shop?search=' + encodeURIComponent(q) : '/shop';
+          } else if (e.key === 'Escape') {
+            closeSearch();
+          }
+        });
+      }
+
+      document.addEventListener('click', function (e) {
+        if (!searchWrapper.contains(e.target)) closeSearch();
+      });
     }
 
-    function closeSearch() {
-      wrapper.classList.remove('is-open');
-      toggleBtn.setAttribute('aria-expanded', 'false');
-    }
+    // ── Global Helper for Dynamic Cart Badge ──
+    window.updateCartBadge = function (count) {
+      var countNum = Number(count) || 0;
+      var text = countNum > 99 ? '99+' : (countNum > 0 ? String(countNum) : '');
 
-    toggleBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (wrapper.classList.contains('is-open')) {
-        // Icon acts as submit once the panel is already open and has text
-        if (input.value.trim()) {
-          window.location.href = '/shop?search=' + encodeURIComponent(input.value.trim());
-          return;
+      var cartBtn = document.querySelector('.cart-btn');
+      if (cartBtn) {
+        var badge = cartBtn.querySelector('.cart-badge');
+        if (countNum > 0) {
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'cart-badge';
+            cartBtn.appendChild(badge);
+          }
+          badge.textContent = text;
+        } else if (badge) {
+          badge.remove();
         }
-        closeSearch();
-      } else {
-        openSearch();
       }
-    });
 
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        var q = input.value.trim();
-        window.location.href = q ? '/shop?search=' + encodeURIComponent(q) : '/shop';
-      } else if (e.key === 'Escape') {
-        closeSearch();
-      }
-    });
-
-    // Click anywhere outside closes the panel
-    document.addEventListener('click', function (e) {
-      if (!wrapper.contains(e.target)) closeSearch();
-    });
-
-    // Global helper to update cart badge dynamically from AJAX calls
-    window.updateCartBadge = function(count) {
-      const cartBtn = document.querySelector('.cart-btn');
-      if (!cartBtn) return;
-      let badge = cartBtn.querySelector('.cart-badge');
-      if (count > 0) {
-        if (!badge) {
-          badge = document.createElement('span');
-          badge.className = 'cart-badge';
-          cartBtn.appendChild(badge);
+      var mobileBadges = document.querySelectorAll('.mobile-cart-badge');
+      mobileBadges.forEach(function (mb) {
+        if (countNum > 0) {
+          mb.textContent = text;
+          mb.style.display = 'inline-flex';
+        } else {
+          mb.style.display = 'none';
         }
-        badge.textContent = count > 99 ? '99+' : count;
-      } else if (badge) {
-        badge.remove();
-      }
+      });
     };
 
     // ── Mobile Nav Drawer ──
-    var hamburger   = document.getElementById('hamburgerBtn');
-    var drawer      = document.getElementById('mobileNavDrawer');
-    var overlay     = document.getElementById('mobileNavOverlay');
-    var closeBtn    = document.getElementById('mobileNavClose');
+    var hamburger    = document.getElementById('hamburgerBtn');
+    var drawer       = document.getElementById('mobileNavDrawer');
+    var overlay      = document.getElementById('mobileNavOverlay');
+    var closeBtn     = document.getElementById('mobileNavClose');
     var mobileLogout = document.getElementById('mobileLogoutBtn');
 
     function openDrawer() {
+      if (!drawer) return;
       drawer.classList.add('is-open');
-      overlay.classList.add('is-open');
-      hamburger.classList.add('is-open');
-      hamburger.setAttribute('aria-expanded', 'true');
+      if (overlay) overlay.classList.add('is-open');
+      if (hamburger) {
+        hamburger.classList.add('is-open');
+        hamburger.setAttribute('aria-expanded', 'true');
+      }
       drawer.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
     }
 
     function closeDrawer() {
+      if (!drawer) return;
       drawer.classList.remove('is-open');
-      overlay.classList.remove('is-open');
-      hamburger.classList.remove('is-open');
-      hamburger.setAttribute('aria-expanded', 'false');
+      if (overlay) overlay.classList.remove('is-open');
+      if (hamburger) {
+        hamburger.classList.remove('is-open');
+        hamburger.setAttribute('aria-expanded', 'false');
+      }
       drawer.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
     }
@@ -205,21 +300,25 @@
     if (closeBtn)  closeBtn.addEventListener('click', closeDrawer);
     if (overlay)   overlay.addEventListener('click', closeDrawer);
 
-    // Close on Escape key
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeDrawer();
     });
 
-    // Wire up mobile logout button to the same form as desktop logout
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 1024 && drawer && drawer.classList.contains('is-open')) {
+        closeDrawer();
+      }
+    });
+
     if (mobileLogout) {
-      mobileLogout.addEventListener('click', function() {
+      mobileLogout.addEventListener('click', function () {
         var desktopLogout = document.getElementById('logoutBtn');
         if (desktopLogout) desktopLogout.click();
         else window.location.href = '/auth/logout';
       });
     }
 
-    // ── Mobile search ──
+    // ── Mobile Search Inside Drawer ──
     var mobileSearchInput = document.getElementById('mobileSearchInput');
     var mobileSearchBtn   = document.getElementById('mobileSearchBtn');
 
@@ -230,14 +329,12 @@
 
     if (mobileSearchBtn) mobileSearchBtn.addEventListener('click', doMobileSearch);
     if (mobileSearchInput) {
-      mobileSearchInput.addEventListener('keydown', function(e) {
+      mobileSearchInput.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); doMobileSearch(); }
       });
     }
-
   })();
 </script>
 
 <!-- Global Essence UI: branded toast + confirm (replaces alert/confirm sitewide) -->
 <script src="/user/js/essence-ui.js"></script>
-
