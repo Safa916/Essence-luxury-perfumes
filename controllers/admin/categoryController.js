@@ -5,6 +5,7 @@ import Category from '../../models/category.js';
 import Product from '../../models/product.js';
 import APIFeatures from '../../utils/apiFeatures.js';
 import { toPublicPath, uploadDir } from '../../middleware/uploadCategoryImage.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 function slugify(text) {
   return text
@@ -99,7 +100,7 @@ export const listCategories = async (req, res) => {
     });
   } catch (err) {
     console.error('Error loading categories:', err);
-    res.status(500).send('Something went wrong while loading categories.');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Something went wrong while loading categories.');
   }
 };
 

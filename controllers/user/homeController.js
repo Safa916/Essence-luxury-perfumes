@@ -1,5 +1,6 @@
 import Category from '../../models/category.js';
 import Brand from '../../models/brands.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 // GET /  (replaces the inline route currently in server.js)
 export const renderHome = async (req, res) => {
@@ -36,7 +37,7 @@ export const renderHome = async (req, res) => {
     });
   } catch (err) {
     console.error('renderHome error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load home page' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load home page' });
   }
 };
 export default {

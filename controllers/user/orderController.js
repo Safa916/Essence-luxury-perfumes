@@ -4,6 +4,7 @@ import Product from '../../models/product.js';
 import Variant from '../../models/variant.js';
 import Return from '../../models/Return.js';
 import walletService from '../../services/walletService.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 const PER_PAGE = 8;
 
@@ -135,7 +136,7 @@ export const listOrders = async (req, res) => {
     });
   } catch (err) {
     console.error('listOrders error:', err);
-    res.status(500).render('user/error', { message: 'Could not load orders.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Could not load orders.' });
   }
 };
 

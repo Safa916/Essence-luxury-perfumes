@@ -1,5 +1,6 @@
 import Brand from '../../models/brands.js';
 import Product from '../../models/product.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function slugify(str) {
@@ -51,7 +52,7 @@ export const listBrands = async (req, res) => {
     });
   } catch (err) {
     console.error('listBrands error:', err);
-    res.status(500).send('Server error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error');
   }
 };
 
@@ -87,7 +88,7 @@ export const createBrand = async (req, res) => {
     res.redirect('/admin/brands');
   } catch (err) {
     console.error('createBrand error:', err);
-    res.status(500).send('Server error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error');
   }
 };
 
@@ -95,11 +96,11 @@ export const createBrand = async (req, res) => {
 export const renderEdit = async (req, res) => {
   try {
     const brand = await Brand.findById(req.params.id).lean();
-    if (!brand) return res.status(404).send('Brand not found');
+    if (!brand) return res.status(HTTP_STATUS.NOT_FOUND).send('Brand not found');
     res.render('admin/brands/edit', { activePage: 'brand', admin: req.admin, brand, errors: [] });
   } catch (err) {
     console.error('renderEdit error:', err);
-    res.status(500).send('Server error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error');
   }
 };
 
@@ -107,7 +108,7 @@ export const renderEdit = async (req, res) => {
 export const updateBrand = async (req, res) => {
   try {
     const brand = await Brand.findById(req.params.id);
-    if (!brand) return res.status(404).send('Brand not found');
+    if (!brand) return res.status(HTTP_STATUS.NOT_FOUND).send('Brand not found');
 
     const { name, tagline, is_active } = req.body;
     const errors = [];
@@ -140,7 +141,7 @@ export const updateBrand = async (req, res) => {
     res.redirect('/admin/brands');
   } catch (err) {
     console.error('updateBrand error:', err);
-    res.status(500).send('Server error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error');
   }
 };
 
@@ -148,13 +149,13 @@ export const updateBrand = async (req, res) => {
 export const toggleBrand = async (req, res) => {
   try {
     const brand = await Brand.findById(req.params.id);
-    if (!brand) return res.status(404).json({ success: false });
+    if (!brand) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false });
     brand.is_active = !brand.is_active;
     await brand.save();
     res.json({ success: true, is_active: brand.is_active });
   } catch (err) {
     console.error('toggleBrand error:', err);
-    res.status(500).json({ success: false });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false });
   }
 };
 
@@ -165,7 +166,7 @@ export const deleteBrand = async (req, res) => {
     res.redirect('/admin/brands');
   } catch (err) {
     console.error('deleteBrand error:', err);
-    res.status(500).send('Server error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error');
   }
 };
 

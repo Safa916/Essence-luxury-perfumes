@@ -5,6 +5,7 @@ import Category from '../../models/category.js';
 import Brand from '../../models/brands.js';
 import Variant from '../../models/variant.js';
 import WishlistItem from '../../models/wishlistItems.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 const DEFAULT_LIMIT = 6;
 
@@ -300,7 +301,7 @@ export const renderProductListing = async (req, res) => {
     });
   } catch (err) {
     console.error('renderProductListing error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load products' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load products' });
   }
 };
 export const getProductsPartial = async (req, res) => {
@@ -322,14 +323,14 @@ export const getProductsPartial = async (req, res) => {
       (err, html) => {
         if (err) {
           console.error('getProductsPartial render error:', err);
-          return res.status(500).json({ success: false, message: 'Failed to load products' });
+          return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Failed to load products' });
         }
         res.json({ success: true, html, totalProducts, currentPage: page, totalPages });
       }
     );
   } catch (err) {
     console.error('getProductsPartial error:', err);
-    res.status(500).json({ success: false, message: 'Failed to load products' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Failed to load products' });
   }
 };
 export default {

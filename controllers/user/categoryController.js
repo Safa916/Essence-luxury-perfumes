@@ -1,5 +1,6 @@
 import Category from '../../models/category.js';
 import Product from '../../models/product.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 // GET /categories — browsable grid of every active category
 export const renderCategoriesPage = async (req, res) => {
@@ -29,7 +30,7 @@ export const renderCategoriesPage = async (req, res) => {
     });
   } catch (err) {
     console.error('renderCategoriesPage error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load categories' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load categories' });
   }
 };
 

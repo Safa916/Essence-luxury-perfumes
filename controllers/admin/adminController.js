@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import Admin from '../../models/admin.js';
 import Order from '../../models/order.js';
 import User from '../../models/user.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 // GET /admin/login
 export const getLoginPage = (req, res) => {
@@ -18,18 +19,18 @@ export const postLogin = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).render('admin/login', { error: 'Email and password are required' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).render('admin/login', { error: 'Email and password are required' });
     }
 
     const admin = await Admin.findOne({ email: email.toLowerCase().trim() });
 
     if (!admin || !admin.is_active) {
-      return res.status(401).render('admin/login', { error: 'Invalid email or password' });
+      return res.status(HTTP_STATUS.UNAUTHORIZED).render('admin/login', { error: 'Invalid email or password' });
     }
 
     const isMatch = await admin.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).render('admin/login', { error: 'Invalid email or password' });
+      return res.status(HTTP_STATUS.UNAUTHORIZED).render('admin/login', { error: 'Invalid email or password' });
     }
 
     admin.last_login_at = new Date();
@@ -48,7 +49,7 @@ export const postLogin = async (req, res) => {
     return res.redirect('/admin/dashboard');
   } catch (err) {
     console.error('Admin login error:', err);
-    return res.status(500).render('admin/login', { error: 'Something went wrong, please try again' });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('admin/login', { error: 'Something went wrong, please try again' });
   }
 };
 
@@ -246,7 +247,7 @@ export const getDashboard = async (req, res) => {
     });
   } catch (err) {
     console.error('getDashboard error:', err);
-    res.status(500).send('Server error loading dashboard');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error loading dashboard');
   }
 };
 
@@ -344,14 +345,14 @@ export const getDashboardChartData = async (req, res) => {
       const endStr   = req.query.endDate;
 
       if (!startStr || !endStr) {
-        return res.status(400).json({ success: false, message: 'startDate and endDate required' });
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'startDate and endDate required' });
       }
 
       const rangeStart = new Date(startStr + 'T00:00:00.000Z');
       const rangeEnd   = new Date(endStr   + 'T23:59:59.999Z');
 
       if (isNaN(rangeStart) || isNaN(rangeEnd) || rangeStart > rangeEnd) {
-        return res.status(400).json({ success: false, message: 'Invalid date range' });
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid date range' });
       }
 
       match.placed_at = { $gte: rangeStart, $lte: rangeEnd };
@@ -472,7 +473,7 @@ export const getDashboardChartData = async (req, res) => {
     });
   } catch (err) {
     console.error('getDashboardChartData error:', err);
-    res.status(500).json({ success: false, message: 'Server error loading chart data' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Server error loading chart data' });
   }
 };
 

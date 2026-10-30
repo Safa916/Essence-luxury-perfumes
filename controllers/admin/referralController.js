@@ -1,5 +1,6 @@
 import Referral from '../../models/Referral.js';
 import referralService from '../../services/referralService.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 // ── GET /admin/referrals ──────────────────────────────────────────────────────
 export const listReferrals = async (req, res) => {
@@ -38,7 +39,7 @@ export const listReferrals = async (req, res) => {
     });
   } catch (err) {
     console.error('listReferrals error:', err);
-    res.status(500).send('Server error loading referrals');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error loading referrals');
   }
 };
 

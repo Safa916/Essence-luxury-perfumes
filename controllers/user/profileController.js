@@ -4,6 +4,7 @@ import { sendOTPEmail } from '../../services/emailService.js';
 import { generateOTPCode } from '../../utils/otp.js';
 import { isValidName, isValidPassword } from '../../utils/validators.js';
 import referralService from '../../services/referralService.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 const formatRelativeTime = (date) => {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -50,7 +51,7 @@ export const getProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Get profile error:', error.message);
-    res.status(500).send('Server error loading profile');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error loading profile');
   }
 };
 export const getEditProfileForm = (req, res) => {
@@ -61,7 +62,7 @@ export const getEditProfileForm = (req, res) => {
     });
   } catch (error) {
     console.error('Get edit profile form error:', error.message);
-    res.status(500).send('Server error loading edit profile form');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error loading edit profile form');
   }
 };
 export const updateProfile = async (req, res) => {
@@ -97,7 +98,7 @@ export const updateProfile = async (req, res) => {
     res.redirect('/profile');
   } catch (error) {
     console.error('Update profile error:', error.message);
-    res.status(500).send('Server error updating profile');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error updating profile');
   }
 };
 
@@ -147,7 +148,7 @@ export const requestEmailChange = async (req, res) => {
     });
   } catch (error) {
     console.error('Request email change error:', error.message);
-    res.status(500).send('Server error requesting email change');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error requesting email change');
   }
 };
 export const verifyEmailChange = async (req, res) => {
@@ -183,7 +184,7 @@ export const verifyEmailChange = async (req, res) => {
   res.redirect('/profile?emailChanged=true');
   } catch (error) {
     console.error('Verify email change error:', error.message);
-    res.status(500).send('Server error verifying email change');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error verifying email change');
   }
 
 };
@@ -240,7 +241,7 @@ export const updatePassword = async (req, res) => {
     res.redirect('/profile?passwordChanged=true');
   } catch (error) {
     console.error('Update password error:', error.message);
-    res.status(500).send('Server error updating password');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error updating password');
   }
 };
 export default {

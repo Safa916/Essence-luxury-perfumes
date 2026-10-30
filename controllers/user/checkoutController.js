@@ -13,6 +13,7 @@ import walletService from '../../services/walletService.js';
 import crypto from 'crypto';
 import { getRazorpayInstance } from '../../config/razorpay.js';
 import { getAvailableCouponsForUser } from './couponController.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 // ─── constants ───────────────────────────────────────────────────────────────
 const GST_RATE        = 0.18;          // 18 % GST on subtotal
@@ -186,7 +187,7 @@ export const renderCheckout = async (req, res) => {
     });
   } catch (err) {
     console.error('renderCheckout error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load checkout' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load checkout' });
   }
 };
 
@@ -233,7 +234,7 @@ export const getCheckoutSummary = async (req, res) => {
     });
   } catch (err) {
     console.error('getCheckoutSummary error:', err);
-    return res.status(500).json({ success: false });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false });
   }
 };
 
@@ -299,7 +300,7 @@ export const checkCheckoutStock = async (req, res) => {
     });
   } catch (err) {
     console.error('checkCheckoutStock error:', err);
-    return res.status(500).json({ success: false, message: 'Could not verify stock status.' });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not verify stock status.' });
   }
 };
 
@@ -594,17 +595,17 @@ export const createRazorpayOrder = async (req, res) => {
 
     // 1. Validate address
     if (!addressId || !mongoose.Types.ObjectId.isValid(addressId)) {
-      return res.status(400).json({ success: false, message: 'Please select a valid shipping address.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Please select a valid shipping address.' });
     }
     const address = await Address.findOne({ _id: addressId, user_id: userId }).lean();
     if (!address) {
-      return res.status(400).json({ success: false, message: 'Address not found.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Address not found.' });
     }
 
     // 2. Load cart & items
     const cart = await Cart.findOne({ user_id: userId }).lean();
     if (!cart || !cart.items.length) {
-      return res.status(400).json({ success: false, message: 'Your cart is empty.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Your cart is empty.' });
     }
 
     const cartItemsRaw = await CartItem.find({ cart_id: cart._id })
@@ -613,7 +614,7 @@ export const createRazorpayOrder = async (req, res) => {
       .lean();
     const validItems = cartItemsRaw.filter(i => i.product_id && i.variant_id);
     if (!validItems.length) {
-      return res.status(400).json({ success: false, message: 'No valid items in cart.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'No valid items in cart.' });
     }
 
     // 3. Stock validation
@@ -626,7 +627,7 @@ export const createRazorpayOrder = async (req, res) => {
         const msg = currentStock <= 0
           ? `Sorry! "${prodName}"${sizeStr} is currently out of stock.`
           : `Only ${currentStock} unit(s) of "${prodName}"${sizeStr} are left in stock (you requested ${i.quantity}). Please adjust your quantity.`;
-        return res.status(400).json({
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           code: 'INSUFFICIENT_STOCK',
           message: msg,
@@ -679,7 +680,7 @@ export const createRazorpayOrder = async (req, res) => {
 
     const razorpay = getRazorpayInstance();
     if (!razorpay) {
-      return res.status(500).json({
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: 'Online payment gateway is not configured yet. Please configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env or choose Cash on Delivery.',
       });
@@ -722,7 +723,7 @@ export const createRazorpayOrder = async (req, res) => {
     });
   } catch (err) {
     console.error('createRazorpayOrder error:', err);
-    return res.status(500).json({ success: false, message: 'Could not initialize payment gateway.' });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not initialize payment gateway.' });
   }
 };
 
@@ -738,7 +739,7 @@ export const verifyRazorpayPayment = async (req, res) => {
     } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json({ success: false, message: 'Missing payment verification credentials.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Missing payment verification credentials.' });
     }
 
     // 1. Verify signature
@@ -756,19 +757,19 @@ export const verifyRazorpayPayment = async (req, res) => {
         { gateway_order_id: razorpay_order_id },
         { status: 'failed', failure_reason: 'Signature verification mismatch' }
       );
-      return res.status(400).json({ success: false, message: 'Payment verification failed. Invalid signature.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Payment verification failed. Invalid signature.' });
     }
 
     // 2. Validate address
     const address = await Address.findOne({ _id: addressId, user_id: userId }).lean();
     if (!address) {
-      return res.status(400).json({ success: false, message: 'Shipping address not found.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Shipping address not found.' });
     }
 
     // 3. Load cart & items
     const cart = await Cart.findOne({ user_id: userId }).lean();
     if (!cart || !cart.items.length) {
-      return res.status(400).json({ success: false, message: 'Cart items not found.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Cart items not found.' });
     }
 
     const cartItemsRaw = await CartItem.find({ cart_id: cart._id })
@@ -777,7 +778,7 @@ export const verifyRazorpayPayment = async (req, res) => {
       .lean();
     const validItems = cartItemsRaw.filter(i => i.product_id && i.variant_id);
     if (!validItems.length) {
-      return res.status(400).json({ success: false, message: 'No valid items.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'No valid items.' });
     }
     const offerServiceVerify = offerService;
     const activeOffersVerify = await offerServiceVerify.getActiveOffers();
@@ -858,7 +859,7 @@ export const verifyRazorpayPayment = async (req, res) => {
         ? `"${prodName}"${sizeStr} went out of stock right as your payment finished. Your payment of ₹${total.toLocaleString('en-IN')} has been immediately credited to your Essence Wallet.`
         : `Only ${avail} unit(s) of "${prodName}"${sizeStr} remain in stock. Your payment of ₹${total.toLocaleString('en-IN')} has been immediately refunded to your Essence Wallet.`;
 
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         code: 'INSUFFICIENT_STOCK',
         message,
@@ -947,7 +948,7 @@ export const verifyRazorpayPayment = async (req, res) => {
     });
   } catch (err) {
     console.error('verifyRazorpayPayment error:', err);
-    return res.status(500).json({ success: false, message: 'Order finalization failed after payment.' });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Order finalization failed after payment.' });
   }
 };
 

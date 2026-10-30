@@ -6,6 +6,7 @@ import Cart from '../../models/cart.js';
 import walletService from '../../services/walletService.js';
 import { getRazorpayInstance } from '../../config/razorpay.js';
 import crypto from 'crypto';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 function toNum(d) {
   if (d == null) return 0;
@@ -74,7 +75,7 @@ export const renderWallet = async (req, res) => {
     });
   } catch (err) {
     console.error('renderWallet error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load wallet.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load wallet.' });
   }
 };
 
@@ -85,12 +86,12 @@ export const createTopupOrder = async (req, res) => {
     const amount = parseFloat(req.body.amount);
 
     if (!amount || isNaN(amount) || amount < 1) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid amount (minimum ₹1).' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Please enter a valid amount (minimum ₹1).' });
     }
 
     const razorpay = getRazorpayInstance();
     if (!razorpay) {
-      return res.status(500).json({ success: false, message: 'Payment gateway not configured.' });
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Payment gateway not configured.' });
     }
 
     const amountInPaise = Math.round(amount * 100);
@@ -128,7 +129,7 @@ export const createTopupOrder = async (req, res) => {
     });
   } catch (err) {
     console.error('createTopupOrder error:', err);
-    return res.status(500).json({ success: false, message: 'Could not create topup order.' });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not create topup order.' });
   }
 };
 
@@ -139,7 +140,7 @@ export const verifyTopupPayment = async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json({ success: false, message: 'Missing payment details.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Missing payment details.' });
     }
 
     const secret = process.env.RAZORPAY_KEY_SECRET || '';
@@ -154,7 +155,7 @@ export const verifyTopupPayment = async (req, res) => {
         { gateway_order_id: razorpay_order_id },
         { status: 'failed', failure_reason: 'Signature mismatch' }
       );
-      return res.status(400).json({ success: false, message: 'Signature verification failed.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Signature verification failed.' });
     }
 
     const topupAmount = parseFloat(amount);
@@ -182,7 +183,7 @@ export const verifyTopupPayment = async (req, res) => {
     });
   } catch (err) {
     console.error('verifyTopupPayment error:', err);
-    return res.status(500).json({ success: false, message: 'Failed to credit wallet.' });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Failed to credit wallet.' });
   }
 };
 

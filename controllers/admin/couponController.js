@@ -1,5 +1,6 @@
 import Coupon from '../../models/coupon.js';
 import CouponUsage from '../../models/couponUsage.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 function toNum(v) {
   if (v == null) return 0;
@@ -53,7 +54,7 @@ export const listCoupons = async (req, res) => {
     });
   } catch (err) {
     console.error('listCoupons error:', err);
-    res.status(500).send('Server error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error');
   }
 };
 
@@ -288,7 +289,7 @@ export const deleteCoupon = async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('deleteCoupon error:', err);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -296,13 +297,13 @@ export const deleteCoupon = async (req, res) => {
 export const toggleCoupon = async (req, res) => {
   try {
     const coupon = await Coupon.findById(req.params.id);
-    if (!coupon) return res.status(404).json({ success: false });
+    if (!coupon) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false });
     coupon.is_active = !coupon.is_active;
     await coupon.save();
     res.json({ success: true, is_active: coupon.is_active });
   } catch (err) {
     console.error('toggleCoupon error:', err);
-    res.status(500).json({ success: false });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false });
   }
 };
 

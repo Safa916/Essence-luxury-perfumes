@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Product from '../../models/product.js';
 import Variant from '../../models/variant.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 const toDecimal = (val) => mongoose.Types.Decimal128.fromString(String(Number(val) || 0));
 
@@ -21,7 +22,7 @@ export const getVariant = async (req, res) => {
     // Use .lean() so Decimal128 fields come back as BSON Decimal128 instances
     // that have a reliable .toString() method, not raw Mongoose Document objects.
     const variant = await Variant.findById(req.params.variantId).lean();
-    if (!variant) return res.status(404).json({ success: false, message: 'Variant not found' });
+    if (!variant) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Variant not found' });
 
     // Convert Decimal128 price → plain JS number so the browser receives a
     // normal numeric value instead of {"$numberDecimal":"..."}.
@@ -32,7 +33,7 @@ export const getVariant = async (req, res) => {
 
     res.json({ success: true, variant: variantData });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Could not load variant' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not load variant' });
   }
 };
 
@@ -41,17 +42,17 @@ export const getVariant = async (req, res) => {
 export const addVariant = async (req, res) => {
   try {
     const product = await Product.findById(req.params.productId);
-    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    if (!product) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Product not found' });
 
     const { variant_name, concentration, size_ml, quantity, price, is_active, sku } = req.body;
 
     // variant_name is now required
     if (!variant_name || !variant_name.trim()) {
-      return res.status(400).json({ success: false, message: 'Variant name is required.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Variant name is required.' });
     }
 
     if (!size_ml || price === undefined || price === null || price === '') {
-      return res.status(400).json({ success: false, message: 'Size and price are required' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Size and price are required' });
     }
 
     // Check for an existing active (non-deleted) variant with the same name
@@ -61,7 +62,7 @@ export const addVariant = async (req, res) => {
       deleted_at: null,
     });
     if (dupName) {
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         message: `A variant named "${variant_name.trim()}" already exists for this product. Please use a unique name.`,
       });
@@ -75,7 +76,7 @@ export const addVariant = async (req, res) => {
       deleted_at: null,
     });
     if (duplicate) {
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         message: `A variant with ${size_ml}ml and "${concentration || 'no concentration'}" already exists. Please change either the size or the concentration.`,
       });
@@ -95,20 +96,20 @@ export const addVariant = async (req, res) => {
     // Keep the parent product's aggregate price/stock in sync
     await Promise.all([recalcProductStock(product._id), recalcProductPrice(product._id)]);
 
-    res.status(201).json({ success: true, variant });
+    res.status(HTTP_STATUS.CREATED).json({ success: true, variant });
   } catch (err) {
     console.error('addVariant error:', err);
     // MongoDB duplicate key fallback (e.g. if the pre-check races)
     if (err.code === 11000) {
       const isNameDup = err.keyPattern && err.keyPattern.variant_name;
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         message: isNameDup
           ? 'A variant with that name already exists for this product.'
           : 'A variant with the same size and concentration already exists for this product.',
       });
     }
-    res.status(400).json({ success: false, message: err.message || 'Could not add variant' });
+    res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: err.message || 'Could not add variant' });
   }
 };
 
@@ -118,13 +119,13 @@ export const addVariant = async (req, res) => {
 export const updateVariant = async (req, res) => {
   try {
     const variant = await Variant.findById(req.params.variantId);
-    if (!variant) return res.status(404).json({ success: false, message: 'Variant not found' });
+    if (!variant) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Variant not found' });
 
     const { variant_name, concentration, size_ml, quantity, price, is_active } = req.body;
 
     // variant_name is now required
     if (variant_name !== undefined && variant_name.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Variant name cannot be empty.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Variant name cannot be empty.' });
     }
 
     // If name is being changed, check uniqueness among other live variants
@@ -137,7 +138,7 @@ export const updateVariant = async (req, res) => {
         deleted_at: null,
       });
       if (dupName) {
-        return res.status(409).json({
+        return res.status(HTTP_STATUS.CONFLICT).json({
           success: false,
           message: `Another variant named "${newName}" already exists for this product. Please use a unique name.`,
         });
@@ -156,7 +157,7 @@ export const updateVariant = async (req, res) => {
       deleted_at: null,
     });
     if (duplicate) {
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         message: `Another variant with ${newSize}ml and "${newConc || 'no concentration'}" already exists. Please change either the size or the concentration.`,
       });
@@ -177,14 +178,14 @@ export const updateVariant = async (req, res) => {
     console.error('updateVariant error:', err);
     if (err.code === 11000) {
       const isNameDup = err.keyPattern && err.keyPattern.variant_name;
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         message: isNameDup
           ? 'A variant with that name already exists for this product.'
           : 'A variant with the same size and concentration already exists for this product.',
       });
     }
-    res.status(400).json({ success: false, message: err.message || 'Could not update variant' });
+    res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: err.message || 'Could not update variant' });
   }
 };
 
@@ -195,7 +196,7 @@ export const updateVariant = async (req, res) => {
 export const deleteVariant = async (req, res) => {
   try {
     const variant = await Variant.findById(req.params.variantId);
-    if (!variant) return res.status(404).json({ success: false, message: 'Variant not found' });
+    if (!variant) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Variant not found' });
 
     variant.deleted_at = new Date();
     variant.is_active = false;
@@ -207,7 +208,7 @@ export const deleteVariant = async (req, res) => {
     res.json({ success: true, message: 'Variant deleted', id: variant._id });
   } catch (err) {
     console.error('deleteVariant error:', err);
-    res.status(500).json({ success: false, message: 'Could not delete variant' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not delete variant' });
   }
 };
 

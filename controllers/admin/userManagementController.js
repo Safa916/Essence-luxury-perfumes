@@ -1,5 +1,6 @@
 import User from '../../models/user.js';
 import APIFeatures from '../../utils/apiFeatures.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 
 // GET /admin/users?search=&page=&limit=
@@ -57,7 +58,7 @@ export const getUsersPage = async (req, res) => {
     });
   } catch (err) {
     console.error('Error loading users page:', err);
-    res.status(500).send('Something went wrong loading users');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Something went wrong loading users');
   }
 };
 

@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
 import WishlistItem from '../../models/wishlistItems.js';
 import Product from '../../models/product.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 export const requireAuthApi = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ success: false, message: 'Please log in to continue.', redirect: '/auth/login' });
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'Please log in to continue.', redirect: '/auth/login' });
   }
   next();
 };
@@ -54,7 +55,7 @@ export const renderWishlist = async (req, res) => {
     res.render('user/wishlist/wishlist', { user: req.user, items });
   } catch (err) {
     console.error('renderWishlist error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load your wishlist' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load your wishlist' });
   }
 };
 
@@ -65,12 +66,12 @@ export const addToWishlist = async (req, res) => {
     const { product_id, variant_id } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(product_id)) {
-      return res.status(400).json({ success: false, message: 'Invalid product.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid product.' });
     }
 
     const product = await Product.findById(product_id).lean();
     if (!product || !product.is_active || product.is_deleted) {
-      return res.status(400).json({ success: false, message: 'This product is no longer available.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'This product is no longer available.' });
     }
 
     const existing = await WishlistItem.findOne({ user_id: userId, product_id });
@@ -87,7 +88,7 @@ export const addToWishlist = async (req, res) => {
     res.json({ success: true, message: 'Added to your wishlist.', inWishlist: true });
   } catch (err) {
     console.error('addToWishlist error:', err);
-    res.status(500).json({ success: false, message: 'Could not add to wishlist.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not add to wishlist.' });
   }
 };
 
@@ -101,7 +102,7 @@ export const removeFromWishlist = async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('removeFromWishlist error:', err);
-    res.status(500).json({ success: false, message: 'Could not remove item.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not remove item.' });
   }
 };
 
@@ -115,7 +116,7 @@ export const removeFromWishlistByProduct = async (req, res) => {
     res.json({ success: true });
   } catch (err) {
      console.error('removeFromWishlistByProduct error:', err);
-    res.status(500).json({ success: false, message: 'Could not remove item.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not remove item.' });
   }
 };
 export default {

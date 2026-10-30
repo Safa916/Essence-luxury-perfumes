@@ -2,6 +2,7 @@ import CartItem from '../../models/cartItem.js';
 import Cart from '../../models/cart.js';
 import Coupon from '../../models/coupon.js';
 import CouponUsage from '../../models/couponUsage.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const GST_RATE         = 0.18;
@@ -30,24 +31,24 @@ export const applyCoupon = async (req, res) => {
     const code   = (req.body.code || '').trim().toUpperCase();
 
     if (!code) {
-      return res.status(400).json({ success: false, message: 'Please enter a coupon code.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Please enter a coupon code.' });
     }
 
     // 1. Find the coupon
     const coupon = await Coupon.findOne({ code, is_active: true });
     if (!coupon) {
-      return res.status(404).json({ success: false, message: 'Invalid or expired coupon code.' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Invalid or expired coupon code.' });
     }
 
     // 2. Check expiry
     if (coupon.valid_until && new Date(coupon.valid_until) < new Date()) {
-      return res.status(400).json({ success: false, message: 'This coupon has expired.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'This coupon has expired.' });
     }
 
     // 3. Get cart subtotal
     const cart = await Cart.findOne({ user_id: userId }).lean();
     if (!cart) {
-      return res.status(400).json({ success: false, message: 'Your cart is empty.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Your cart is empty.' });
     }
 
     // 4. Minimum order check
@@ -62,7 +63,7 @@ export const applyCoupon = async (req, res) => {
     const subtotal = rawItems.reduce((s, i) => s + toNum(i.total_price), 0);
 
     if (subtotal < minOrder) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: `Minimum order value for this coupon is ₹${minOrder.toLocaleString('en-IN')}.`,
       });
@@ -76,14 +77,14 @@ export const applyCoupon = async (req, res) => {
       const msg = limitPerUser === 1
         ? 'You have already used this coupon.'
         : `You have reached the maximum limit (${limitPerUser} uses) for this coupon.`;
-      return res.status(400).json({ success: false, message: msg });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: msg });
     }
 
     // 5b. Check if total usage limit is exhausted across all users
     if (coupon.total_usage_limit && coupon.total_usage_limit > 0) {
       const totalUsageCount = await CouponUsage.countDocuments({ coupon_id: coupon._id });
       if (totalUsageCount >= coupon.total_usage_limit) {
-        return res.status(400).json({
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'This coupon has reached its total usage limit and is no longer available.',
         });
@@ -126,7 +127,7 @@ export const applyCoupon = async (req, res) => {
     });
   } catch (err) {
     console.error('applyCoupon error:', err);
-    return res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -137,7 +138,7 @@ export const removeCoupon = async (req, res) => {
 
     const cart = await Cart.findOne({ user_id: userId });
     if (!cart) {
-      return res.status(400).json({ success: false, message: 'Cart not found.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Cart not found.' });
     }
 
     // Clear the applied coupon
@@ -162,7 +163,7 @@ export const removeCoupon = async (req, res) => {
     });
   } catch (err) {
     console.error('removeCoupon error:', err);
-    return res.status(500).json({ success: false, message: 'Something went wrong.' });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Something went wrong.' });
   }
 };
 
@@ -234,7 +235,7 @@ export const getAvailableCoupons = async (req, res) => {
     res.json({ success: true, coupons, subtotal });
   } catch (err) {
     console.error('getAvailableCoupons error:', err);
-    res.status(500).json({ success: false, message: 'Could not fetch coupons.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not fetch coupons.' });
   }
 };
 
@@ -256,7 +257,7 @@ export const renderUserCoupons = async (req, res) => {
     });
   } catch (err) {
     console.error('renderUserCoupons error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load coupons.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load coupons.' });
   }
 };
 

@@ -1,5 +1,6 @@
 import Brand from '../../models/brands.js';
 import Product from '../../models/product.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 // GET /brands — all active brands
 export const renderBrandsPage = async (req, res) => {
@@ -30,7 +31,7 @@ export const renderBrandsPage = async (req, res) => {
     });
   } catch (err) {
     console.error('renderBrandsPage error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load brands' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load brands' });
   }
 };
 
@@ -44,7 +45,7 @@ export const renderBrandDetail = async (req, res) => {
     }).lean();
 
     if (!brand) {
-      return res.status(404).render('user/error', { message: 'Fragrance House not found.' });
+      return res.status(HTTP_STATUS.NOT_FOUND).render('user/error', { message: 'Fragrance House not found.' });
     }
 
     // Fetch products belonging to this brand
@@ -85,7 +86,7 @@ export const renderBrandDetail = async (req, res) => {
     });
   } catch (err) {
     console.error('renderBrandDetail error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load brand showcase' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load brand showcase' });
   }
 };
 

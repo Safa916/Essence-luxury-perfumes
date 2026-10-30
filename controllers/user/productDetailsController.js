@@ -2,6 +2,7 @@ import offerService from '../../services/offerService.js';
 import Product from '../../models/product.js';
 import Variant from '../../models/variant.js';
 import Review from '../../models/review.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 function formatRelativeTime(date) {
   const now = new Date();
@@ -142,7 +143,7 @@ export const renderProductDetails = async (req, res) => {
     });
   } catch (err) {
     console.error('renderProductDetails error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load product' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load product' });
   }
 };
 

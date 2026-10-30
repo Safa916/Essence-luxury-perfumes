@@ -1,6 +1,7 @@
 import Order from '../../models/order.js';
 import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 function toNum(d) {
   if (d == null) return 0;
@@ -192,7 +193,7 @@ export const getSalesReport = async (req, res) => {
     });
   } catch (err) {
     console.error('getSalesReport error:', err);
-    res.status(500).send('Server error generating sales report');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error generating sales report');
   }
 };
 
@@ -342,7 +343,7 @@ export const downloadPdf = async (req, res) => {
     doc.end();
   } catch (err) {
     console.error('downloadPdf error:', err);
-    res.status(500).send('Error generating PDF sales report');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error generating PDF sales report');
   }
 };
 
@@ -526,7 +527,7 @@ export const downloadExcel = async (req, res) => {
     res.end();
   } catch (err) {
     console.error('downloadExcel error:', err);
-    res.status(500).send('Error generating Excel sales report');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error generating Excel sales report');
   }
 };
 

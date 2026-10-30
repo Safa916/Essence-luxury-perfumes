@@ -8,6 +8,7 @@ import Variant from '../../models/variant.js';
 import APIFeatures from '../../utils/apiFeatures.js';
 import { uploadDir } from '../../middleware/uploadProductImages.js';
 import { nextVariantSku } from './variantController.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 
 
@@ -46,7 +47,7 @@ export const checkProductName = async (req, res) => {
     return res.json({ exists: !!existing });
   } catch (err) {
     console.error('checkProductName error:', err);
-    return res.status(500).json({ exists: false });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ exists: false });
   }
 };
 
@@ -85,7 +86,7 @@ export const checkProductSku = async (req, res) => {
     return res.json({ exists: false });
   } catch (err) {
     console.error('checkProductSku error:', err);
-    return res.status(500).json({ exists: false });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ exists: false });
   }
 };
 
@@ -125,10 +126,10 @@ export const getProductss = async (req, res) => {
       is_active: true,
     },{name:1,price:1});
 
-    res.status(200).send(filteredProducts);
+    res.status(HTTP_STATUS.OK).send(filteredProducts);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Server error' });
   }
 };
 export const getProductts = async (req,res)=>{
@@ -138,12 +139,12 @@ export const getProductts = async (req,res)=>{
       is_active:true,
     
     },{name:1,price:1})
-    res.status(200).send(filterProducts)
+    res.status(HTTP_STATUS.OK).send(filterProducts)
   }catch(err){
 
 
     console.error(err);
-    res.status(500).json({message:'server error'})
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({message:'server error'})
   }
  };
 
@@ -209,7 +210,7 @@ const withSl = products.map((p, i) => {
     });
   } catch (err) {
     console.error('renderProductManagement error:', err);
-    res.status(500).render('admin/error', { message: 'Failed to load products' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('admin/error', { message: 'Failed to load products' });
   }
 };
 
@@ -239,7 +240,7 @@ export const createProduct = async (req, res) => {
         Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
         Brand ? Brand.find({ is_active: true }).sort({ name: 1 }).lean() : [],
       ]);
-      return res.status(400).render('admin/products/addProduct', {
+      return res.status(HTTP_STATUS.BAD_REQUEST).render('admin/products/addProduct', {
         categories,
         brands,
         errors,
@@ -260,7 +261,7 @@ export const createProduct = async (req, res) => {
         Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
         Brand ? Brand.find({ is_active: true }).sort({ name: 1 }).lean() : [],
       ]);
-      return res.status(400).render('admin/products/addProduct', {
+      return res.status(HTTP_STATUS.BAD_REQUEST).render('admin/products/addProduct', {
         categories,
         brands,
         errors: { name: `A product named "${trimmedName}" already exists. Please use a different name.` },
@@ -286,7 +287,7 @@ export const createProduct = async (req, res) => {
       const skuUsedBy = skuProductConflict
         ? 'It is already assigned to the product "' + skuProductConflict.name + '".'
         : 'It is already assigned to an existing product variant.';
-      return res.status(400).render('admin/products/addProduct', {
+      return res.status(HTTP_STATUS.BAD_REQUEST).render('admin/products/addProduct', {
         categories,
         brands,
         errors: { sku: 'SKU "' + trimmedSku + '" is already taken. ' + skuUsedBy + ' Please use a unique SKU.' },
@@ -365,7 +366,7 @@ export const createProduct = async (req, res) => {
       errors = { general: err.message || 'Could not create product' };
     }
 
-    res.status(400).render('admin/products/addProduct', {
+    res.status(HTTP_STATUS.BAD_REQUEST).render('admin/products/addProduct', {
       categories,
       brands,
       errors,
@@ -379,7 +380,7 @@ export const createProduct = async (req, res) => {
 // ---------------------------------------------------------------------------
 export const renderEditProduct = async (req, res) => {
   const product = await Product.findById(req.params.id).lean();
-  if (!product) return res.status(404).render('admin/error', { message: 'Product not found' });
+  if (!product) return res.status(HTTP_STATUS.NOT_FOUND).render('admin/error', { message: 'Product not found' });
 
   const [categories, brands, variantCount] = await Promise.all([
     Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
@@ -394,7 +395,7 @@ export const renderEditProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).render('admin/error', { message: 'Product not found' });
+    if (!product) return res.status(HTTP_STATUS.NOT_FOUND).render('admin/error', { message: 'Product not found' });
 
     const {
       name,
@@ -470,7 +471,7 @@ export const updateProduct = async (req, res) => {
         Brand ? Brand.find({ $or: [{ is_active: true }, { _id: product.brand_id }] }).sort({ name: 1 }).lean() : [],
         Variant.countDocuments({ product_id: product._id, deleted_at: null }),
       ]);
-      return res.status(400).render('admin/products/editProduct', {
+      return res.status(HTTP_STATUS.BAD_REQUEST).render('admin/products/editProduct', {
         product: { ...product.toObject(), ...req.body, images },
         categories,
         brands,
@@ -515,7 +516,7 @@ export const updateProduct = async (req, res) => {
       errors.general = err.message || 'Could not update product';
     }
 
-    res.status(400).render('admin/products/editProduct', {
+    res.status(HTTP_STATUS.BAD_REQUEST).render('admin/products/editProduct', {
       product: { _id: req.params.id, ...req.body },
       categories,
       brands,
@@ -531,7 +532,7 @@ export const updateProduct = async (req, res) => {
 export const softDeleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    if (!product) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Product not found' });
 
     product.is_deleted = true;
     product.deleted_at = new Date();
@@ -558,7 +559,7 @@ export const softDeleteProduct = async (req, res) => {
     res.json({ success: true, message: 'Product deleted', id: product._id });
   } catch (err) {
     console.error('softDeleteProduct error:', err);
-    res.status(500).json({ success: false, message: 'Could not delete product' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not delete product' });
   }
 };
 
@@ -571,7 +572,7 @@ export const renderProductDetail = async (req, res) => {
       .populate('brand_id', 'name')
       .lean();
 
-    if (!product) return res.status(404).render('admin/error', { message: 'Product not found' });
+    if (!product) return res.status(HTTP_STATUS.NOT_FOUND).render('admin/error', { message: 'Product not found' });
 
     const variantCount = await Variant.countDocuments({
       product_id: product._id,
@@ -591,7 +592,7 @@ export const renderProductDetail = async (req, res) => {
     });
   } catch (err) {
     console.error('renderProductDetail error:', err);
-    res.status(500).render('admin/error', { message: 'Failed to load product' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('admin/error', { message: 'Failed to load product' });
   }
 };
 
@@ -605,7 +606,7 @@ export const renderVariantManager = async (req, res) => {
       .populate('brand_id', 'name')
       .lean();
 
-    if (!product) return res.status(404).render('admin/error', { message: 'Product not found' });
+    if (!product) return res.status(HTTP_STATUS.NOT_FOUND).render('admin/error', { message: 'Product not found' });
 
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = 4; // matches the "Showing 4 of 24 variants" screenshot
@@ -632,7 +633,7 @@ export const renderVariantManager = async (req, res) => {
     });
   } catch (err) {
     console.error('renderVariantManager error:', err);
-    res.status(500).render('admin/error', { message: 'Failed to load product' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('admin/error', { message: 'Failed to load product' });
   }
 };
 

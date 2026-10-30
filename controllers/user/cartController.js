@@ -5,6 +5,7 @@ import CartItem from '../../models/cartItem.js';
 import Product from '../../models/product.js';
 import Variant from '../../models/variant.js';
 import WishlistItem from '../../models/wishlistItems.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 const MAX_QTY_PER_ITEM = 10;
 
@@ -17,7 +18,7 @@ function toNumber(decimal128) {
 // existing requireAuth (redirects); these return JSON so fetch() can react.
 export const requireAuthApi = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ success: false, message: 'Please log in to continue.', redirect: '/auth/login' });
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'Please log in to continue.', redirect: '/auth/login' });
   }
   next();
 };
@@ -60,7 +61,7 @@ export const addToCart = async (req, res) => {
     // Guard: requireAuthApi is in the route chain but add an explicit check
     // here too so a misconfigured route can never crash the server.
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Please log in to continue.', redirect: '/auth/login' });
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'Please log in to continue.', redirect: '/auth/login' });
     }
     const userId = req.user._id;
     const { product_id, variant_id } = req.body;
@@ -68,7 +69,7 @@ export const addToCart = async (req, res) => {
     let quantity = parseInt(req.body.quantity, 10) || 1;
 
     if (!mongoose.Types.ObjectId.isValid(product_id) || !mongoose.Types.ObjectId.isValid(variant_id)) {
-      return res.status(400).json({ success: false, message: 'Invalid product or variant.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid product or variant.' });
     }
 
     const product = await Product.findById(product_id)
@@ -76,13 +77,13 @@ export const addToCart = async (req, res) => {
       .populate('category_id', 'is_active')
       .lean();
     if (!product || !product.is_active || product.is_deleted) {
-      return res.status(400).json({ success: false, message: 'This product is no longer available.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'This product is no longer available.' });
     }
     if (product.category_id && product.category_id.is_active === false) {
-      return res.status(400).json({ success: false, message: 'This product is no longer available.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'This product is no longer available.' });
     }
     if (product.brand_id && product.brand_id.is_active === false) {
-      return res.status(400).json({ success: false, message: 'This product is no longer available.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'This product is no longer available.' });
     }
 
     const variant = await Variant.findOne({
@@ -93,11 +94,11 @@ export const addToCart = async (req, res) => {
     }).lean();
 
     if (!variant) {
-      return res.status(400).json({ success: false, message: 'This size is no longer available.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'This size is no longer available.' });
     }
 
     if (variant.quantity <= 0) {
-      return res.status(400).json({ success: false, message: 'This size is out of stock.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'This size is out of stock.' });
     }
 
     const cart = await getOrCreateCart(userId);
@@ -167,7 +168,7 @@ export const addToCart = async (req, res) => {
     res.json({ success: true, message: 'Added to your bag', itemCount, subtotal, couponCleared });
   } catch (err) {
     console.error('addToCart error:', err);
-    res.status(500).json({ success: false, message: 'Could not add to cart.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not add to cart.' });
   }
 };
 
@@ -281,7 +282,7 @@ export const renderCart = async (req, res) => {
     });
   } catch (err) {
     console.error('renderCart error:', err);
-    res.status(500).render('user/error', { message: 'Failed to load your bag' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load your bag' });
   }
 };
 
@@ -291,7 +292,7 @@ export const updateQuantity = async (req, res) => {
     const { cart_item_id, action } = req.body;
 
     const item = await CartItem.findById(cart_item_id).populate('variant_id');
-    if (!item) return res.status(404).json({ success: false, message: 'Item not found.' });
+    if (!item) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Item not found.' });
 
     const variant = item.variant_id;
     const maxQty = variant ? Math.min(MAX_QTY_PER_ITEM, variant.quantity) : MAX_QTY_PER_ITEM;
@@ -300,7 +301,7 @@ export const updateQuantity = async (req, res) => {
       const msg = item.quantity >= MAX_QTY_PER_ITEM 
         ? `You can only purchase a maximum of ${MAX_QTY_PER_ITEM} units of this item.`
         : 'Maximum available stock reached for this item.';
-      return res.status(400).json({ success: false, message: msg, maxReached: true });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: msg, maxReached: true });
     }
 
     let newQty = item.quantity;
@@ -326,7 +327,7 @@ export const updateQuantity = async (req, res) => {
     });
   } catch (err) {
     console.error('updateQuantity error:', err);
-    res.status(500).json({ success: false, message: 'Could not update quantity.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not update quantity.' });
   }
 };
 
@@ -334,7 +335,7 @@ export const updateQuantity = async (req, res) => {
 export const removeItem = async (req, res) => {
   try {
     const item = await CartItem.findById(req.params.cartItemId);
-    if (!item) return res.status(404).json({ success: false, message: 'Item not found.' });
+    if (!item) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Item not found.' });
 
     const cartId = item.cart_id;
     await CartItem.findByIdAndDelete(item._id);
@@ -348,7 +349,7 @@ export const removeItem = async (req, res) => {
     res.json({ success: true, subtotal, itemCount, couponCleared });
   } catch (err) {
     console.error('removeItem error:', err);
-    res.status(500).json({ success: false, message: 'Could not remove item.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Could not remove item.' });
 
 
 

@@ -1,5 +1,6 @@
 import Address from '../../models/address.js';
 import { isValidName } from '../../utils/validators.js';
+import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 // Helper: only allow known paths to return to (prevents open-redirect abuse)
 const getSafeReturnTo = (value) => (value === '/checkout' ? '/checkout' : '/address');
@@ -55,7 +56,7 @@ export const listAddresses = async (req, res) => {
     res.render('user/address/myAddresses', { addresses: formatted, user: req.user });
   } catch (error) {
     console.error('List addresses error:', error.message);
-    res.status(500).send('Server error loading addresses');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error loading addresses');
   }
 };
 
@@ -73,7 +74,7 @@ export const getNewAddressForm = (req, res) => {
 export const getEditAddressForm = async (req, res) => {
   try {
     const addr = await Address.findOne({ _id: req.params.id, user_id: req.user._id });
-    if (!addr) return res.status(404).send('Address not found');
+    if (!addr) return res.status(HTTP_STATUS.NOT_FOUND).send('Address not found');
 
     res.render('user/address/edit-address', {
       address: {
@@ -90,7 +91,7 @@ export const getEditAddressForm = async (req, res) => {
     });
   } catch (error) {
     console.error('Get edit address form error:', error.message);
-    res.status(500).send('Server error loading address');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error loading address');
   }
 };
 
@@ -136,7 +137,7 @@ export const setDefaultAddress = async (req, res) => {
     res.redirect('/address');
   } catch (error) {
     console.error('Set default address error:', error.message);
-    res.status(500).send('Server error setting default address');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error setting default address');
   }
 };
 
@@ -179,7 +180,7 @@ export const createAddress = async (req, res) => {
     res.redirect(returnTo);
   } catch (error) {
     console.error('Create address error:', error.message);
-    res.status(500).send('Server error creating address');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error creating address');
   }
 };
 
@@ -215,7 +216,7 @@ export const updateAddress = async (req, res) => {
     res.redirect(returnTo);
   } catch (error) {
     console.error('Update address error:', error.message);
-    res.status(500).send('Server error updating address');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error updating address');
   }
 };
 
@@ -227,7 +228,7 @@ export const deleteAddress = async (req, res) => {
     res.redirect('/address');
   } catch (error) {
     console.error('Delete address error:', error.message);
-    res.status(500).send('Server error deleting address');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error deleting address');
   }
 };
 
