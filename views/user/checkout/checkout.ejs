@@ -556,6 +556,9 @@
                 const verifyData = await verifyRes.json();
                 if (verifyData.success && verifyData.redirectUrl) {
                   window.location.href = verifyData.redirectUrl;
+                } else if (verifyData.refundedToWallet) {
+                  // Payment captured but stock was gone — money auto-refunded to wallet
+                  window.location.href = `/checkout/failure?refundedToWallet=1&reason=${encodeURIComponent(verifyData.message || 'Item went out of stock. Your payment has been refunded to your Essence Wallet.')}`;
                 } else {
                   window.location.href = `/checkout/failure?reason=${encodeURIComponent(verifyData.message || 'Payment verification failed')}`;
                 }

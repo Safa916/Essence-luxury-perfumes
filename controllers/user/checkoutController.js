@@ -953,8 +953,9 @@ export const verifyRazorpayPayment = async (req, res) => {
 
 // ─── GET /checkout/failure ────────────────────────────────────────────────────
 export const renderPaymentFailure = (req, res) => {
-  const reason = req.query.reason || 'Your payment was not completed.';
-  res.render('user/checkout/payment-failure', { reason });
+  const reason           = req.query.reason || 'Your payment was not completed.';
+  const refundedToWallet = req.query.refundedToWallet === '1';
+  res.render('user/checkout/payment-failure', { reason, refundedToWallet });
 };
 
 
