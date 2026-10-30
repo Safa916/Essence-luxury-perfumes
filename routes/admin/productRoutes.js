@@ -19,6 +19,7 @@ router.get('/', productController.renderProductManagement);
 
 // Add product
 router.get('/add', productController.renderAddProduct);
+router.get('/check-name', productController.checkProductName);
 router.post('/add', uploadProductImages.array('images', 8), resizeProductImages, productController.createProduct);
 
 

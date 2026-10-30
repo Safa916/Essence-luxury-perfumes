@@ -183,6 +183,32 @@
       });
       // ========================================================================
 
+      // ===== Live duplicate name check on blur ================================
+      const nameInput = document.querySelector('[name="name"]');
+      let nameCheckTimeout = null;
+
+      if (nameInput) {
+        nameInput.addEventListener('blur', function () {
+          const val = this.value.trim();
+          if (!val) return;
+          clearTimeout(nameCheckTimeout);
+          nameCheckTimeout = setTimeout(async () => {
+            try {
+              const res = await fetch('/admin/products/check-name?name=' + encodeURIComponent(val));
+              const data = await res.json();
+              if (data.exists) {
+                showError('name', 'A product named "' + val + '" already exists. Please use a different name.');
+              }
+            } catch (_) { /* silently ignore network errors */ }
+          }, 300);
+        });
+        nameInput.addEventListener('input', function () {
+          clearError('name');
+          clearTimeout(nameCheckTimeout);
+        });
+      }
+      // ========================================================================
+
       form.addEventListener('submit', function (e) {
         let isValid = true;
 
@@ -194,6 +220,10 @@
         const imageSlots = document.querySelectorAll('.preview-slot:not(.empty)').length;
 
         if (!name) { showError('name', 'Product name is required.'); isValid = false; }
+        // Also block submit if the live check already flagged a duplicate name
+        if (name && document.querySelector('[data-error-for="name"]')?.classList.contains('show')) {
+          isValid = false;
+        }
         if (!sku) { showError('sku', 'SKU is required.'); isValid = false; }
         if (!description) { showError('full_description', 'Product description is required.'); isValid = false; }
         if (!brandId) { showError('brand_id', 'Please select a brand.'); isValid = false; }

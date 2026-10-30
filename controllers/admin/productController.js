@@ -29,6 +29,26 @@ function deleteUploadedImages(publicPaths) {
 
 
 
+// ─── GET /admin/products/check-name?name=... ─────────────────────────────────
+// JSON endpoint — returns { exists: bool } for live duplicate-name checking.
+export const checkProductName = async (req, res) => {
+  try {
+    const name = (req.query.name || '').trim();
+    const excludeId = req.query.excludeId || null; // for edit-product use
+    if (!name) return res.json({ exists: false });
+
+    const query = { name: { $regex: `^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }, deleted_at: null };
+    if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
+      query._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
+    }
+    const existing = await Product.findOne(query).lean();
+    return res.json({ exists: !!existing });
+  } catch (err) {
+    console.error('checkProductName error:', err);
+    return res.status(500).json({ exists: false });
+  }
+};
+
 function validateProductInput(data, imageCount) {
   const errors = {};
 
@@ -186,6 +206,28 @@ export const createProduct = async (req, res) => {
         oldInput: req.body,
       });
     }
+
+    // ── Duplicate name check (case-insensitive) ──────────────────────────────
+    const trimmedName = req.body.name.trim();
+    const nameConflict = await Product.findOne({
+      name: { $regex: `^${trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+      deleted_at: null,
+    }).lean();
+
+    if (nameConflict) {
+      deleteUploadedImages(uploadedImages);
+      const [categories, brands] = await Promise.all([
+        Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
+        Brand ? Brand.find({ is_active: true }).sort({ name: 1 }).lean() : [],
+      ]);
+      return res.status(400).render('admin/products/addProduct', {
+        categories,
+        brands,
+        errors: { name: `A product named "${trimmedName}" already exists. Please use a different name.` },
+        oldInput: req.body,
+      });
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     const {
       name,
@@ -459,6 +501,7 @@ export default {
   renderProductManagement,
   renderAddProduct,
   createProduct,
+  checkProductName,
   renderEditProduct,
   updateProduct,
   softDeleteProduct,
