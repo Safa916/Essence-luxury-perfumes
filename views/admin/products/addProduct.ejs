@@ -209,6 +209,33 @@
       }
       // ========================================================================
 
+      // ===== Live duplicate SKU check on blur =================================
+      const skuInput = document.querySelector('[name="sku"]');
+      let skuCheckTimeout = null;
+
+      if (skuInput) {
+        skuInput.addEventListener('blur', function () {
+          const val = this.value.trim();
+          if (!val) return;
+          clearTimeout(skuCheckTimeout);
+          skuCheckTimeout = setTimeout(async () => {
+            try {
+              const res = await fetch('/admin/products/check-sku?sku=' + encodeURIComponent(val));
+              const data = await res.json();
+              if (data.exists) {
+                const usedBy = data.usedBy ? ' It is already assigned to ' + data.usedBy + '.' : '';
+                showError('sku', 'SKU "' + val.toUpperCase() + '" is already taken.' + usedBy + ' Please use a unique SKU.');
+              }
+            } catch (_) { /* silently ignore network errors */ }
+          }, 300);
+        });
+        skuInput.addEventListener('input', function () {
+          clearError('sku');
+          clearTimeout(skuCheckTimeout);
+        });
+      }
+      // ========================================================================
+
       form.addEventListener('submit', function (e) {
         let isValid = true;
 
@@ -225,6 +252,10 @@
           isValid = false;
         }
         if (!sku) { showError('sku', 'SKU is required.'); isValid = false; }
+        // Also block submit if the live check already flagged a duplicate SKU
+        if (sku && document.querySelector('[data-error-for="sku"]')?.classList.contains('show')) {
+          isValid = false;
+        }
         if (!description) { showError('full_description', 'Product description is required.'); isValid = false; }
         if (!brandId) { showError('brand_id', 'Please select a brand.'); isValid = false; }
         if (!categoryId) { showError('category_id', 'Please select a category.'); isValid = false; }

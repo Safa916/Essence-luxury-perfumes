@@ -49,6 +49,41 @@ export const checkProductName = async (req, res) => {
   }
 };
 
+
+// ─── GET /admin/products/check-sku?sku=... ──────────────────────────────────────────────
+// JSON endpoint — returns { exists: bool, usedBy: string } for live SKU check.
+export const checkProductSku = async (req, res) => {
+  try {
+    const sku = (req.query.sku || '').trim().toUpperCase();
+    const excludeId = req.query.excludeId || null;
+    if (!sku) return res.json({ exists: false });
+
+    const escaped = sku.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const skuRegex = { $regex: '^' + escaped + '$', $options: 'i' };
+
+    const productQuery = { sku: skuRegex, deleted_at: null };
+    if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
+      productQuery._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
+    }
+
+    const [existingProduct, existingVariant] = await Promise.all([
+      Product.findOne(productQuery, 'name sku').lean(),
+      Variant.findOne({ sku: skuRegex }, 'sku').lean(),
+    ]);
+
+    if (existingProduct) {
+      return res.json({ exists: true, usedBy: 'product "' + existingProduct.name + '"' });
+    }
+    if (existingVariant) {
+      return res.json({ exists: true, usedBy: 'an existing product variant' });
+    }
+    return res.json({ exists: false });
+  } catch (err) {
+    console.error('checkProductSku error:', err);
+    return res.status(500).json({ exists: false });
+  }
+};
+
 function validateProductInput(data, imageCount) {
   const errors = {};
 
@@ -224,6 +259,32 @@ export const createProduct = async (req, res) => {
         categories,
         brands,
         errors: { name: `A product named "${trimmedName}" already exists. Please use a different name.` },
+        oldInput: req.body,
+      });
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+    // ── Duplicate SKU check (case-insensitive, checks products + variants) ───
+    const trimmedSku = (req.body.sku || '').trim().toUpperCase();
+    const escapedSku = trimmedSku.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const skuRx = { $regex: '^' + escapedSku + '$', $options: 'i' };
+    const [skuProductConflict, skuVariantConflict] = await Promise.all([
+      Product.findOne({ sku: skuRx, deleted_at: null }, 'name').lean(),
+      Variant.findOne({ sku: skuRx }, 'sku').lean(),
+    ]);
+    if (skuProductConflict || skuVariantConflict) {
+      deleteUploadedImages(uploadedImages);
+      const [categories, brands] = await Promise.all([
+        Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
+        Brand ? Brand.find({ is_active: true }).sort({ name: 1 }).lean() : [],
+      ]);
+      const skuUsedBy = skuProductConflict
+        ? 'It is already assigned to the product "' + skuProductConflict.name + '".'
+        : 'It is already assigned to an existing product variant.';
+      return res.status(400).render('admin/products/addProduct', {
+        categories,
+        brands,
+        errors: { sku: 'SKU "' + trimmedSku + '" is already taken. ' + skuUsedBy + ' Please use a unique SKU.' },
         oldInput: req.body,
       });
     }
@@ -502,6 +563,7 @@ export default {
   renderAddProduct,
   createProduct,
   checkProductName,
+  checkProductSku,
   renderEditProduct,
   updateProduct,
   softDeleteProduct,
