@@ -31,6 +31,74 @@ function generateOrderNumber() {
   return `ESS-${datePart}-${randPart}`;
 }
 
+/**
+ * Atomically reserves stock for a list of items to prevent race conditions.
+ * Uses MongoDB findOneAndUpdate with condition `quantity: { $gte: reqQty }` so that
+ * concurrent order placements cannot oversell the same item.
+ * If any item cannot be reserved, all previously reserved items in this order are rolled back.
+ */
+async function reserveStockAtomically(items) {
+  const reserved = [];
+
+  for (const item of items) {
+    const variantId = item.variant_id._id || item.variant_id;
+    const productId = item.product_id._id || item.product_id;
+    const reqQty = Number(item.quantity) || 1;
+
+    // Atomically find & decrement ONLY if current stock >= reqQty and variant is not soft-deleted
+    const updatedVariant = await Variant.findOneAndUpdate(
+      {
+        _id: variantId,
+        quantity: { $gte: reqQty },
+        deleted_at: null,
+      },
+      { $inc: { quantity: -reqQty } },
+      { new: true }
+    );
+
+    if (!updatedVariant) {
+      // Stock reservation failed! Roll back all items that were successfully reserved in this transaction
+      for (const r of reserved) {
+        await Variant.findByIdAndUpdate(r.variantId, { $inc: { quantity: r.qty } });
+        await Product.findByIdAndUpdate(r.productId, { $inc: { stock: r.qty } });
+      }
+
+      // Check current live stock to return the exact available quantity
+      const liveV = await Variant.findById(variantId).lean();
+      const currentStock = liveV && liveV.deleted_at === null ? Math.max(0, liveV.quantity) : 0;
+
+      return {
+        success: false,
+        failedItem: item,
+        availableStock: currentStock,
+        requestedQuantity: reqQty,
+      };
+    }
+
+    // Keep product aggregate stock in sync
+    await Product.findByIdAndUpdate(productId, { $inc: { stock: -reqQty } });
+
+    reserved.push({ variantId, productId, qty: reqQty });
+  }
+
+  return { success: true, reserved };
+}
+
+/**
+ * Rolls back an already reserved batch of stock items (e.g. if order creation or wallet debit fails).
+ */
+async function rollbackStockReservation(reserved) {
+  if (!Array.isArray(reserved)) return;
+  for (const r of reserved) {
+    try {
+      await Variant.findByIdAndUpdate(r.variantId, { $inc: { quantity: r.qty } });
+      await Product.findByIdAndUpdate(r.productId, { $inc: { stock: r.qty } });
+    } catch (err) {
+      console.error('[StockRollback] Failed to restore stock for item:', r, err);
+    }
+  }
+}
+
 // ─── GET /checkout ────────────────────────────────────────────────────────────
 export const renderCheckout = async (req, res) => {
   try {
@@ -169,8 +237,85 @@ export const getCheckoutSummary = async (req, res) => {
   }
 };
 
+// ─── GET /checkout/check-stock (Live Pre-flight Stock Verification) ────────────
+export const checkCheckoutStock = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const cart = await Cart.findOne({ user_id: userId }).lean();
+    if (!cart || !cart.items.length) {
+      return res.json({ success: true, inStock: true, items: [], message: 'Cart is empty' });
+    }
+
+    const cartItemsRaw = await CartItem.find({ cart_id: cart._id })
+      .populate('product_id')
+      .populate('variant_id')
+      .lean();
+
+    const validItems = cartItemsRaw.filter(i => i.product_id && i.variant_id);
+    let allInStock = true;
+    const issues = [];
+    const stockStatus = [];
+
+    for (const item of validItems) {
+      const liveVariant = await Variant.findById(item.variant_id._id).lean();
+      const currentStock = liveVariant && liveVariant.deleted_at === null ? Math.max(0, liveVariant.quantity) : 0;
+      const isAvailable = currentStock >= item.quantity && currentStock > 0;
+      const prodName = (item.product_id && item.product_id.name) || 'Product';
+      const sizeStr = (item.variant_id && item.variant_id.size_ml) ? `${item.variant_id.size_ml}ML` : '';
+
+      stockStatus.push({
+        cartItemId: item._id,
+        variantId: item.variant_id._id,
+        productName: prodName,
+        size: sizeStr,
+        requestedQty: item.quantity,
+        availableStock: currentStock,
+        inStock: isAvailable,
+      });
+
+      if (!isAvailable) {
+        allInStock = false;
+        const msg = currentStock <= 0
+          ? `Sorry! "${prodName}" (${sizeStr}) is currently out of stock.`
+          : `Only ${currentStock} unit(s) of "${prodName}" (${sizeStr}) are left in stock (you requested ${item.quantity}). Please adjust your quantity.`;
+
+        issues.push({
+          cartItemId: item._id,
+          productName: prodName,
+          size: sizeStr,
+          requestedQty: item.quantity,
+          availableStock: currentStock,
+          message: msg,
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      inStock: allInStock,
+      items: stockStatus,
+      issues,
+      message: issues.length ? issues[0].message : 'All items are in stock',
+    });
+  } catch (err) {
+    console.error('checkCheckoutStock error:', err);
+    return res.status(500).json({ success: false, message: 'Could not verify stock status.' });
+  }
+};
+
 // ─── POST /checkout ───────────────────────────────────────────────────────────
 export const placeOrder = async (req, res) => {
+  const isAjax = req.xhr || req.headers.accept?.includes('application/json') || req.is('json');
+
+  const sendError = (status, payload) => {
+    if (isAjax) {
+      return res.status(status).json(typeof payload === 'string' ? { success: false, message: payload } : { success: false, ...payload });
+    }
+    return res.status(status).render('user/error', { message: typeof payload === 'string' ? payload : payload.message });
+  };
+
+  let reservedBatch = null;
+
   try {
     const userId = req.user._id;
     const { addressId, paymentMethod = 'cod' } = req.body;
@@ -178,18 +323,18 @@ export const placeOrder = async (req, res) => {
     const method = paymentMethod === 'wallet' ? 'Wallet' : 'Cash on Delivery';
 
     // 1. Validate address belongs to this user
-    if (!mongoose.Types.ObjectId.isValid(addressId)) {
-      return res.status(400).render('user/error', { message: 'Invalid address selected.' });
+    if (!addressId || !mongoose.Types.ObjectId.isValid(addressId)) {
+      return sendError(400, 'Invalid delivery address selected.');
     }
     const address = await Address.findOne({ _id: addressId, user_id: userId }).lean();
     if (!address) {
-      return res.status(400).render('user/error', { message: 'Address not found.' });
+      return sendError(400, 'Selected shipping address not found.');
     }
 
     // 2. Get cart
     const cart = await Cart.findOne({ user_id: userId }).lean();
     if (!cart || !cart.items.length) {
-      return res.redirect('/cart');
+      return sendError(400, { message: 'Your cart is empty.', redirectUrl: '/cart' });
     }
 
     // 3. Load cart items with product & variant data
@@ -198,25 +343,44 @@ export const placeOrder = async (req, res) => {
       .populate('variant_id')
       .lean();
     const validItems = cartItemsRaw.filter(i => i.product_id && i.variant_id);
-    if (!validItems.length) return res.redirect('/cart');
+    if (!validItems.length) {
+      return sendError(400, { message: 'No valid items in cart.', redirectUrl: '/cart' });
+    }
 
-    // 4. Live stock and max quantity validation — re-fetch each variant to catch admin edits since page load
+    // 4. Validate maximum allowed quantity per item (10 units)
     for (const i of validItems) {
       if (i.quantity > 10) {
-        return res.status(400).render('user/error', {
-          message: `Maximum allowed quantity for "${i.product_id.name}" is 10 units. Please adjust your order.`,
-        });
-      }
-      const liveVariant = await Variant.findById(i.variant_id._id);
-      if (!liveVariant || liveVariant.quantity < i.quantity) {
-        return res.status(400).render('user/error', {
-          message: `"${i.product_id.name}" (${i.variant_id.size_ml}ML) is out of stock or has insufficient quantity. Please update your cart.`,
-        });
+        return sendError(400, `Maximum allowed quantity for "${i.product_id.name}" is 10 units. Please adjust your order.`);
       }
     }
 
-    // 5. Build order items snapshot with live offer pricing
-// offerService imported at top
+    // 5. ATOMIC STOCK RESERVATION (Prevents Race Condition when two users order concurrently)
+    const reservation = await reserveStockAtomically(validItems);
+    if (!reservation.success) {
+      const failed = reservation.failedItem;
+      const prodName = (failed.product_id && failed.product_id.name) || 'Selected fragrance';
+      const sizeStr = (failed.variant_id && failed.variant_id.size_ml) ? ` (${failed.variant_id.size_ml}ML)` : '';
+      const avail = reservation.availableStock;
+      const reqQty = reservation.requestedQuantity;
+
+      const message = avail <= 0
+        ? `Sorry! "${prodName}"${sizeStr} is currently out of stock. Another customer just purchased the last item.`
+        : `Only ${avail} unit(s) of "${prodName}"${sizeStr} are available in stock (you requested ${reqQty}). Please adjust your quantity to continue.`;
+
+      return sendError(409, {
+        code: 'INSUFFICIENT_STOCK',
+        message,
+        availableStock: avail,
+        requestedQuantity: reqQty,
+        productName: prodName,
+        size: sizeStr,
+        cartItemId: failed._id,
+      });
+    }
+
+    reservedBatch = reservation.reserved;
+
+    // 6. Build order items snapshot with live offer pricing
     const activeOffers = await offerService.getActiveOffers();
 
     const orderItems = validItems.map(i => {
@@ -241,7 +405,7 @@ export const placeOrder = async (req, res) => {
       };
     });
 
-    // 6. Pricing calculations
+    // 7. Pricing calculations
     const subtotal = orderItems.reduce((s, i) => s + (i.price_at_purchase * i.quantity), 0);
     let coupon     = cart.applied_coupon?.code ? cart.applied_coupon : null;
     let discount   = coupon ? toNum(cart.applied_coupon.discount_value) : 0;
@@ -269,17 +433,19 @@ export const placeOrder = async (req, res) => {
     const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
     const total    = parseFloat((taxable + tax + shipping).toFixed(2));
 
-    // 7. Check wallet balance if payment method is Wallet
+    // 8. Check wallet balance if payment method is Wallet
     if (method === 'Wallet') {
       const currentBal = await walletService.getBalance(userId);
       if (currentBal < total) {
-        return res.status(400).render('user/error', {
+        await rollbackStockReservation(reservedBatch);
+        reservedBatch = null;
+        return sendError(400, {
           message: `Insufficient wallet balance. You have ₹${currentBal.toLocaleString('en-IN')}, but order total is ₹${total.toLocaleString('en-IN')}.`,
         });
       }
     }
 
-    // 8. Create order (retry on duplicate order_number)
+    // 9. Create order (retry on duplicate order_number)
     let order;
     let attempts = 0;
     while (!order && attempts < 5) {
@@ -309,30 +475,40 @@ export const placeOrder = async (req, res) => {
           coupon_code:     coupon?.code || null,
         });
       } catch (e) {
-        if (e.code === 11000) { attempts++; continue; } // duplicate order_number — retry
+        if (e.code === 11000) { attempts++; continue; }
+        await rollbackStockReservation(reservedBatch);
+        reservedBatch = null;
         throw e;
       }
     }
-    if (!order) throw new Error('Could not generate a unique order number');
+
+    if (!order) {
+      await rollbackStockReservation(reservedBatch);
+      reservedBatch = null;
+      throw new Error('Could not generate a unique order number');
+    }
 
     // If paid by wallet, debit the wallet balance
     if (method === 'Wallet') {
-      await walletService.debitWallet({
-        userId,
-        amount: total,
-        category: 'purchase',
-        description: `Order payment for #${order.order_number}`,
-        method: 'Wallet',
-        relatedOrderId: order._id,
-      });
+      try {
+        await walletService.debitWallet({
+          userId,
+          amount: total,
+          category: 'purchase',
+          description: `Order payment for #${order.order_number}`,
+          method: 'Wallet',
+          relatedOrderId: order._id,
+        });
+      } catch (debitErr) {
+        console.error('Wallet debit failed, cancelling order:', debitErr);
+        await Order.findByIdAndUpdate(order._id, { $set: { order_status: 'cancelled', payment_status: 'failed' } });
+        await rollbackStockReservation(reservedBatch);
+        reservedBatch = null;
+        return sendError(500, 'Wallet payment failed. Your balance was not charged.');
+      }
     }
 
-    // 8. Decrement stock for each item
-    for (const i of validItems) {
-      await Variant.findByIdAndUpdate(i.variant_id._id, { $inc: { quantity: -i.quantity } });
-      await Product.findByIdAndUpdate(i.product_id._id, { $inc: { stock:    -i.quantity } });
-    }
-    // 9. Record coupon usage so admin dashboard shows correct count
+    // 10. Record coupon usage so admin dashboard shows correct count
     if (coupon && coupon.code) {
       try {
         const cleanCode = coupon.code.toString().trim().toUpperCase();
@@ -345,22 +521,26 @@ export const placeOrder = async (req, res) => {
             discount_applied: discount,
           });
           console.log(`[CouponUsage] Recorded usage for coupon: ${cleanCode}, user: ${userId}, order: ${order._id}`);
-        } else {
-          console.warn(`[CouponUsage] Coupon code "${cleanCode}" not found in database.`);
         }
       } catch (usageErr) {
         console.error('[CouponUsage] Error saving coupon usage:', usageErr);
       }
     }
 
-    // 10. Clear the cart
+    // 11. Clear the cart
     await CartItem.deleteMany({ cart_id: cart._id });
     await Cart.findByIdAndUpdate(cart._id, { $set: { items: [], applied_coupon: { code: null, discount_value: null } } });
 
-    res.redirect(`/checkout/success/${order._id}`);
+    if (isAjax) {
+      return res.json({ success: true, redirectUrl: `/checkout/success/${order._id}` });
+    }
+    return res.redirect(`/checkout/success/${order._id}`);
   } catch (err) {
     console.error('placeOrder error:', err);
-    res.status(500).render('user/error', { message: 'Failed to place order. Please try again.' });
+    if (reservedBatch) {
+      await rollbackStockReservation(reservedBatch);
+    }
+    return sendError(500, 'Failed to place order. Please try again.');
   }
 };
 
@@ -438,11 +618,22 @@ export const createRazorpayOrder = async (req, res) => {
 
     // 3. Stock validation
     for (const i of validItems) {
-      const liveVariant = await Variant.findById(i.variant_id._id);
-      if (!liveVariant || liveVariant.quantity < i.quantity) {
+      const liveVariant = await Variant.findById(i.variant_id._id).lean();
+      const currentStock = liveVariant && liveVariant.deleted_at === null ? Math.max(0, liveVariant.quantity) : 0;
+      if (currentStock < i.quantity || currentStock <= 0) {
+        const prodName = (i.product_id && i.product_id.name) || 'Selected fragrance';
+        const sizeStr = (i.variant_id && i.variant_id.size_ml) ? ` (${i.variant_id.size_ml}ML)` : '';
+        const msg = currentStock <= 0
+          ? `Sorry! "${prodName}"${sizeStr} is currently out of stock.`
+          : `Only ${currentStock} unit(s) of "${prodName}"${sizeStr} are left in stock (you requested ${i.quantity}). Please adjust your quantity.`;
         return res.status(400).json({
           success: false,
-          message: `"${i.product_id.name}" (${i.variant_id.size_ml}ML) has insufficient stock.`,
+          code: 'INSUFFICIENT_STOCK',
+          message: msg,
+          availableStock: currentStock,
+          requestedQuantity: i.quantity,
+          productName: prodName,
+          size: sizeStr,
         });
       }
     }
@@ -640,7 +831,44 @@ export const verifyRazorpayPayment = async (req, res) => {
     const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
     const total    = parseFloat((taxable + tax + shipping).toFixed(2));
 
-    // 6. Create Order with payment_status = 'paid'
+    // 6. ATOMIC STOCK RESERVATION
+    const reservation = await reserveStockAtomically(validItems);
+    if (!reservation.success) {
+      const failed = reservation.failedItem;
+      const prodName = (failed.product_id && failed.product_id.name) || 'Selected fragrance';
+      const sizeStr = (failed.variant_id && failed.variant_id.size_ml) ? ` (${failed.variant_id.size_ml}ML)` : '';
+      const avail = reservation.availableStock;
+
+      // Update payment record to reflect failed stock
+      await Payment.findOneAndUpdate(
+        { gateway_order_id: razorpay_order_id },
+        { status: 'refunded_to_wallet', transaction_id: razorpay_payment_id }
+      );
+
+      // Refund the captured amount to user's Essence Wallet
+      await walletService.creditWallet({
+        userId,
+        amount: total,
+        category: 'refund',
+        description: `Automatic refund for out-of-stock item: ${prodName}${sizeStr} (Payment #${razorpay_payment_id})`,
+        method: 'Online Payment',
+      });
+
+      const message = avail <= 0
+        ? `"${prodName}"${sizeStr} went out of stock right as your payment finished. Your payment of ₹${total.toLocaleString('en-IN')} has been immediately credited to your Essence Wallet.`
+        : `Only ${avail} unit(s) of "${prodName}"${sizeStr} remain in stock. Your payment of ₹${total.toLocaleString('en-IN')} has been immediately refunded to your Essence Wallet.`;
+
+      return res.status(409).json({
+        success: false,
+        code: 'INSUFFICIENT_STOCK',
+        message,
+        refundedToWallet: true,
+      });
+    }
+
+    const reservedBatch = reservation.reserved;
+
+    // 7. Create Order with payment_status = 'paid'
     let order;
     let attempts = 0;
     while (!order && attempts < 5) {
@@ -671,12 +899,16 @@ export const verifyRazorpayPayment = async (req, res) => {
         });
       } catch (e) {
         if (e.code === 11000) { attempts++; continue; }
+        await rollbackStockReservation(reservedBatch);
         throw e;
       }
     }
-    if (!order) throw new Error('Could not generate unique order number');
+    if (!order) {
+      await rollbackStockReservation(reservedBatch);
+      throw new Error('Could not generate unique order number');
+    }
 
-    // 7. Update Payment record
+    // 8. Update Payment record
     await Payment.findOneAndUpdate(
       { gateway_order_id: razorpay_order_id },
       {
@@ -685,12 +917,6 @@ export const verifyRazorpayPayment = async (req, res) => {
         status: 'success',
       }
     );
-
-    // 8. Decrement stock
-    for (const i of validItems) {
-      await Variant.findByIdAndUpdate(i.variant_id._id, { $inc: { quantity: -i.quantity } });
-      await Product.findByIdAndUpdate(i.product_id._id, { $inc: { stock:    -i.quantity } });
-    }
 
     // 9. Record coupon usage
     if (coupon && coupon.code) {
@@ -735,6 +961,7 @@ export const renderPaymentFailure = (req, res) => {
 export default {
   renderCheckout,
   getCheckoutSummary,
+  checkCheckoutStock,
   placeOrder,
   renderOrderSuccess,
   createRazorpayOrder,

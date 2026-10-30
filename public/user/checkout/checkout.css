@@ -974,4 +974,179 @@
   border-radius: 2px;
   display: inline-block;
 }
-
+
+
+
+/* ── Stock status badges in Order Summary ── */
+.co-stock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  padding: 1px 7px;
+  border-radius: 2px;
+  font-weight: 500;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+.co-stock-pill.in-stock {
+  color: #2e6930;
+  background: #edf7ed;
+  border: 1px solid #c8e6c9;
+}
+
+.co-stock-pill.low-stock {
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  font-weight: 600;
+}
+
+.co-stock-pill.out-of-stock {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  font-weight: 600;
+}
+
+/* ── Stock Alert Modal Popup ── */
+.co-stock-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.co-stock-modal.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.co-stock-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(24, 20, 16, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.co-stock-modal-box {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e5dfd5;
+  width: min(440px, calc(100vw - 2.5rem));
+  padding: 2.2rem 2rem 2rem;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.22);
+  text-align: center;
+  transform: translateY(14px) scale(0.98);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+}
+
+.co-stock-modal.is-open .co-stock-modal-box {
+  transform: translateY(0) scale(1);
+}
+
+.co-stock-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.1rem;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: #8c857b;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.co-stock-modal-close:hover {
+  color: #1a1714;
+}
+
+.co-stock-modal-icon {
+  margin: 0 auto 1.1rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fffbf0;
+  border: 1px solid #f3e8c9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b08030;
+}
+
+.co-stock-modal-title {
+  font-family: var(--font-display, 'Cormorant Garamond', serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #1c1a17;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.75rem;
+}
+
+.co-stock-modal-msg {
+  font-family: var(--font-body, 'Jost', sans-serif);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #555046;
+  margin: 0 0 1.25rem;
+}
+
+.co-stock-modal-table {
+  background: #faf8f5;
+  border: 1px solid #ece5da;
+  border-radius: 2px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+}
+
+.co-stock-modal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: #635d52;
+}
+
+.co-stock-modal-row strong {
+  color: #1c1a17;
+}
+
+.co-stock-modal-row.highlight {
+  border-top: 1px dashed #ded6c8;
+  padding-top: 0.45rem;
+  margin-top: 0.25rem;
+  color: #b91c1c;
+}
+
+.co-stock-modal-row.highlight strong {
+  color: #b91c1c;
+  font-size: 0.95rem;
+}
+
+.co-stock-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.co-stock-modal-actions .btn {
+  width: 100%;
+  padding: 0.85rem 1.2rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+}

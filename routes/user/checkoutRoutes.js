@@ -1,10 +1,22 @@
 import express from 'express';
 const router   = express.Router();
 import { requireAuth } from '../../middleware/authMiddleware.js';
-import { renderCheckout, placeOrder, renderOrderSuccess, createRazorpayOrder, verifyRazorpayPayment, renderPaymentFailure, getCheckoutSummary } from '../../controllers/user/checkoutController.js';
+import {
+  renderCheckout,
+  placeOrder,
+  renderOrderSuccess,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  renderPaymentFailure,
+  getCheckoutSummary,
+  checkCheckoutStock
+} from '../../controllers/user/checkoutController.js';
 
 // GET  /checkout                     — render checkout page (login required)
 router.get('/',                       requireAuth, renderCheckout);
+
+// GET  /checkout/check-stock         — JSON: live pre-flight stock verification
+router.get('/check-stock',            requireAuth, checkCheckoutStock);
 
 // GET  /checkout/summary             — JSON: fresh totals for stale-tab detection
 router.get('/summary',                requireAuth, getCheckoutSummary);

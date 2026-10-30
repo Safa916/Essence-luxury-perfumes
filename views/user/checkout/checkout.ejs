@@ -254,7 +254,16 @@
               </div>
               <div class="summary-info">
                 <p class="summary-name"><%= item.name %></p>
-                <p class="summary-meta"><%= item.size %></p>
+                <p class="summary-meta">
+                  <%= item.size %>
+                  <% if (item.stock <= 0) { %>
+                    &middot; <span class="co-stock-pill out-of-stock">Out of Stock</span>
+                  <% } else if (item.stock <= 5) { %>
+                    &middot; <span class="co-stock-pill low-stock">Only <%= item.stock %> left</span>
+                  <% } else { %>
+                    &middot; <span class="co-stock-pill in-stock"><%= item.stock %> in stock</span>
+                  <% } %>
+                </p>
                 <div class="co-qty-control">
                   <button type="button" class="co-qty-btn co-qty-decrease" <%= item.quantity <= 1 ? 'disabled' : '' %> aria-label="Decrease quantity">−</button>
                   <span class="co-qty-value"><%= item.quantity %></span>
@@ -320,6 +329,37 @@
     </form>
   </main>
 
+  
+  <!-- Stock Alert Modal Popup -->
+  <div id="stockAlertModal" class="co-stock-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="stockAlertTitle">
+    <div class="co-stock-modal-backdrop" id="stockAlertBackdrop"></div>
+    <div class="co-stock-modal-box">
+      <button type="button" class="co-stock-modal-close" id="stockAlertCloseBtn" aria-label="Close dialog">&times;</button>
+      <div class="co-stock-modal-icon">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <h3 class="co-stock-modal-title" id="stockAlertTitle">Stock Notice</h3>
+      <p class="co-stock-modal-msg" id="stockAlertMsg"></p>
+      <div class="co-stock-modal-table" id="stockAlertTable" style="display:none;">
+        <div class="co-stock-modal-row">
+          <span>Requested Quantity:</span>
+          <strong id="stockModalRequested">0</strong>
+        </div>
+        <div class="co-stock-modal-row highlight">
+          <span>Available in Stock:</span>
+          <strong id="stockModalAvailable">0</strong>
+        </div>
+      </div>
+      <div class="co-stock-modal-actions">
+        <button type="button" class="btn btn-dark" id="stockAlertOkBtn">Acknowledge & Update</button>
+      </div>
+    </div>
+  </div>
+
   <%- include('../partials/logout-modal') %>
 
   <!-- Razorpay Checkout Script -->
@@ -359,21 +399,116 @@
       });
     });
 
-    // ── Checkout submission (COD vs Razorpay) ─────────────────────────────────
+        // ── Stock Alert Popup Helpers ─────────────────────────────────────────────
+    function showStockAlertPopup(message, requestedQty, availableStock) {
+      const modal = document.getElementById('stockAlertModal');
+      const msgEl = document.getElementById('stockAlertMsg');
+      const tableEl = document.getElementById('stockAlertTable');
+      const reqEl = document.getElementById('stockModalRequested');
+      const availEl = document.getElementById('stockModalAvailable');
+
+      if (msgEl) msgEl.textContent = message;
+
+      if (requestedQty !== undefined && availableStock !== undefined && tableEl) {
+        tableEl.style.display = 'flex';
+        if (reqEl) reqEl.textContent = requestedQty + ' unit(s)';
+        if (availEl) availEl.textContent = availableStock + ' unit(s)';
+      } else if (tableEl) {
+        tableEl.style.display = 'none';
+      }
+
+      if (modal) {
+        modal.style.display = 'flex';
+        requestAnimationFrame(() => modal.classList.add('is-open'));
+      }
+
+      if (typeof window.essToast === 'function') {
+        window.essToast(message, 'warning', 6000);
+      }
+    }
+
+    function closeStockAlertPopup() {
+      const modal = document.getElementById('stockAlertModal');
+      if (!modal) return;
+      modal.classList.remove('is-open');
+      setTimeout(() => { modal.style.display = 'none'; }, 240);
+    }
+
+    document.getElementById('stockAlertCloseBtn')?.addEventListener('click', closeStockAlertPopup);
+    document.getElementById('stockAlertOkBtn')?.addEventListener('click', closeStockAlertPopup);
+    document.getElementById('stockAlertBackdrop')?.addEventListener('click', closeStockAlertPopup);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeStockAlertPopup();
+    });
+
+    // ── Checkout submission (COD, Wallet & Razorpay with Live Stock Check) ────
     document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
       const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'cod';
       const addressInput = document.querySelector('input[name="addressId"]:checked');
 
       if (!addressInput) {
-        e.preventDefault();
-        alert('Please select or add a delivery address first.');
+        showStockAlertPopup('Please select or add a delivery address first.');
         return;
       }
 
+      const btn = document.getElementById('placeOrderBtn');
+      const originalText = selectedPayment === 'online'
+        ? 'Proceed to Pay Online'
+        : selectedPayment === 'wallet'
+        ? 'Pay with Essence Wallet'
+        : 'Place Order';
+
+      btn.disabled = true;
+      btn.textContent = 'Verifying Stock...';
+
+      // 1. Live Pre-flight Stock Verification
+      try {
+        const stockRes = await fetch('/checkout/check-stock');
+        const stockData = await stockRes.json();
+
+        if (!stockData.success || !stockData.inStock) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+
+          const issue = (stockData.issues && stockData.issues[0]) || {};
+          const msg = issue.message || stockData.message || 'Some items in your cart have insufficient stock.';
+          showStockAlertPopup(msg, issue.requestedQty, issue.availableStock);
+
+          // Update stock status badges in summary list live
+          if (stockData.items && Array.isArray(stockData.items)) {
+            stockData.items.forEach(st => {
+              const row = document.querySelector(`.summary-item[data-cart-item-id="${st.cartItemId}"]`);
+              if (row) {
+                row.dataset.maxQty = st.availableStock;
+                const pill = row.querySelector('.co-stock-pill');
+                if (pill) {
+                  if (st.availableStock <= 0) {
+                    pill.className = 'co-stock-pill out-of-stock';
+                    pill.textContent = 'Out of Stock';
+                  } else if (st.availableStock <= 5) {
+                    pill.className = 'co-stock-pill low-stock';
+                    pill.textContent = `Only ${st.availableStock} left`;
+                  } else {
+                    pill.className = 'co-stock-pill in-stock';
+                    pill.textContent = `${st.availableStock} in stock`;
+                  }
+                }
+                const incBtn = row.querySelector('.co-qty-increase');
+                const qtyVal = parseInt(row.querySelector('.co-qty-value')?.textContent || '1', 10);
+                if (incBtn) incBtn.disabled = qtyVal >= st.availableStock || st.availableStock <= 0;
+              }
+            });
+          }
+          return;
+        }
+      } catch (checkErr) {
+        console.error('Pre-checkout stock check failed:', checkErr);
+      }
+
+      // 2. Online Payment (Razorpay)
       if (selectedPayment === 'online') {
-        e.preventDefault();
-        const btn = document.getElementById('placeOrderBtn');
-        btn.disabled = true;
         btn.textContent = 'Initiating Payment...';
 
         try {
@@ -385,9 +520,9 @@
 
           const data = await res.json();
           if (!res.ok || !data.success) {
-            alert(data.message || 'Could not initiate online payment. Please try again.');
+            showStockAlertPopup(data.message || 'Could not initiate online payment. Please try again.', data.requestedQuantity, data.availableStock);
             btn.disabled = false;
-            btn.textContent = 'Proceed to Pay Online';
+            btn.textContent = originalText;
             return;
           }
 
@@ -403,11 +538,9 @@
               email: data.user.email,
               contact: data.user.phone,
             },
-            theme: {
-              color: '#54433b',
-            },
+            theme: { color: '#54433b' },
             handler: async function (response) {
-              btn.textContent = 'Confirming Payment...';
+              btn.textContent = 'Confirming & Reserving Stock...';
               try {
                 const verifyRes = await fetch('/checkout/verify-razorpay-payment', {
                   method: 'POST',
@@ -434,7 +567,7 @@
             modal: {
               ondismiss: function () {
                 btn.disabled = false;
-                btn.textContent = 'Proceed to Pay Online';
+                btn.textContent = originalText;
               },
             },
           };
@@ -447,15 +580,45 @@
           rzp.open();
         } catch (err) {
           console.error('Create order error:', err);
-          alert('Failed to connect to payment gateway. Please check your network connection.');
+          showStockAlertPopup('Failed to connect to payment gateway. Please check your network connection.');
           btn.disabled = false;
-          btn.textContent = 'Proceed to Pay Online';
+          btn.textContent = originalText;
         }
       } else {
-        // COD or Wallet submission
-        const btn = document.getElementById('placeOrderBtn');
-        btn.disabled = true;
+        // 3. COD or Wallet — submit via fetch to catch race conditions without full-page error
         btn.textContent = selectedPayment === 'wallet' ? 'Processing Wallet Payment...' : 'Placing Order...';
+
+        try {
+          const res = await fetch('/checkout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              addressId: addressInput.value,
+              paymentMethod: selectedPayment,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || !data.success) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+
+            showStockAlertPopup(data.message || 'Could not complete order.', data.requestedQuantity, data.availableStock);
+            return;
+          }
+
+          // Order placed successfully!
+          window.location.href = data.redirectUrl;
+        } catch (err) {
+          console.error('Place order network error:', err);
+          btn.disabled = false;
+          btn.textContent = originalText;
+          showStockAlertPopup('Network connection error while placing order. Please try again.');
+        }
       }
     });
 

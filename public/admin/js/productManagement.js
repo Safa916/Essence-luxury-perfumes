@@ -15,7 +15,9 @@
   const cancelBtn     = document.getElementById('cancelDeleteProductBtn');
   const closeBtn      = document.getElementById('closeDeleteProductBtn');
 
+  // Track pending ID and whether a deletion is actively in-flight
   let pendingProductId = null;
+  let isDeleting       = false;
 
   function resetConfirmBtn() {
     if (confirmBtn) {
@@ -28,6 +30,7 @@
   function openDeleteModal(id, name) {
     if (!id) return;
     pendingProductId = id;
+    isDeleting = false;
     if (productNameEl) productNameEl.textContent = name || 'this product';
     if (productRefEl)  productRefEl.textContent  = 'REF: ' + id.slice(-8).toUpperCase();
     resetConfirmBtn();
@@ -36,6 +39,8 @@
 
   // ── Close modal ──────────────────────────────────────────────────────────────
   function closeDeleteModal() {
+    // Don't allow closing via backdrop/ESC/cancel while a deletion is in-flight
+    if (isDeleting) return;
     pendingProductId = null;
     resetConfirmBtn();
     if (overlay) overlay.classList.remove('open');
@@ -79,11 +84,14 @@
   // ── Confirm delete ───────────────────────────────────────────────────────────
   if (confirmBtn) {
     confirmBtn.addEventListener('click', async function () {
-      if (!pendingProductId) return;
+      if (!pendingProductId || isDeleting) return;
 
       const idToDelete = pendingProductId;
+      isDeleting = true;
       confirmBtn.disabled = true;
       confirmBtn.textContent = 'Deleting…';
+
+      let succeeded = false;
 
       try {
         const res = await fetch('/admin/products/' + idToDelete, {
@@ -93,22 +101,31 @@
         const data = await res.json();
 
         if (data.success) {
-          // Remove the row from the table smoothly
+          succeeded = true;
+
+          // Close modal first, then animate-remove the row so the
+          // button state is fully reset before the animation plays.
+          isDeleting = false;
+          pendingProductId = null;
+          resetConfirmBtn();
+          if (overlay) overlay.classList.remove('open');
+
+          // Fade-out and remove the deleted row from the table
           const row = document.querySelector(`.btn-delete[data-id="${idToDelete}"]`)?.closest('tr');
           if (row) {
             row.style.transition = 'opacity 0.3s';
             row.style.opacity = '0';
             setTimeout(function () {
               row.remove();
-              const tbody = document.querySelector('.data-table tbody');
+              // Show "no products" message if the table is now empty
+              const tbody = document.querySelector('.products-table tbody');
               if (tbody && tbody.querySelectorAll('tr').length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 2.5rem; color: #888;">No products found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2.5rem;color:#888;">No products found</td></tr>';
               }
             }, 300);
           }
-          closeDeleteModal();
 
-          // Update "Showing X of Y" count if present
+          // Update "Showing X of Y" counters
           const showingEl = document.querySelector('.showing-count');
           if (showingEl) {
             const strongs = showingEl.querySelectorAll('strong');
@@ -123,14 +140,17 @@
           }
         } else {
           alert(data.message || 'Could not delete product. Please try again.');
-          resetConfirmBtn();
         }
       } catch (err) {
         console.error('Delete product error:', err);
         alert('Server error while deleting product. Please try again.');
-        resetConfirmBtn();
       } finally {
-        resetConfirmBtn();
+        // Always unblock the modal so the user can retry or open another
+        // deletion — but only if we didn't already handle success above.
+        if (!succeeded) {
+          isDeleting = false;
+          resetConfirmBtn();
+        }
       }
     });
   }
