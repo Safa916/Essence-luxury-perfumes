@@ -37,7 +37,8 @@ export const checkProductName = async (req, res) => {
     const excludeId = req.query.excludeId || null; // for edit-product use
     if (!name) return res.json({ exists: false });
 
-    const query = { name: { $regex: `^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }, deleted_at: null };
+    const escaped = name.replace(/[.*+?^$${}()|[\]\\]/g, '\\$&');
+    const query = { name: { $regex: '^' + escaped + '$', $options: 'i' }, is_deleted: { $ne: true } };
     if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
       query._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
     }
@@ -49,7 +50,6 @@ export const checkProductName = async (req, res) => {
   }
 };
 
-
 // ─── GET /admin/products/check-sku?sku=... ──────────────────────────────────────────────
 // JSON endpoint — returns { exists: bool, usedBy: string } for live SKU check.
 export const checkProductSku = async (req, res) => {
@@ -58,17 +58,22 @@ export const checkProductSku = async (req, res) => {
     const excludeId = req.query.excludeId || null;
     if (!sku) return res.json({ exists: false });
 
-    const escaped = sku.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = sku.replace(/[.*+?^$${}()|[\]\\]/g, '\\$&');
     const skuRegex = { $regex: '^' + escaped + '$', $options: 'i' };
 
-    const productQuery = { sku: skuRegex, deleted_at: null };
+    const productQuery = { sku: skuRegex, is_deleted: { $ne: true } };
     if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
       productQuery._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
     }
 
+    const variantQuery = { sku: skuRegex, deleted_at: null };
+    if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
+      variantQuery.product_id = { $ne: new mongoose.Types.ObjectId(excludeId) };
+    }
+
     const [existingProduct, existingVariant] = await Promise.all([
       Product.findOne(productQuery, 'name sku').lean(),
-      Variant.findOne({ sku: skuRegex }, 'sku').lean(),
+      Variant.findOne(variantQuery, 'sku').lean(),
     ]);
 
     if (existingProduct) {
@@ -342,12 +347,20 @@ export const createProduct = async (req, res) => {
       Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
       Brand ? Brand.find({ is_active: true }).sort({ name: 1 }).lean() : [],
     ]);
-
-       let errors;
+    let errors = {};
     if (err.code === 'INVALID_FILE_TYPE') {
       errors = { images: err.message };
     } else if (err.code === 'LIMIT_FILE_SIZE') {
       errors = { images: 'One or more images exceed the 5 MB size limit.' };
+    } else if (err.code === 11000) {
+      const msg = err.message || '';
+      if (err.keyPattern?.sku || msg.includes('sku')) {
+        errors.sku = 'SKU "' + (req.body.sku || '').toUpperCase() + '" is already taken. Please use a unique SKU.';
+      } else if (err.keyPattern?.name || err.keyPattern?.slug || msg.includes('name') || msg.includes('slug')) {
+        errors.name = 'A product named "' + (req.body.name || '') + '" already exists. Please use a different name.';
+      } else {
+        errors.general = 'A duplicate field error occurred. Please check the product details.';
+      }
     } else {
       errors = { general: err.message || 'Could not create product' };
     }
@@ -391,7 +404,7 @@ export const updateProduct = async (req, res) => {
       brand_id,
       category_id,
       status,
-      removed_images, 
+      removed_images,
     } = req.body;
 
     let images = [...product.images];
@@ -399,14 +412,12 @@ export const updateProduct = async (req, res) => {
     if (removed_images) {
       const toRemove = removed_images.split(',').filter(Boolean);
       images = images.filter((img) => !toRemove.includes(img));
-      // best-effort delete from disk
       toRemove.forEach((img) => {
         const filePath = path.join(uploadDir, path.basename(img));
         fs.unlink(filePath, () => {});
       });
     }
 
-    // resizeProductImages resizes new files and stores paths on req.processedImages.
     if (req.processedImages && req.processedImages.length) {
       images.push(...req.processedImages);
     }
@@ -418,6 +429,39 @@ export const updateProduct = async (req, res) => {
     if (!category_id) errors.category_id = 'Please select a category.';
     if (!brand_id) errors.brand_id = 'Please select a brand.';
     if (images.length < 3) errors.images = 'At least 3 product images are required.';
+
+    // Check duplicate Name (excluding this product)
+    if (name && name.trim()) {
+      const trimmedName = name.trim();
+      const escapedName = trimmedName.replace(/[.*+?^$${}()|[\]\\]/g, '\\$&');
+      const nameConflict = await Product.findOne({
+        _id: { $ne: product._id },
+        name: { $regex: '^' + escapedName + '$', $options: 'i' },
+        is_deleted: { $ne: true },
+      }).lean();
+
+      if (nameConflict) {
+        errors.name = 'A product named "' + trimmedName + '" already exists. Please use a different name.';
+      }
+    }
+
+    // Check duplicate SKU (excluding this product and its variants)
+    if (sku && sku.trim()) {
+      const trimmedSku = sku.trim().toUpperCase();
+      const escapedSku = trimmedSku.replace(/[.*+?^$${}()|[\]\\]/g, '\\$&');
+      const skuRx = { $regex: '^' + escapedSku + '$', $options: 'i' };
+      const [skuProductConflict, skuVariantConflict] = await Promise.all([
+        Product.findOne({ _id: { $ne: product._id }, sku: skuRx, is_deleted: { $ne: true } }, 'name').lean(),
+        Variant.findOne({ product_id: { $ne: product._id }, sku: skuRx, deleted_at: null }, 'sku').lean(),
+      ]);
+
+      if (skuProductConflict || skuVariantConflict) {
+        const skuUsedBy = skuProductConflict
+          ? 'It is already assigned to the product "' + skuProductConflict.name + '".'
+          : 'It is already assigned to an existing product variant.';
+        errors.sku = 'SKU "' + trimmedSku + '" is already taken. ' + skuUsedBy + ' Please use a unique SKU.';
+      }
+    }
 
     if (Object.keys(errors).length > 0) {
       deleteUploadedImages(req.processedImages);
@@ -435,8 +479,8 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    product.name = name;
-    product.sku = sku;
+    product.name = name.trim();
+    product.sku = sku.trim().toUpperCase();
     product.short_description = short_description;
     product.full_description = full_description;
     product.images = images;
@@ -450,7 +494,34 @@ export const updateProduct = async (req, res) => {
   } catch (err) {
     console.error('updateProduct error:', err);
     deleteUploadedImages(req.processedImages);
-    res.status(400).render('admin/error', { message: err.message || 'Could not update product' });
+
+    const [categories, brands, variantCount] = await Promise.all([
+      Category ? Category.find({ is_active: true, is_deleted: { $ne: true } }).lean() : [],
+      Brand ? Brand.find({ $or: [{ is_active: true }, { _id: req.body.brand_id }] }).sort({ name: 1 }).lean() : [],
+      Variant.countDocuments({ product_id: req.params.id, deleted_at: null }),
+    ]);
+
+    const errors = {};
+    if (err.code === 11000) {
+      const msg = err.message || '';
+      if (err.keyPattern?.sku || msg.includes('sku')) {
+        errors.sku = 'SKU "' + (req.body.sku || '').toUpperCase() + '" is already taken. Please use a unique SKU.';
+      } else if (err.keyPattern?.name || err.keyPattern?.slug || msg.includes('name') || msg.includes('slug')) {
+        errors.name = 'A product named "' + (req.body.name || '') + '" already exists. Please use a different name.';
+      } else {
+        errors.general = 'A duplicate field error occurred. Please check the product details.';
+      }
+    } else {
+      errors.general = err.message || 'Could not update product';
+    }
+
+    res.status(400).render('admin/products/editProduct', {
+      product: { _id: req.params.id, ...req.body },
+      categories,
+      brands,
+      errors,
+      variantCount,
+    });
   }
 };
 
@@ -465,14 +536,24 @@ export const softDeleteProduct = async (req, res) => {
     product.is_deleted = true;
     product.deleted_at = new Date();
     product.is_active = false;
-    await product.save();
+    if (product.sku && !product.sku.startsWith('__DELETED_')) {
+      product.sku = '__DELETED_' + product._id + '_' + product.sku;
+    }
+    if (product.slug && !product.slug.startsWith('__deleted_')) {
+      product.slug = '__deleted_' + product._id + '_' + product.slug;
+    }
+    await product.save({ validateBeforeSave: false });
 
-    // Soft delete the variants that belong to it too (your variant schema
-    // uses deleted_at, not is_deleted)
-    await Variant.updateMany(
-      { product_id: product._id, deleted_at: null },
-      { $set: { deleted_at: new Date(), is_active: false } }
-    );
+    // Soft delete the variants and rename their SKUs so they never block reuse
+    const variants = await Variant.find({ product_id: product._id, deleted_at: null });
+    for (const v of variants) {
+      v.deleted_at = new Date();
+      v.is_active = false;
+      if (v.sku && !v.sku.startsWith('__DELETED_')) {
+        v.sku = '__DELETED_' + v._id + '_' + v.sku;
+      }
+      await v.save({ validateBeforeSave: false });
+    }
 
     res.json({ success: true, message: 'Product deleted', id: product._id });
   } catch (err) {
@@ -481,7 +562,6 @@ export const softDeleteProduct = async (req, res) => {
   }
 };
 
-// ---------------------------------------------------------------------------
 // GET /admin/products/:id  -> Core Specs page
 // ---------------------------------------------------------------------------
 export const renderProductDetail = async (req, res) => {

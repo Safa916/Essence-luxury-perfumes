@@ -207,6 +207,58 @@
         return remainingExisting + newSlots;
       }
 
+      // ===== Live duplicate name check on blur ================================
+      const nameInput = document.querySelector('[name="name"]');
+      let nameCheckTimeout = null;
+
+      if (nameInput) {
+        nameInput.addEventListener('blur', function () {
+          const val = this.value.trim();
+          if (!val) return;
+          clearTimeout(nameCheckTimeout);
+          nameCheckTimeout = setTimeout(async () => {
+            try {
+              const res = await fetch('/admin/products/check-name?name=' + encodeURIComponent(val) + '&excludeId=<%= product._id %>');
+              const data = await res.json();
+              if (data.exists) {
+                showError('name', 'A product named "' + val + '" already exists. Please use a different name.');
+              }
+            } catch (_) { /* silently ignore network errors */ }
+          }, 300);
+        });
+        nameInput.addEventListener('input', function () {
+          clearError('name');
+          clearTimeout(nameCheckTimeout);
+        });
+      }
+
+      // ===== Live duplicate SKU check on blur =================================
+      const skuInput = document.querySelector('[name="sku"]');
+      let skuCheckTimeout = null;
+
+      if (skuInput) {
+        skuInput.addEventListener('blur', function () {
+          const val = this.value.trim();
+          if (!val) return;
+          clearTimeout(skuCheckTimeout);
+          skuCheckTimeout = setTimeout(async () => {
+            try {
+              const res = await fetch('/admin/products/check-sku?sku=' + encodeURIComponent(val) + '&excludeId=<%= product._id %>');
+              const data = await res.json();
+              if (data.exists) {
+                const usedBy = data.usedBy ? ' It is already assigned to ' + data.usedBy + '.' : '';
+                showError('sku', 'SKU "' + val.toUpperCase() + '" is already taken.' + usedBy + ' Please use a unique SKU.');
+              }
+            } catch (_) { /* silently ignore network errors */ }
+          }, 300);
+        });
+        skuInput.addEventListener('input', function () {
+          clearError('sku');
+          clearTimeout(skuCheckTimeout);
+        });
+      }
+      // ========================================================================
+
       form.addEventListener('submit', function (e) {
         let isValid = true;
 
@@ -215,9 +267,14 @@
         const description = document.querySelector('[name="full_description"]').value.trim();
         const brandId = document.querySelector('[name="brand_id"]').value;
         const categoryId = document.querySelector('[name="category_id"]').value;
-
         if (!name) { showError('name', 'Product name is required.'); isValid = false; }
+        if (name && document.querySelector('[data-error-for="name"]')?.classList.contains('show')) {
+          isValid = false;
+        }
         if (!sku) { showError('sku', 'SKU is required.'); isValid = false; }
+        if (sku && document.querySelector('[data-error-for="sku"]')?.classList.contains('show')) {
+          isValid = false;
+        }
         if (!description) { showError('full_description', 'Product description is required.'); isValid = false; }
         if (!brandId) { showError('brand_id', 'Please select a brand.'); isValid = false; }
         if (!categoryId) { showError('category_id', 'Please select a category.'); isValid = false; }
