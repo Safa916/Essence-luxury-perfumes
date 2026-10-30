@@ -19,9 +19,10 @@
         </div>
       </div>
 
-      <% if (errors && Object.keys(errors).length) { %>
+      <% const _bannerErrors = Object.entries(errors || {}).filter(function(kv){ return !['name','sku','full_description','brand_id','category_id'].includes(kv[0]); }); %>
+      <% if (_bannerErrors.length) { %>
         <div class="form-errors">
-          <% Object.values(errors).forEach(function(e) { %><div><%= e %></div><% }); %>
+          <% _bannerErrors.forEach(function(kv){ %><div><%= kv[1] %></div><% }); %>
         </div>
       <% } %>
 
