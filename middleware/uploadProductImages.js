@@ -1,19 +1,8 @@
 import multer from 'multer';
 import sharp from 'sharp';
 import path from 'path';
-import fs from 'fs';
-
-const __dirname = import.meta.dirname;
-
-// Make sure the upload folder exists
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'products');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Store the raw upload in memory first — we need the buffer so sharp can resize
-// it before it ever touches disk (this avoids saving huge/oversized originals).
-const storage = multer.memoryStorage();
+import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import s3, { S3_BUCKET, S3_BASE_URL } from '../config/s3.js';
 
 const ALLOWED_MIMES      = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
@@ -34,16 +23,16 @@ function fileFilter(req, file, cb) {
   }
 }
 
-// The multer instance itself — used in routes as uploadProductImages.array('images', 8)
+// Store files in memory — we resize with sharp before uploading to S3
 const uploadProductImages = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max per file
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB per file
 });
 
 // Runs AFTER uploadProductImages in the route chain.
-// Resizes every uploaded file, saves it to disk as a JPEG, and stores the
-// resulting paths on req.body.images so the controller can save them to the product.
+// Resizes every file with sharp, uploads the buffer to S3, and stores
+// the resulting S3 URLs on req.processedImages for the controller.
 async function resizeProductImages(req, res, next) {
   try {
     if (!req.files || req.files.length === 0) {
@@ -54,15 +43,24 @@ async function resizeProductImages(req, res, next) {
 
     await Promise.all(
       req.files.map(async (file, index) => {
-        const filename = `product-${Date.now()}-${index + 1}.jpeg`;
+        const filename = `products/product-${Date.now()}-${index + 1}.jpeg`;
 
-        await sharp(file.buffer)
+        // Resize with sharp → get a buffer (never write to local disk)
+        const buffer = await sharp(file.buffer)
           .resize(1000, 1000, { fit: 'inside', withoutEnlargement: true })
           .toFormat('jpeg')
           .jpeg({ quality: 88 })
-          .toFile(path.join(uploadDir, filename));
+          .toBuffer();
 
-        req.processedImages.push(`/uploads/products/${filename}`);
+        // Upload buffer directly to S3
+        await s3.send(new PutObjectCommand({
+          Bucket: S3_BUCKET,
+          Key: filename,
+          Body: buffer,
+          ContentType: 'image/jpeg',
+        }));
+
+        req.processedImages.push(`${S3_BASE_URL}/${filename}`);
       })
     );
 
@@ -72,13 +70,27 @@ async function resizeProductImages(req, res, next) {
   }
 }
 
-// uploadDir is exported so the product controller can clean up resized files
-// that were already written to disk if the rest of the submission turns out
-// to be invalid (resizeProductImages saves files BEFORE the controller gets
-// a chance to validate the rest of the form).
-export {
-  uploadProductImages, resizeProductImages, uploadDir
-};
-export default {
-  uploadProductImages, resizeProductImages, uploadDir
-};
+// Deletes an array of S3 URLs from the bucket.
+// The product controller calls this on validation failure / product deletion.
+async function deleteProductImagesFromS3(imageUrls = []) {
+  if (!imageUrls || imageUrls.length === 0) return;
+  await Promise.all(
+    imageUrls.map(async (url) => {
+      try {
+        // Extract the S3 key from the full URL
+        // e.g. "https://bucket.s3.region.amazonaws.com/products/product-xxx.jpeg"
+        //   →  "products/product-xxx.jpeg"
+        const key = url.replace(`${S3_BASE_URL}/`, '');
+        await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: key }));
+      } catch (err) {
+        console.error('S3 delete error for', url, err.message);
+      }
+    })
+  );
+}
+
+// uploadDir is kept as a no-op export so any existing import doesn't break
+export const uploadDir = null;
+
+export { uploadProductImages, resizeProductImages, deleteProductImagesFromS3 };
+export default { uploadProductImages, resizeProductImages, deleteProductImagesFromS3, uploadDir };

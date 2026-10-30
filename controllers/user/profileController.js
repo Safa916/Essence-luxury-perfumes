@@ -5,6 +5,7 @@ import { generateOTPCode } from '../../utils/otp.js';
 import { isValidName, isValidPassword } from '../../utils/validators.js';
 import referralService from '../../services/referralService.js';
 import { HTTP_STATUS } from '../../constants/httpStatus.js';
+import { deleteAvatarFromS3 } from '../../config/upload.js';
 
 const formatRelativeTime = (date) => {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -89,8 +90,11 @@ export const updateProfile = async (req, res) => {
       phone_number: phone ? phone.trim() : '',
     };
 
-    if (req.file) {
-      updateData.profile_picture = `/uploads/avatars/${req.file.filename}`;
+    if (req.file && (req.file.s3Url || req.file.filename)) {
+      if (req.user.profile_picture) {
+        deleteAvatarFromS3(req.user.profile_picture).catch(() => {});
+      }
+      updateData.profile_picture = req.file.s3Url || `/uploads/avatars/${req.file.filename}`;
     }
 
     await User.findByIdAndUpdate(req.user._id, updateData);

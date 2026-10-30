@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
-import fs from 'fs';
-import path from 'path';
 import Category from '../../models/category.js';
 import Product from '../../models/product.js';
 import APIFeatures from '../../utils/apiFeatures.js';
-import { toPublicPath, uploadDir } from '../../middleware/uploadCategoryImage.js';
+import { deleteBannerFromS3 } from '../../middleware/uploadCategoryImage.js';
 import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
 function slugify(text) {
@@ -26,14 +24,7 @@ function isValidId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
-// Best-effort delete of an old category banner from disk when it's being
-// replaced or the category is removed. Safe no-op if the path isn't one of
-// ours (e.g. still null, or an external URL).
-function deleteBannerFile(bannerUrl) {
-  if (!bannerUrl || !bannerUrl.startsWith('/uploads/categories/')) return;
-  const filePath = path.join(uploadDir, path.basename(bannerUrl));
-  fs.unlink(filePath, () => {});
-}
+// deleteBannerFromS3 is imported from the uploadCategoryImage middleware.
 
 const INVALID_NAME_MSG = 'Category name must contain at least one letter or number (a-z, 0-9).';
 
@@ -111,7 +102,6 @@ export const createCategory = async (req, res) => {
     const bannerFile = req.file; // set by uploadCategoryImage middleware, if a file was chosen
 
     if (!name || !name.trim()) {
-      if (bannerFile) fs.unlink(bannerFile.path, () => {});
       return res.redirect(
         `/admin/categories?openModal=add&formError=${encodeURIComponent('Category name is required.')}`
       );
@@ -121,7 +111,6 @@ export const createCategory = async (req, res) => {
 
     // NEW: names made only of symbols/non-English letters produce an empty slug
     if (!slug) {
-      if (bannerFile) fs.unlink(bannerFile.path, () => {});
       return res.redirect(
         `/admin/categories?openModal=add&formError=${encodeURIComponent(
           INVALID_NAME_MSG
@@ -129,14 +118,13 @@ export const createCategory = async (req, res) => {
       );
     }
 
-    const bannerUrl = bannerFile ? toPublicPath(bannerFile.filename) : null;
+    const bannerUrl = bannerFile ? bannerFile.s3Url : null;
 
     // Check across ALL categories (including soft-deleted) since slug is unique at the DB level
     const existing = await Category.findOne({ slug });
 
     if (existing && !existing.is_deleted) {
       // A live category already uses this name
-      if (bannerFile) fs.unlink(bannerFile.path, () => {});
       return res.redirect(
         `/admin/categories?openModal=add&formError=${encodeURIComponent(
           'A category with this name already exists.'
@@ -151,7 +139,7 @@ export const createCategory = async (req, res) => {
       existing.name = name.trim();
       existing.is_active = is_active === 'on' || is_active === 'true';
       if (bannerUrl) {
-        deleteBannerFile(existing.banner_url);
+        deleteBannerFromS3(existing.banner_url);
         existing.banner_url = bannerUrl;
       }
       await existing.save();
@@ -168,7 +156,6 @@ export const createCategory = async (req, res) => {
     res.redirect('/admin/categories');
   } catch (err) {
     console.error('Error creating category:', err);
-    if (req.file) fs.unlink(req.file.path, () => {});
     res.redirect(
       `/admin/categories?openModal=add&formError=${encodeURIComponent('Something went wrong. Please try again.')}`
     );
@@ -184,7 +171,6 @@ export const updateCategory = async (req, res) => {
     // Guard: if id is missing/invalid (e.g. still "0"), don't let Mongoose throw — send back cleanly
     if (!isValidId(id)) {
       console.warn('updateCategory called with invalid id:', id);
-      if (bannerFile) fs.unlink(bannerFile.path, () => {});
       return res.redirect(
         `/admin/categories?formError=${encodeURIComponent('Invalid category selected. Please try again.')}`
       );
@@ -193,14 +179,12 @@ export const updateCategory = async (req, res) => {
     const { name, is_active } = req.body;
     const category = await Category.findById(id);
     if (!category) {
-      if (bannerFile) fs.unlink(bannerFile.path, () => {});
       return res.redirect(
         `/admin/categories?formError=${encodeURIComponent('That category no longer exists.')}`
       );
     }
 
     if (!name || !name.trim()) {
-      if (bannerFile) fs.unlink(bannerFile.path, () => {});
       return res.redirect(
         `/admin/categories?openModal=edit&editId=${id}&formError=${encodeURIComponent('Category name is required.')}`
       );
@@ -210,7 +194,6 @@ export const updateCategory = async (req, res) => {
 
    
     if (!slug) {
-      if (bannerFile) fs.unlink(bannerFile.path, () => {});
       return res.redirect(
         `/admin/categories?openModal=edit&editId=${id}&formError=${encodeURIComponent(
           INVALID_NAME_MSG
@@ -224,7 +207,6 @@ export const updateCategory = async (req, res) => {
       _id: { $ne: id },
     });
     if (duplicate) {
-      if (bannerFile) fs.unlink(bannerFile.path, () => {});
       return res.redirect(
         `/admin/categories?openModal=edit&editId=${id}&formError=${encodeURIComponent(
           'A category with this name already exists.'
@@ -247,8 +229,8 @@ export const updateCategory = async (req, res) => {
     category.is_active = is_active === 'on' || is_active === 'true';
 
     if (bannerFile) {
-      deleteBannerFile(category.banner_url);
-      category.banner_url = toPublicPath(bannerFile.filename);
+      deleteBannerFromS3(category.banner_url);
+      category.banner_url = bannerFile.s3Url;
     }
 
     await category.save();
@@ -256,7 +238,6 @@ export const updateCategory = async (req, res) => {
     res.redirect('/admin/categories');
   } catch (err) {
     console.error('Error updating category:', err);
-    if (req.file) fs.unlink(req.file.path, () => {});
     res.redirect(
       `/admin/categories?formError=${encodeURIComponent('Something went wrong while updating. Please try again.')}`
     );

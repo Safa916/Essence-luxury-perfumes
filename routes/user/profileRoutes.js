@@ -1,7 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import { requireAuth } from '../../middleware/authMiddleware.js';
-import uploadAvatar from '../../config/upload.js';
+import uploadAvatar, { handleAvatarUpload } from '../../config/upload.js';
 import { getProfile, getEditProfileForm, updateProfile, getChangeEmailForm, requestEmailChange, verifyEmailChange } from '../../controllers/user/profileController.js';
 
 import { getChangePasswordForm, updatePassword } from '../../controllers/user/profileController.js';
@@ -19,11 +19,10 @@ router.get('/edit', requireAuth, getEditProfileForm);
 
 router.post('/edit', requireAuth, (req, res, next) => {
   uploadAvatar.single('avatar')(req, res, (err) => {
-    
     if (err) {
       return res.redirect('/profile/edit?error=' + encodeURIComponent(err.message));
     }
-    next();
+    handleAvatarUpload(req, res, next);
   });
 }, updateProfile);
 

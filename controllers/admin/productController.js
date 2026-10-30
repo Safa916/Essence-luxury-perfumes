@@ -1,12 +1,10 @@
 import Category from '../../models/category.js';
 import Brand from '../../models/brands.js';
-import fs from 'fs';
-import path from 'path';
 import mongoose from 'mongoose';
 import Product from '../../models/product.js';
 import Variant from '../../models/variant.js';
 import APIFeatures from '../../utils/apiFeatures.js';
-import { uploadDir } from '../../middleware/uploadProductImages.js';
+import { deleteProductImagesFromS3 } from '../../middleware/uploadProductImages.js';
 import { nextVariantSku } from './variantController.js';
 import { HTTP_STATUS } from '../../constants/httpStatus.js';
 
@@ -21,11 +19,8 @@ const slugify = (str) =>
 
 
 function deleteUploadedImages(publicPaths) {
-  (publicPaths || []).forEach((p) => {
-    if (!p) return;
-    const filePath = path.join(uploadDir, path.basename(p));
-    fs.unlink(filePath, () => {});
-  });
+  // Fire-and-forget S3 deletes — errors are logged inside deleteProductImagesFromS3
+  deleteProductImagesFromS3(publicPaths).catch((e) => console.error('S3 cleanup error:', e));
 }
 
 
@@ -413,10 +408,7 @@ export const updateProduct = async (req, res) => {
     if (removed_images) {
       const toRemove = removed_images.split(',').filter(Boolean);
       images = images.filter((img) => !toRemove.includes(img));
-      toRemove.forEach((img) => {
-        const filePath = path.join(uploadDir, path.basename(img));
-        fs.unlink(filePath, () => {});
-      });
+      deleteProductImagesFromS3(toRemove).catch(() => {});
     }
 
     if (req.processedImages && req.processedImages.length) {
