@@ -341,3 +341,25 @@ body {
         font-size: 0.95rem;
     }
 }
+
+/* ── Sign In link (below change-email divider) ────────────────────────────── */
+.otp-signin-prompt {
+    margin-top: 18px;
+    font-size: 0.82rem;
+    color: #8a857a;
+    text-align: center;
+    letter-spacing: 0.01em;
+}
+
+.otp-signin-link {
+    color: #1c1c1e;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid #d1c9bc;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.otp-signin-link:hover {
+    color: #bfa15f;
+    border-color: #bfa15f;
+}
