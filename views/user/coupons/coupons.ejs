@@ -43,9 +43,8 @@
           </div>
           <div class="coupons-grid">
             <% availableCoupons.forEach(function (c) {
-               const isPercent = c.discount_type === 'percentage';
-               const valueLabel = isPercent ? c.discount_value + '%' : '₹' + c.discount_value;
-               const typeLabel  = isPercent ? 'Off' : 'Flat Off';
+               const valueLabel = c.discount_value + '%';
+               const typeLabel  = 'Off';
             %>
               <div class="coupon-box is-active-coupon" data-code="<%= c.code %>">
 
@@ -74,7 +73,7 @@
                       <span class="rule-bullet">&bull;</span>
                       <span>Min. purchase: <strong>₹<%= c.min_order_value.toLocaleString('en-IN') %></strong></span>
                     </li>
-                    <% if (c.max_discount_amount && isPercent) { %>
+                    <% if (c.max_discount_amount) { %>
                       <li>
                         <span class="rule-bullet">&bull;</span>
                         <span>Max discount: <strong>₹<%= c.max_discount_amount.toLocaleString('en-IN') %></strong></span>
@@ -112,9 +111,8 @@
           </div>
           <div class="coupons-grid">
             <% usedCoupons.forEach(function (c) {
-               const isPercent = c.discount_type === 'percentage';
-               const valueLabel = isPercent ? c.discount_value + '%' : '₹' + c.discount_value;
-               const typeLabel  = isPercent ? 'Off' : 'Flat Off';
+               const valueLabel = c.discount_value + '%';
+               const typeLabel  = 'Off';
             %>
               <div class="coupon-box is-used-coupon" data-code="<%= c.code %>">
 

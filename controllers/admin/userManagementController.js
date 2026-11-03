@@ -30,7 +30,7 @@ export const getUsersPage = async (req, res) => {
 
     const features = new APIFeatures(baseQuery, { search, page, limit })
       .search(['full_name', 'email'])
-      .sort({ is_active: -1 })
+      .sort({ created_at: -1 })
       .paginate();
 
     const users = await features.query;
@@ -61,6 +61,9 @@ export const getUsersPage = async (req, res) => {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Something went wrong loading users');
   }
 };
+
+
+
 
 // POST /admin/users/:id/toggle-block
 export const toggleBlockUser = async (req, res) => {

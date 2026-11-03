@@ -61,14 +61,13 @@ export const listCoupons = async (req, res) => {
 // ─── POST /admin/coupons ──────────────────────────────────────────────────────
 export const createCoupon = async (req, res) => {
   try {
-    const { code, description, discount_type, discount_value,
+    const { code, description, discount_value,
             min_order_value, max_discount_amount, valid_until,
             usage_limit_per_user, total_usage_limit, is_active } = req.body;
 
     // ── Server-side validation ──────────────────────────────────────────────
     const cleanCode = (code || '').trim().toUpperCase();
     const cleanDesc = (description || '').trim();
-    const cleanType = discount_type === 'fixed' ? 'fixed' : 'percentage';
     const dv        = parseFloat(discount_value);
     const mov       = min_order_value !== '' && min_order_value != null ? parseFloat(min_order_value) : 0;
     const maxCap    = max_discount_amount ? parseFloat(max_discount_amount) : null;
@@ -95,7 +94,7 @@ export const createCoupon = async (req, res) => {
     if (isNaN(dv) || dv <= 0) {
       return res.redirect('/admin/coupons?error=invalid_value&open=add');
     }
-    if (cleanType === 'percentage' && dv > 100) {
+    if (dv > 100) {
       return res.redirect('/admin/coupons?error=invalid_value&open=add');
     }
 
@@ -103,15 +102,9 @@ export const createCoupon = async (req, res) => {
     if (isNaN(mov) || mov < 0) {
       return res.redirect('/admin/coupons?error=invalid_min_order&open=add');
     }
-    if (cleanType === 'fixed' && mov > 0 && dv >= mov) {
-      return res.redirect('/admin/coupons?error=fixed_gt_min&open=add');
-    }
-
-    // 5. Max discount cap validation (required for percentage discounts)
-    if (cleanType === 'percentage') {
-      if (maxCap == null || isNaN(maxCap) || maxCap <= 0) {
-        return res.redirect('/admin/coupons?error=invalid_max_cap&open=add');
-      }
+    // 5. Max discount cap validation (required for all percentage discounts)
+    if (maxCap == null || isNaN(maxCap) || maxCap <= 0) {
+      return res.redirect('/admin/coupons?error=invalid_max_cap&open=add');
     }
 
     // 6. Usage limit per user validation
@@ -144,10 +137,10 @@ export const createCoupon = async (req, res) => {
     await Coupon.create({
       code               : cleanCode,
       description        : cleanDesc,
-      discount_type      : cleanType,
+      discount_type      : 'percentage',
       discount_value     : dv,
       min_order_value    : mov,
-      max_discount_amount: cleanType === 'percentage' ? maxCap : null,
+      max_discount_amount: maxCap,
       valid_until        : expDate,
       usage_limit_per_user: userLimit,
       total_usage_limit  : cleanTotalLimit,
@@ -195,12 +188,11 @@ export const renderEditCoupon = async (req, res) => {
 export const updateCoupon = async (req, res) => {
   const couponId = req.params.id;
   try {
-    const { description, discount_type, discount_value,
+    const { description, discount_value,
             min_order_value, max_discount_amount, valid_until,
             usage_limit_per_user, total_usage_limit, is_active } = req.body;
 
     const cleanDesc = (description || '').trim();
-    const cleanType = discount_type === 'fixed' ? 'fixed' : 'percentage';
     const dv        = parseFloat(discount_value);
     const mov       = min_order_value !== '' && min_order_value != null ? parseFloat(min_order_value) : 0;
     const maxCap    = max_discount_amount ? parseFloat(max_discount_amount) : null;
@@ -215,7 +207,7 @@ export const updateCoupon = async (req, res) => {
     if (isNaN(dv) || dv <= 0) {
       return res.redirect(`/admin/coupons/${couponId}/edit?error=invalid_value`);
     }
-    if (cleanType === 'percentage' && dv > 100) {
+    if (dv > 100) {
       return res.redirect(`/admin/coupons/${couponId}/edit?error=invalid_value`);
     }
 
@@ -223,15 +215,9 @@ export const updateCoupon = async (req, res) => {
     if (isNaN(mov) || mov < 0) {
       return res.redirect(`/admin/coupons/${couponId}/edit?error=invalid_min_order`);
     }
-    if (cleanType === 'fixed' && mov > 0 && dv >= mov) {
-      return res.redirect(`/admin/coupons/${couponId}/edit?error=fixed_gt_min`);
-    }
-
-    // 4. Max discount cap validation
-    if (cleanType === 'percentage') {
-      if (maxCap == null || isNaN(maxCap) || maxCap <= 0) {
-        return res.redirect(`/admin/coupons/${couponId}/edit?error=invalid_max_cap`);
-      }
+    // 4. Max discount cap validation (required for all percentage discounts)
+    if (maxCap == null || isNaN(maxCap) || maxCap <= 0) {
+      return res.redirect(`/admin/coupons/${couponId}/edit?error=invalid_max_cap`);
     }
 
     // 5. Usage limit per user validation
@@ -264,10 +250,10 @@ export const updateCoupon = async (req, res) => {
 
     await Coupon.findByIdAndUpdate(couponId, {
       description        : cleanDesc,
-      discount_type      : cleanType,
+      discount_type      : 'percentage',
       discount_value     : dv,
       min_order_value    : mov,
-      max_discount_amount: cleanType === 'percentage' ? maxCap : null,
+      max_discount_amount: maxCap,
       valid_until        : expDate,
       usage_limit_per_user: userLimit,
       total_usage_limit  : cleanTotalLimit,

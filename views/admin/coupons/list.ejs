@@ -253,14 +253,8 @@
             <tr>
               <td class="code-cell"><%= c.code %></td>
               <td>
-                <div class="disc-value">
-                  <% if (c.discount_type === 'percentage') { %>
-                    <%= c.discount_value %>% OFF
-                  <% } else { %>
-                    ₹<%= c.discount_value.toLocaleString('en-IN') %> OFF
-                  <% } %>
-                </div>
-                <div class="disc-type"><%= c.discount_type %></div>
+                <div class="disc-value"><%= c.discount_value %>% OFF</div>
+                <div class="disc-type">percentage</div>
               </td>
               <td>
                 <% if (c.min_order_value > 0) { %>
@@ -353,13 +347,7 @@
             <p class="form-hint">3–15 uppercase letters/numbers. Cannot be only symbols.</p>
             <span class="field-error" id="err-code">Coupon code is required.</span>
           </div>
-          <div class="form-group">
-            <label>Discount Type *</label>
-            <select name="discount_type" id="addDiscType" onchange="toggleMaxDisc('add')">
-              <option value="percentage">Percentage (%)</option>
-              <option value="fixed">Fixed Amount (₹)</option>
-            </select>
-          </div>
+
         </div>
 
         <div class="form-group">
@@ -382,7 +370,7 @@
               min="0.01" step="0.01" placeholder="20"
               oninput="clearErr('err-disc-val')"
             >
-            <p class="form-hint">Enter % for percentage, or ₹ amount for fixed.</p>
+            <p class="form-hint">Enter percentage value (e.g. 20 for 20% off).</p>
             <span class="field-error" id="err-disc-val">Enter a valid discount value greater than 0.</span>
           </div>
           <div class="form-group">

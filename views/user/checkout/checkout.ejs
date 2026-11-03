@@ -203,13 +203,13 @@
                       <div class="co-coupon-top">
                         <span class="co-coupon-code"><%= c.code %></span>
                         <span class="co-coupon-discount">
-                          <%= c.discount_type === 'percentage' ? c.discount_value + '% OFF' : '₹' + c.discount_value + ' FLAT OFF' %>
+                          <%= c.discount_value %>% OFF
                         </span>
                       </div>
                       <p class="co-coupon-desc"><%= c.description %></p>
                       <div class="co-coupon-terms">
                         <span>Min spend: ₹<%= c.min_order_value.toLocaleString('en-IN') %></span>
-                        <% if (c.max_discount_amount && c.discount_type === 'percentage') { %>
+                        <% if (c.max_discount_amount) { %>
                           <span> &middot; Max saving: ₹<%= c.max_discount_amount.toLocaleString('en-IN') %></span>
                         <% } %>
                         <% if (c.valid_until) { %>

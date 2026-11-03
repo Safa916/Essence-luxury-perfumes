@@ -295,9 +295,9 @@
 
                   <td>
                     <div class="disc-main">
-                      <%= o.discount_type === 'percentage' ? o.discount_value + '% Off' : '₹' + o.discount_value + ' Flat' %>
+                      <%= o.discount_value %>% Off
                     </div>
-                    <div class="disc-sub"><%= o.discount_type %></div>
+                    <div class="disc-sub">percentage</div>
                   </td>
 
                   <td>
@@ -369,9 +369,6 @@
             <div class="radio-group">
               <label class="radio-label">
                 <input type="radio" name="discount_type" value="percentage" checked> Percentage
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="discount_type" value="fixed"> Flat Amount
               </label>
             </div>
           </div>

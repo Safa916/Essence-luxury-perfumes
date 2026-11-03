@@ -121,7 +121,6 @@ export const createOffer = async (req, res) => {
     const {
       name,
       internal_code,
-      discount_type,
       discount_value,
       apply_to,
       target_id,
@@ -138,11 +137,7 @@ export const createOffer = async (req, res) => {
     }
 
     const val = parseFloat(discount_value);
-    if (isNaN(val) || val <= 0) {
-      return res.redirect('/admin/offers?error=invalid_discount');
-    }
-
-    if (discount_type === 'percentage' && (val <= 0 || val > 90)) {
+    if (isNaN(val) || val <= 0 || val > 90) {
       return res.redirect('/admin/offers?error=percentage_out_of_range');
     }
 
@@ -174,7 +169,7 @@ export const createOffer = async (req, res) => {
     await Offer.create({
       name: name.trim(),
       internal_code: code,
-      discount_type: discount_type === 'fixed' ? 'fixed' : 'percentage',
+      discount_type: 'percentage',
       discount_value: val,
       apply_to,
       target_ids: [new mongoose.Types.ObjectId(target_id)],
@@ -239,7 +234,6 @@ export const updateOffer = async (req, res) => {
     const {
       name,
       internal_code,
-      discount_type,
       discount_value,
       apply_to,
       target_id,
@@ -255,11 +249,7 @@ export const updateOffer = async (req, res) => {
     }
 
     const val = parseFloat(discount_value);
-    if (isNaN(val) || val <= 0) {
-      return res.redirect(`/admin/offers/${req.params.id}/edit?error=invalid_discount`);
-    }
-
-    if (discount_type === 'percentage' && (val <= 0 || val > 90)) {
+    if (isNaN(val) || val <= 0 || val > 90) {
       return res.redirect(`/admin/offers/${req.params.id}/edit?error=percentage_out_of_range`);
     }
 
@@ -286,7 +276,7 @@ export const updateOffer = async (req, res) => {
     const isActive = status === 'active' || status === 'true' || status === true || status === '1';
 
     offer.name = name.trim();
-    offer.discount_type = discount_type === 'fixed' ? 'fixed' : 'percentage';
+    offer.discount_type = 'percentage';
     offer.discount_value = val;
     offer.apply_to = apply_to;
     offer.target_ids = [new mongoose.Types.ObjectId(target_id)];

@@ -17,7 +17,8 @@ const couponSchema = new mongoose.Schema(
     },
     discount_type: {
       type: String,
-      enum: ['percentage', 'fixed'],
+      enum: ['percentage'],
+      default: 'percentage',
       required: [true, 'Discount type is required'],
     },
     discount_value: {
@@ -30,7 +31,7 @@ const couponSchema = new mongoose.Schema(
     },
     max_discount_amount: {
       type: mongoose.Schema.Types.Decimal128,
-      default: null, // nullable — e.g. for "fixed" discounts, a cap may not apply
+      default: null, // nullable — leave null for unlimited cap
     },
     valid_until: {
       type: Date,

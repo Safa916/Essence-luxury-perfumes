@@ -4,13 +4,13 @@ import path from 'path';
 import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import s3, { S3_BUCKET, S3_BASE_URL } from '../config/s3.js';
 
-const ALLOWED_MIMES      = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 
 function fileFilter(req, file, cb) {
   const mimeOk = ALLOWED_MIMES.includes(file.mimetype);
-  const ext    = path.extname(file.originalname).toLowerCase();
-  const extOk  = ALLOWED_EXTENSIONS.includes(ext);
+  const ext = path.extname(file.originalname).toLowerCase();
+  const extOk = ALLOWED_EXTENSIONS.includes(ext);
 
   if (mimeOk && extOk) {
     cb(null, true);
@@ -77,9 +77,6 @@ async function deleteProductImagesFromS3(imageUrls = []) {
   await Promise.all(
     imageUrls.map(async (url) => {
       try {
-        // Extract the S3 key from the full URL
-        // e.g. "https://bucket.s3.region.amazonaws.com/products/product-xxx.jpeg"
-        //   →  "products/product-xxx.jpeg"
         const key = url.replace(`${S3_BASE_URL}/`, '');
         await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: key }));
       } catch (err) {

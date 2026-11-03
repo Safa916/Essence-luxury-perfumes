@@ -91,16 +91,11 @@ export const applyCoupon = async (req, res) => {
       }
     }
 
-    // 6. Calculate discount
+    // 6. Calculate discount (percentage only)
     let discountValue = 0;
-    if (coupon.discount_type === 'percentage') {
-      discountValue = parseFloat(((subtotal * toNum(coupon.discount_value)) / 100).toFixed(2));
-      const cap = toNum(coupon.max_discount_amount);
-      if (cap > 0 && discountValue > cap) discountValue = cap;
-    } else {
-      // fixed
-      discountValue = toNum(coupon.discount_value);
-    }
+    discountValue = parseFloat(((subtotal * toNum(coupon.discount_value)) / 100).toFixed(2));
+    const cap = toNum(coupon.max_discount_amount);
+    if (cap > 0 && discountValue > cap) discountValue = cap;
 
     // 7. Save applied coupon to cart
     await Cart.findByIdAndUpdate(cart._id, {

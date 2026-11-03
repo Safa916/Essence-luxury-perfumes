@@ -116,17 +116,10 @@
             <span class="field-error" id="e-err-desc">Description is required.</span>
           </div>
 
-          <!-- Discount type + value -->
+          <!-- Discount value (percentage only) -->
           <div class="form-row">
             <div class="form-group">
-              <label>Discount Type *</label>
-              <select name="discount_type" id="editDiscType" onchange="onTypeChange()">
-                <option value="percentage" <%= coupon.discount_type === 'percentage' ? 'selected' : '' %>>Percentage (%)</option>
-                <option value="fixed"      <%= coupon.discount_type === 'fixed'      ? 'selected' : '' %>>Fixed Amount (₹)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Discount Value *</label>
+              <label>Discount Value (%) *</label>
               <input type="number" id="e-disc-val" name="discount_value"
                 min="0.01" step="0.01"
                 value="<%= coupon.discount_value %>"
@@ -147,7 +140,7 @@
               <p class="form-hint">Enter 0 if there is no minimum order requirement.</p>
               <span class="field-error" id="e-err-min-order">Min order value is required.</span>
             </div>
-            <div class="form-group" id="editMaxCapGroup" style="<%= coupon.discount_type === 'fixed' ? 'display:none;' : '' %>">
+            <div class="form-group" id="editMaxCapGroup">
               <label>Max Discount Cap (₹) *</label>
               <input type="number" id="e-max-cap" name="max_discount_amount"
                 min="0.01" step="0.01"

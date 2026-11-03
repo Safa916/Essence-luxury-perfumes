@@ -103,10 +103,7 @@
               <label>Discount Type</label>
               <div class="radio-group">
                 <label class="radio-label">
-                  <input type="radio" name="discount_type" value="percentage" <%= offer.discount_type === 'percentage' ? 'checked' : '' %>> Percentage
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="discount_type" value="fixed" <%= offer.discount_type === 'fixed' ? 'checked' : '' %>> Flat Amount
+                  <input type="radio" name="discount_type" value="percentage" checked> Percentage
                 </label>
               </div>
             </div>
@@ -144,8 +141,8 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label id="discountValLabel">Discount Value (<%= offer.discount_type === 'percentage' ? '%' : '₹' %>) *</label>
-              <input type="number" name="discount_value" id="discountValue" step="0.01" min="1" <%= offer.discount_type === 'percentage' ? 'max="90"' : '' %> value="<%= offer.discount_value %>" required>
+              <label id="discountValLabel">Discount Value (%) *</label>
+              <input type="number" name="discount_value" id="discountValue" step="0.01" min="1" max="90" value="<%= offer.discount_value %>" required>
               <div class="field-error" id="discountError"></div>
             </div>
             <div class="form-group">
@@ -154,7 +151,7 @@
             </div>
           </div>
 
-          <div class="form-group" id="maxDiscountGroup" style="<%= offer.discount_type === 'percentage' ? '' : 'display:none;' %>">
+          <div class="form-group" id="maxDiscountGroup">
             <label>Maximum Discount (₹)</label>
             <input type="number" name="maximum_discount_amount" step="0.01" min="0" value="<%= offer.maximum_discount_amount || '' %>" placeholder="0.00">
             <small style="font-size:0.7rem; color:#6b7280;">*Set max discount amount for percentage offers</small>

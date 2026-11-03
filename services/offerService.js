@@ -7,9 +7,17 @@ function toNum(d) {
 
 /**
  * Get all active, non-expired offers that are currently valid.
+ * Also auto-expires any offers whose end_date has passed in the DB.
  */
 async function getActiveOffers() {
   const now = new Date();
+
+  // Auto-expire offers whose end_date has passed but are still 'active' in DB
+  await Offer.updateMany(
+    { status: 'active', end_date: { $lt: now }, deleted_at: null },
+    { $set: { status: 'expired' } }
+  );
+
   const offers = await Offer.find({
     deleted_at: null,
     status: 'active',
@@ -47,16 +55,13 @@ function evaluateOffer(offer, price) {
   let discount;
   let percentage;
 
-  if (offer.discount_type === 'percentage') {
-    percentage = val;
-    discount = (price * val) / 100;
-    const maxDiscount = toNum(offer.maximum_discount_amount);
-    if (maxDiscount > 0 && discount > maxDiscount) {
-      discount = maxDiscount;
-    }
-  } else {
-    // flat/fixed amount
-    discount = val;
+  // Always percentage (flat amount removed)
+  percentage = val;
+  discount = (price * val) / 100;
+  const maxDiscount = toNum(offer.maximum_discount_amount);
+  if (maxDiscount > 0 && discount > maxDiscount) {
+    discount = maxDiscount;
+    // Recalculate effective percentage when capped
     percentage = price > 0 ? (discount / price) * 100 : 0;
   }
 
@@ -148,7 +153,7 @@ function calculateProductDiscount({ productId, categoryId, price, activeOffers =
     originalPrice,
     finalPrice,
     discount: finalDiscount,
-    discountPercentage: Math.round(finalPercentage),
+    discountPercentage: Math.floor(finalPercentage),
     appliedOffer,
     offerType,
   };
