@@ -98,7 +98,10 @@ export const addToCart = async (req, res) => {
     }
 
     if (variant.quantity <= 0) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'This size is out of stock.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: `Sorry, "${product.name}" (${variant.size_ml}ml) is currently out of stock.`,
+      });
     }
 
     const cart = await getOrCreateCart(userId);
@@ -128,6 +131,18 @@ export const addToCart = async (req, res) => {
     });
 
     if (existingItem) {
+      if (existingItem.quantity >= variant.quantity) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: `Only ${variant.quantity} item${variant.quantity > 1 ? 's' : ''} available in stock for this size, and you already have ${existingItem.quantity} in your bag.`,
+        });
+      }
+      if (existingItem.quantity >= MAX_QTY_PER_ITEM) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: `You can only purchase up to ${MAX_QTY_PER_ITEM} units of this item.`,
+        });
+      }
       const newQty = Math.min(existingItem.quantity + quantity, MAX_QTY_PER_ITEM, variant.quantity);
       existingItem.quantity = newQty;
       existingItem.unit_price = unitPrice;

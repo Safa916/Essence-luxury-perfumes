@@ -14,11 +14,10 @@
     return null;
   }
 
-  /** Return the currently selected, in-stock variant id */
-  function getSelectedVariantId() {
+  /** Return the currently selected variant button */
+  function getSelectedVariantBtn() {
     if (!sizeOptions) return null;
-    const selected = sizeOptions.querySelector('.size-btn.is-selected:not(.is-disabled)');
-    return selected ? selected.dataset.variantId : null;
+    return sizeOptions.querySelector('.size-btn.is-selected');
   }
 
   /** Flash a red outline on the size selector to guide the user */
@@ -67,13 +66,22 @@
   if (addToBagBtn) {
     addToBagBtn.addEventListener('click', async function () {
       const productId = getProductId();
-      const variantId = getSelectedVariantId();
+      const variantBtn = getSelectedVariantBtn();
 
-      if (!variantId) {
+      if (!variantBtn) {
         shakeSizeSelector();
         essToast('Please select a size first.', 'warning');
         return;
       }
+
+      const stock = parseInt(variantBtn.dataset.stock, 10);
+      if (isNaN(stock) || stock <= 0 || variantBtn.classList.contains('is-disabled')) {
+        shakeSizeSelector();
+        essToast('Sorry, this size is currently out of stock.', 'error');
+        return;
+      }
+
+      const variantId = variantBtn.dataset.variantId;
 
       addToBagBtn.disabled = true;
       const originalText = addToBagBtn.textContent;
@@ -107,13 +115,22 @@
       if (buyNowBtn.disabled) return;
 
       const productId = getProductId();
-      const variantId = getSelectedVariantId();
+      const variantBtn = getSelectedVariantBtn();
 
-      if (!productId || !variantId) {
+      if (!productId || !variantBtn) {
         shakeSizeSelector();
         essToast('Please select a size first.', 'warning');
         return;
       }
+
+      const stock = parseInt(variantBtn.dataset.stock, 10);
+      if (isNaN(stock) || stock <= 0 || variantBtn.classList.contains('is-disabled')) {
+        shakeSizeSelector();
+        essToast('Sorry, this size is currently out of stock.', 'error');
+        return;
+      }
+
+      const variantId = variantBtn.dataset.variantId;
 
       buyNowBtn.disabled = true;
       const originalText = buyNowBtn.textContent;
