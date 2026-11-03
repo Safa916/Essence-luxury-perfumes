@@ -21,3 +21,4 @@ const PaymentSettings =
   mongoose.model('PaymentSettings', paymentSettingsSchema);
 
 export default PaymentSettings;
+

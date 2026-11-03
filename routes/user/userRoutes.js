@@ -38,7 +38,8 @@ router.get('/login', checkUser, (req, res) => {
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
 
-  res.render('user/auth/user-login');
+  const googleClientId = process.env.GOOGLE_CLIENT_ID || '462867727867-a115upuog2h2vi3qg5mk36sr7heoatne.apps.googleusercontent.com';
+  res.render('user/auth/user-login', { googleClientId });
 });
 
 
@@ -51,7 +52,8 @@ router.get('/user-signup', checkUser, (req, res) => {
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
 
-  res.render('user/auth/user-signup', { refCode: req.query.ref || '' });
+  const googleClientId = process.env.GOOGLE_CLIENT_ID || '462867727867-a115upuog2h2vi3qg5mk36sr7heoatne.apps.googleusercontent.com';
+  res.render('user/auth/user-signup', { refCode: req.query.ref || '', googleClientId });
 });
 
 
