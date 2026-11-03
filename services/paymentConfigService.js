@@ -32,7 +32,7 @@ export async function getMaxCodLimit() {
     }
   }
 
-  return null;
+  return 10000;
 }
 
 /**

@@ -9,7 +9,7 @@ const paymentSettingsSchema = new mongoose.Schema(
   {
     max_cod_amount: {
       type: Number,
-      default: null, // null means no limit is set (unlimited COD)
+      default: 10000,
       min: 0,
     },
   },
