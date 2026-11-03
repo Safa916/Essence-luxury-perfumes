@@ -634,6 +634,23 @@
     <% if (locals.query && locals.query.open === 'add') { %>
       openAddModal();
     <% } %>
+
+    // Auto-dismiss flash messages and clean query URL
+    const flashMessages = document.querySelectorAll('.flash');
+    if (flashMessages.length) {
+      setTimeout(() => {
+        flashMessages.forEach((msg) => {
+          msg.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+          msg.style.opacity = '0';
+          msg.style.transform = 'translateY(-6px)';
+          setTimeout(() => msg.remove(), 400);
+        });
+        if (window.history.replaceState) {
+          const cleanUrl = window.location.pathname + window.location.search.replace(/([?&])(created|updated|error)=[^&]*(&|$)/g, '$1').replace(/[?&]$/, '');
+          window.history.replaceState(null, '', cleanUrl);
+        }
+      }, 3500);
+    }
   </script>
 </body>
 </html>
