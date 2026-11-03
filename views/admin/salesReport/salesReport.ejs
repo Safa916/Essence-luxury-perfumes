@@ -400,9 +400,9 @@
         </div>
 
         <div class="summary-card revenue">
-          <div class="sc-label">Total Order Amount</div>
+          <div class="sc-label">Net Revenue</div>
           <div class="sc-value">₹<%= summary.totalOrderAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
-          <div class="sc-sub">Gross revenue generated</div>
+          <div class="sc-sub">Revenue after refunds</div>
         </div>
 
         <div class="summary-card discount">
@@ -431,7 +431,7 @@
               <th>Date</th>
               <th>Order ID</th>
               <th>Customer</th>
-              <th style="text-align: right;">Amount</th>
+              <th style="text-align: right;">Net Revenue</th>
               <th style="text-align: right;">Discount</th>
               <th style="text-align: center;">Coupon</th>
               <th>Status</th>

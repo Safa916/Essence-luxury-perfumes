@@ -80,7 +80,11 @@ export const getSalesReport = async (req, res) => {
               $group: {
                 _id: null,
                 overallSalesCount: { $sum: 1 },
-                totalOrderAmount: { $sum: '$total_amount' },
+                totalOrderAmount: {
+                  $sum: {
+                    $subtract: ['$total_amount', { $ifNull: ['$refunded_amount', 0] }],
+                  },
+                },
                 totalDiscount: { $sum: '$discount_amount' },
                 totalCouponDeductions: {
                   $sum: {
@@ -126,6 +130,7 @@ export const getSalesReport = async (req, res) => {
                 order_number: 1,
                 placed_at: 1,
                 total_amount: 1,
+                refunded_amount: 1,
                 discount_amount: 1,
                 coupon_code: 1,
                 order_status: 1,
@@ -166,7 +171,7 @@ export const getSalesReport = async (req, res) => {
         placed_at: o.placed_at,
         customerName,
         customerEmail,
-        amount: toNum(o.total_amount),
+        amount: toNum(o.total_amount) - toNum(o.refunded_amount),
         discount: toNum(o.discount_amount),
         coupon_code: o.coupon_code || null,
         order_status: o.order_status,
@@ -227,7 +232,7 @@ export const downloadPdf = async (req, res) => {
     let totalCouponDeductions = 0;
 
     const rows = ordersRaw.map((o) => {
-      const amt = toNum(o.total_amount);
+      const amt = toNum(o.total_amount) - toNum(o.refunded_amount);
       const disc = toNum(o.discount_amount);
       totalOrderAmount += amt;
       totalDiscount += disc;
@@ -377,7 +382,7 @@ export const downloadExcel = async (req, res) => {
     let totalCouponDeductions = 0;
 
     ordersRaw.forEach((o) => {
-      const amt = toNum(o.total_amount);
+      const amt = toNum(o.total_amount) - toNum(o.refunded_amount);
       const disc = toNum(o.discount_amount);
       totalOrderAmount += amt;
       totalDiscount += disc;
@@ -424,7 +429,7 @@ export const downloadExcel = async (req, res) => {
 
     const summaryData = [
       ['Overall Sales Count', overallSalesCount],
-      ['Total Order Amount (INR)', totalOrderAmount],
+      ['Net Revenue (INR)', totalOrderAmount],
       ['Total Discount (INR)', totalDiscount],
       ['Total Coupon Deductions (INR)', totalCouponDeductions],
     ];
@@ -453,7 +458,7 @@ export const downloadExcel = async (req, res) => {
       { header: 'Customer Email', key: 'customerEmail', width: 28 },
       { header: 'Payment Method', key: 'paymentMethod', width: 18 },
       { header: 'Order Status', key: 'orderStatus', width: 16 },
-      { header: 'Amount (INR)', key: 'amount', width: 16 },
+      { header: 'Net Revenue (INR)', key: 'amount', width: 18 },
       { header: 'Discount (INR)', key: 'discount', width: 16 },
       { header: 'Coupon Code', key: 'couponCode', width: 16 },
     ];
@@ -492,7 +497,7 @@ export const downloadExcel = async (req, res) => {
         customerEmail,
         o.payment_method || '—',
         (o.order_status || '—').toUpperCase(),
-        toNum(o.total_amount),
+        toNum(o.total_amount) - toNum(o.refunded_amount),
         toNum(o.discount_amount),
         o.coupon_code || '—',
       ];
