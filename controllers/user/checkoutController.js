@@ -10,6 +10,7 @@ import Coupon from '../../models/coupon.js';
 import CouponUsage from '../../models/couponUsage.js';
 import Payment from '../../models/payment.js';
 import walletService from '../../services/walletService.js';
+import paymentConfigService from '../../services/paymentConfigService.js';
 import crypto from 'crypto';
 import { getRazorpayInstance } from '../../config/razorpay.js';
 import { getAvailableCouponsForUser } from './couponController.js';
@@ -169,6 +170,8 @@ export const renderCheckout = async (req, res) => {
     const defaultAddr = addresses.find(a => a.is_default) || addresses[0] || null;
     const walletBalance = await walletService.getBalance(userId);
     const availableCoupons = await getAvailableCouponsForUser(userId, subtotal);
+    const maxCodLimit = await paymentConfigService.getMaxCodLimit();
+    const isCodDisabled = maxCodLimit !== null && total > maxCodLimit;
 
     res.render('user/checkout/checkout', {
       user       : req.user,
@@ -184,6 +187,8 @@ export const renderCheckout = async (req, res) => {
       total,
       walletBalance,
       razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',
+      maxCodLimit,
+      isCodDisabled,
     });
   } catch (err) {
     console.error('renderCheckout error:', err);
@@ -222,6 +227,8 @@ export const getCheckoutSummary = async (req, res) => {
     const tax      = parseFloat((taxable * GST_RATE).toFixed(2));
     const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
     const total    = parseFloat((taxable + tax + shipping).toFixed(2));
+    const maxCodLimit = await paymentConfigService.getMaxCodLimit();
+    const isCodDisabled = maxCodLimit !== null && total > maxCodLimit;
 
     return res.json({
       success    : true,
@@ -231,6 +238,8 @@ export const getCheckoutSummary = async (req, res) => {
       tax,
       shipping,
       total,
+      maxCodLimit,
+      isCodDisabled,
     });
   } catch (err) {
     console.error('getCheckoutSummary error:', err);
@@ -434,7 +443,23 @@ export const placeOrder = async (req, res) => {
     const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
     const total    = parseFloat((taxable + tax + shipping).toFixed(2));
 
-    // 8. Check wallet balance if payment method is Wallet
+    // 8. Enforce configurable maximum COD limit
+    if (method === 'Cash on Delivery') {
+      const maxCodLimit = await paymentConfigService.getMaxCodLimit();
+      if (maxCodLimit !== null && total > maxCodLimit) {
+        if (reservedBatch) {
+          await rollbackStockReservation(reservedBatch);
+          reservedBatch = null;
+        }
+        const formattedLimit = '₹' + maxCodLimit.toLocaleString('en-IN');
+        return sendError(400, {
+          code: 'COD_LIMIT_EXCEEDED',
+          message: `Cash on Delivery is unavailable for orders above ${formattedLimit}. Please choose Online Payment or Essence Wallet.`,
+        });
+      }
+    }
+
+    // 9. Check wallet balance if payment method is Wallet
     if (method === 'Wallet') {
       const currentBal = await walletService.getBalance(userId);
       if (currentBal < total) {

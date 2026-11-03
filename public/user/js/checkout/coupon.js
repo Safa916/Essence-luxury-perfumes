@@ -74,6 +74,8 @@
 
     if (totalEl)    totalEl.textContent    = fmt(data.total);
 
+    window.dispatchEvent(new CustomEvent('checkout:total-updated', { detail: { total: data.total } }));
+
     // Update the free-shipping hint
     if (shipNote) {
       if (data.shipping === 0) {
