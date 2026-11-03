@@ -265,7 +265,7 @@ export const updateOrderStatus = async (req, res) => {
 
     if (status === 'cancelled') {
       const reason = (cancel_reason || internal_notes || 'Cancelled by Admin').trim();
-      let totalRefundAmt = 0;
+      const cancelledItemsList = [];
 
       for (const item of order.items) {
         const itemSt = item.item_status || 'placed';
@@ -277,12 +277,33 @@ export const updateOrderStatus = async (req, res) => {
           item.item_status = 'cancelled';
           item.cancel_reason = reason;
           item.cancelled_at = new Date();
-          totalRefundAmt += parseFloat(item.price_at_purchase.toString()) * item.quantity;
+          cancelledItemsList.push(item);
         }
       }
 
       order.order_status = 'cancelled';
       order.cancel_reason = reason;
+
+      // Calculate refund considering coupon discount proportionally
+      const orderSubtotal = toNum(order.subtotal);
+      const orderDiscount = toNum(order.discount_amount);
+      const orderTotal = toNum(order.total_amount);
+      const prevRefunded = toNum(order.refunded_amount);
+      const maxRefundable = Math.max(0, orderTotal - prevRefunded);
+
+      let totalRefundAmt = 0;
+      for (const item of cancelledItemsList) {
+        const itemTotal = toNum(item.price_at_purchase) * item.quantity;
+        let effectiveItemAmt = itemTotal;
+        if (orderSubtotal > 0 && orderDiscount > 0) {
+          const itemDiscountShare = (itemTotal / orderSubtotal) * orderDiscount;
+          effectiveItemAmt = Math.max(0, itemTotal - itemDiscountShare);
+        }
+        totalRefundAmt += effectiveItemAmt;
+      }
+
+      totalRefundAmt = Math.min(totalRefundAmt, maxRefundable);
+      totalRefundAmt = Math.round(totalRefundAmt * 100) / 100;
 
       const isPrepaid = (order.payment_method === 'Wallet' || order.payment_method === 'Online Payment') && order.payment_status === 'paid';
       if (isPrepaid && totalRefundAmt > 0) {
@@ -293,6 +314,7 @@ export const updateOrderStatus = async (req, res) => {
           description    : `Refund for cancelled order #${order.order_number}`,
           relatedOrderId : order._id,
         });
+        order.refunded_amount = prevRefunded + totalRefundAmt;
         order.payment_status = 'refunded';
       }
 
@@ -346,14 +368,30 @@ export const updateItemStatus = async (req, res) => {
 
         const isPrepaid = (order.payment_method === 'Wallet' || order.payment_method === 'Online Payment') && order.payment_status === 'paid';
         if (isPrepaid) {
-          const itemRefund = parseFloat(item.price_at_purchase.toString()) * item.quantity;
-          await walletService.creditWallet({
-            userId         : order.user_id,
-            amount         : itemRefund,
-            category       : 'refund',
-            description    : `Refund for cancelled item in order #${order.order_number}`,
-            relatedOrderId : order._id,
-          });
+          const orderSubtotal = toNum(order.subtotal);
+          const orderDiscount = toNum(order.discount_amount);
+          const orderTotal = toNum(order.total_amount);
+          const prevRefunded = toNum(order.refunded_amount);
+          const maxRefundable = Math.max(0, orderTotal - prevRefunded);
+
+          const itemTotal = toNum(item.price_at_purchase) * item.quantity;
+          let effectiveItemAmt = itemTotal;
+          if (orderSubtotal > 0 && orderDiscount > 0) {
+            const itemDiscountShare = (itemTotal / orderSubtotal) * orderDiscount;
+            effectiveItemAmt = Math.max(0, itemTotal - itemDiscountShare);
+          }
+          const itemRefund = Math.round(Math.min(effectiveItemAmt, maxRefundable) * 100) / 100;
+
+          if (itemRefund > 0) {
+            await walletService.creditWallet({
+              userId         : order.user_id,
+              amount         : itemRefund,
+              category       : 'refund',
+              description    : `Refund for cancelled item in order #${order.order_number}`,
+              relatedOrderId : order._id,
+            });
+            order.refunded_amount = prevRefunded + itemRefund;
+          }
         }
       }
     } else {

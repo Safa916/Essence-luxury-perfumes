@@ -98,6 +98,10 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Decimal128,
       required: true,
     },
+    refunded_amount: {
+      type: mongoose.Schema.Types.Decimal128,
+      default: 0,
+    },
     coupon_code: {
       type: String,
       default: null,

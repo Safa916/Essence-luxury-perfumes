@@ -86,8 +86,12 @@ export const approveReturn = async (req, res) => {
 
     const userId = (ret.user_id && ret.user_id._id) ? ret.user_id._id : (ret.user_id || order.user_id);
 
-    // Refund to wallet
-    const refundAmt = toNum(ret.refund_amount);
+    // Refund to wallet (capped at remaining refundable total on the order)
+    const orderTotal = toNum(order.total_amount);
+    const prevRefunded = toNum(order.refunded_amount);
+    const maxRefundable = Math.max(0, orderTotal - prevRefunded);
+    const refundAmt = Math.round(Math.min(toNum(ret.refund_amount), maxRefundable) * 100) / 100;
+
     if (refundAmt > 0 && userId) {
       await walletService.creditWallet({
         userId,
@@ -97,6 +101,7 @@ export const approveReturn = async (req, res) => {
         method: 'system',
         relatedOrderId: order._id,
       });
+      order.refunded_amount = prevRefunded + refundAmt;
     }
 
     const itemId = ret.order_item_id;

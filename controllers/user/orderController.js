@@ -291,8 +291,8 @@ export const cancelOrder = async (req, res) => {
     }
 
     const cancellable = ['placed', 'processing'];
-    let totalRefundAmt = 0;
     let itemsCancelledCount = 0;
+    const cancelledItemsList = [];
 
     for (const item of order.items) {
       if (itemId && item._id.toString() !== itemId) continue;
@@ -308,12 +308,33 @@ export const cancelOrder = async (req, res) => {
       item.cancel_reason = finalReason;
       item.cancelled_at = new Date();
       itemsCancelledCount++;
-      totalRefundAmt += parseFloat(item.price_at_purchase.toString()) * item.quantity;
+      cancelledItemsList.push(item);
     }
 
     if (itemsCancelledCount === 0) {
       return res.redirect(`/orders/${req.params.id}?error=not_cancellable`);
     }
+
+    // Calculate refund considering coupon discount proportionally
+    const orderSubtotal = toNum(order.subtotal);
+    const orderDiscount = toNum(order.discount_amount);
+    const orderTotal = toNum(order.total_amount);
+    const prevRefunded = toNum(order.refunded_amount);
+    const maxRefundable = Math.max(0, orderTotal - prevRefunded);
+
+    let totalRefundAmt = 0;
+    for (const item of cancelledItemsList) {
+      const itemTotal = toNum(item.price_at_purchase) * item.quantity;
+      let effectiveItemAmt = itemTotal;
+      if (orderSubtotal > 0 && orderDiscount > 0) {
+        const itemDiscountShare = (itemTotal / orderSubtotal) * orderDiscount;
+        effectiveItemAmt = Math.max(0, itemTotal - itemDiscountShare);
+      }
+      totalRefundAmt += effectiveItemAmt;
+    }
+
+    totalRefundAmt = Math.min(totalRefundAmt, maxRefundable);
+    totalRefundAmt = Math.round(totalRefundAmt * 100) / 100;
 
     const isPrepaid = (order.payment_method === 'Wallet' || order.payment_method === 'Online Payment') && order.payment_status === 'paid';
     let refunded = false;
@@ -325,6 +346,7 @@ export const cancelOrder = async (req, res) => {
         description    : `Refund for cancelled item(s) in order #${order.order_number}`,
         relatedOrderId : order._id,
       });
+      order.refunded_amount = prevRefunded + totalRefundAmt;
       refunded = true;
     }
 
@@ -437,18 +459,31 @@ export const submitReturn = async (req, res) => {
     }
 
     let refundAmount = 0;
+    const orderSubtotal = toNum(order.subtotal);
+    const orderDiscount = toNum(order.discount_amount);
+    const orderTotal = toNum(order.total_amount);
+    const prevRefunded = toNum(order.refunded_amount);
+    const maxRefundable = Math.max(0, orderTotal - prevRefunded);
+
     if (itemId) {
       const targetItem = order.items.find(i => i._id.toString() === itemId);
       if (!targetItem) {
         return res.redirect(`/orders/${req.params.id}?error=invalid_item`);
       }
-      refundAmount = parseFloat(targetItem.price_at_purchase.toString()) * targetItem.quantity;
+      const itemTotal = toNum(targetItem.price_at_purchase) * targetItem.quantity;
+      let effectiveItemAmt = itemTotal;
+      if (orderSubtotal > 0 && orderDiscount > 0) {
+        const itemDiscountShare = (itemTotal / orderSubtotal) * orderDiscount;
+        effectiveItemAmt = Math.max(0, itemTotal - itemDiscountShare);
+      }
+      refundAmount = Math.min(effectiveItemAmt, maxRefundable);
     } else {
       if (order.order_status !== 'delivered') {
         return res.redirect(`/orders/${req.params.id}`);
       }
-      refundAmount = parseFloat(order.total_amount.toString());
+      refundAmount = maxRefundable;
     }
+    refundAmount = Math.round(refundAmount * 100) / 100;
 
     const reason   = (req.body.return_reason || '').trim();
     const comments = (req.body.comments || '').trim();
