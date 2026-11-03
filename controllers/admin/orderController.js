@@ -3,7 +3,6 @@ import User from '../../models/user.js';
 import Product from '../../models/product.js';
 import Variant from '../../models/variant.js';
 import walletService from '../../services/walletService.js';
-import paymentConfigService from '../../services/paymentConfigService.js';
 
 const PER_PAGE = 10;
 
@@ -66,11 +65,10 @@ export const listOrders = async (req, res) => {
 
     // Stats for the cards
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const [pendingShipments, ordersToday, activeReturns, maxCodLimit] = await Promise.all([
+    const [pendingShipments, ordersToday, activeReturns] = await Promise.all([
       Order.countDocuments({ order_status: { $in: ['placed', 'processing'] } }),
       Order.countDocuments({ placed_at: { $gte: today } }),
       Order.countDocuments({ order_status: 'returned' }),
-      paymentConfigService.getMaxCodLimit(),
     ]);
 
     // Shape order data for the view
@@ -105,7 +103,6 @@ export const listOrders = async (req, res) => {
         ordersToday,
         activeReturns,
       },
-      maxCodLimit,
       status      : status,
       range       : range,
       search      : search,
@@ -423,22 +420,9 @@ export const updateItemStatus = async (req, res) => {
   }
 };
 
-// ─── POST /admin/orders/cod-limit ───────────────────────────────────────────
-export const updateCodLimit = async (req, res) => {
-  try {
-    const { max_cod_amount } = req.body;
-    await paymentConfigService.setMaxCodLimit(max_cod_amount);
-    res.redirect('/admin/orders?success=cod_limit_updated');
-  } catch (err) {
-    console.error('admin updateCodLimit error:', err);
-    res.redirect('/admin/orders?error=cod_limit_failed');
-  }
-};
-
 export default {
   listOrders,
   renderOrderDetail,
   updateOrderStatus,
   updateItemStatus,
-  updateCodLimit,
 };

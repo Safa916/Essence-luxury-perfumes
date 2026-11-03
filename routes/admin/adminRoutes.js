@@ -3,7 +3,7 @@ const router = express.Router();
 
 import { getLoginPage, postLogin, logout, getDashboard, getDashboardChartData } from '../../controllers/admin/adminController.js';
 import { getUsersPage, toggleBlockUser } from '../../controllers/admin/userManagementController.js';
-import { listOrders, renderOrderDetail, updateOrderStatus, updateItemStatus, updateCodLimit } from '../../controllers/admin/orderController.js';
+import { listOrders, renderOrderDetail, updateOrderStatus, updateItemStatus } from '../../controllers/admin/orderController.js';
 import { listReturns, approveReturn, rejectReturn } from '../../controllers/admin/returnController.js';
 import { listCoupons, createCoupon, renderEditCoupon, updateCoupon, deleteCoupon, toggleCoupon } from '../../controllers/admin/couponController.js';
 import { listOffers, createOffer, renderEditOffer, updateOffer, deleteOffer, toggleOffer } from '../../controllers/admin/offerController.js';
@@ -31,7 +31,6 @@ router.post('/users/:id/toggle-block',  requireAdminAuth, toggleBlockUser);
 
 // Order management
 router.get('/orders',                                    requireAdminAuth, listOrders);
-router.post('/orders/cod-limit',                         requireAdminAuth, updateCodLimit);
 router.get('/orders/:id',                                requireAdminAuth, renderOrderDetail);
 
 router.post('/orders/:id/status',                        requireAdminAuth, updateOrderStatus);
