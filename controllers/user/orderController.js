@@ -649,10 +649,10 @@ export const downloadInvoice = async (req, res) => {
 
     // ── TABLE ROWS — only non-cancelled items ────────────────────────────────
     let rowY = TABLE_Y + 35;
-    // Exclude items that were cancelled by the user
-    const CANCELLED_STATUSES = ['cancelled', 'cancel_requested'];
+    // Exclude cancelled and returned items from active invoice billing
+    const EXCLUDED_STATUSES = ['cancelled', 'cancel_requested', 'returned'];
     const activeItems = (order.items || []).filter(
-      (it) => !CANCELLED_STATUSES.includes((it.item_status || '').toLowerCase())
+      (it) => !EXCLUDED_STATUSES.includes((it.item_status || '').toLowerCase())
     );
 
     activeItems.forEach((item) => {
@@ -686,12 +686,10 @@ export const downloadInvoice = async (req, res) => {
          .strokeColor('#F2F2EF').lineWidth(0.5).stroke();
     });
 
-    // ── TOTALS — recalculated from active (non-cancelled) items ──────────────
+    // ── TOTALS — calculated from active (delivered/payable) items ─────────────
     const TOT_X = COL.qty;
     const TOT_W = L + PAGE_W - TOT_X;
 
-    // Recalculate from active items so cancelled items don't inflate totals
-    const GST_RATE          = 0.18;
     const FREE_SHIPPING_AT  = 2000;
     const SHIPPING_FEE      = 99;
 
@@ -699,15 +697,17 @@ export const downloadInvoice = async (req, res) => {
       (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
     );
     const savedDiscount  = toNum(order.discount_amount) || 0;
-    // Pro-rate the coupon discount if some items were cancelled
+    // Pro-rate the coupon discount based on active items
     const allSubtotal    = toNum(order.subtotal) || activeSubtotal;
     const discountRatio  = allSubtotal > 0 ? activeSubtotal / allSubtotal : 1;
     const appliedDiscount = parseFloat((savedDiscount * discountRatio).toFixed(2));
 
-    const taxable        = Math.max(activeSubtotal - appliedDiscount, 0);
-    const activeTax      = parseFloat((taxable * GST_RATE).toFixed(2));
-    const activeShipping = taxable >= FREE_SHIPPING_AT ? 0 : SHIPPING_FEE;
-    const activeTotal    = parseFloat((taxable + activeTax + activeShipping).toFixed(2));
+    const discountedSubtotal = Math.max(activeSubtotal - appliedDiscount, 0);
+    // Shipping calculation: Free if discounted subtotal >= Rs. 2000, or if no active items Rs. 0
+    const activeShipping = activeItems.length === 0 ? 0 : (discountedSubtotal >= FREE_SHIPPING_AT ? 0 : SHIPPING_FEE);
+
+    // Final total payable on invoice (no extra tax added)
+    const activeTotal    = parseFloat((discountedSubtotal + activeShipping).toFixed(2));
 
     rowY += 10;
     doc.moveTo(L, rowY).lineTo(L + PAGE_W, rowY).strokeColor('#E0DDD8').lineWidth(1).stroke();
@@ -715,7 +715,6 @@ export const downloadInvoice = async (req, res) => {
     const totals = [
       ['SUBTOTAL',     activeSubtotal],
       ['SHIPPING',     activeShipping === 0 ? null : activeShipping],
-      ['TAX (GST 18%)', activeTax],
     ];
 
     if (appliedDiscount > 0) {
