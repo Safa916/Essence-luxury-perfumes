@@ -13,6 +13,7 @@ function toNum(d) {
  */
 function buildSalesFilter(query) {
   const filter = query.filter || 'daily';
+  const status = query.status || 'delivered';
   const now = new Date();
 
   let startDate = null;
@@ -46,11 +47,17 @@ function buildSalesFilter(query) {
     }
   }
 
-  // Base match: Count only successful orders (exclude cancelled, returned, and failed)
+  // Base match: In real-world e-commerce, sales report defaults to delivered orders (actual completed sales)
   const match = {
-    order_status: { $nin: ['cancelled', 'returned'] },
     payment_status: { $ne: 'failed' },
   };
+
+  if (status && status !== 'all') {
+    match.order_status = status;
+  } else {
+    // If 'all', count all active orders but exclude cancelled and returned
+    match.order_status = { $nin: ['cancelled', 'returned'] };
+  }
 
   if (startDate && endDate) {
     match.placed_at = { $gte: startDate, $lte: endDate };
@@ -60,7 +67,7 @@ function buildSalesFilter(query) {
     match.placed_at = { $lte: endDate };
   }
 
-  return { match, filter, startDate, endDate, customFrom, customTo };
+  return { match, filter, status, startDate, endDate, customFrom, customTo };
 }
 
 // ── GET /admin/sales-report ──────────────────────────────────────────────────
@@ -69,7 +76,7 @@ export const getSalesReport = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, parseInt(req.query.limit) || 10);
 
-    const { match, filter, startDate, endDate, customFrom, customTo } = buildSalesFilter(req.query);
+    const { match, filter, status, startDate, endDate, customFrom, customTo } = buildSalesFilter(req.query);
 
     const [result] = await Order.aggregate([
       { $match: match },
@@ -191,6 +198,7 @@ export const getSalesReport = async (req, res) => {
       totalRecords: totalCount,
       limit,
       filter,
+      status,
       customFrom,
       customTo,
       startDate,
@@ -205,7 +213,7 @@ export const getSalesReport = async (req, res) => {
 // ── GET /admin/sales-report/download/pdf ──────────────────────────────────────
 export const downloadPdf = async (req, res) => {
   try {
-    const { match, filter, customFrom, customTo } = buildSalesFilter(req.query);
+    const { match, filter, status, customFrom, customTo } = buildSalesFilter(req.query);
 
     const ordersRaw = await Order.aggregate([
       { $match: match },
@@ -259,12 +267,16 @@ export const downloadPdf = async (req, res) => {
     else if (filter === 'custom') filterLabel = `CUSTOM (${customFrom || 'Start'} TO ${customTo || 'End'})`;
     else if (filter === 'all') filterLabel = 'ALL TIME';
 
+    let statusLabel = status.toUpperCase();
+    if (status === 'delivered') statusLabel = 'DELIVERED (COMPLETED SALES)';
+    else if (status === 'all') statusLabel = 'ALL ACTIVE';
+
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="sales-report-${filter}-${Date.now()}.pdf"`
+      `attachment; filename="sales-report-${filter}-${status}-${Date.now()}.pdf"`
     );
 
     doc.pipe(res);
@@ -275,7 +287,7 @@ export const downloadPdf = async (req, res) => {
     doc.fillColor('#111');
 
     // Filter info
-    doc.fontSize(9).font('Helvetica-Bold').text(`FILTER: ${filterLabel}`, 250, 45, { width: 305, align: 'right' });
+    doc.fontSize(8.5).font('Helvetica-Bold').text(`FILTER: ${filterLabel} | STATUS: ${statusLabel}`, 180, 45, { width: 375, align: 'right' });
     doc.fontSize(8).font('Helvetica').fillColor('#666').text(`Generated: ${new Date().toLocaleString('en-IN')}`, 250, 58, { width: 305, align: 'right' });
     doc.fillColor('#111');
 
@@ -355,7 +367,7 @@ export const downloadPdf = async (req, res) => {
 // ── GET /admin/sales-report/download/excel (ExcelJS .xlsx) ────────────────────
 export const downloadExcel = async (req, res) => {
   try {
-    const { match, filter, customFrom, customTo } = buildSalesFilter(req.query);
+    const { match, filter, status, customFrom, customTo } = buildSalesFilter(req.query);
 
     const ordersRaw = await Order.aggregate([
       { $match: match },
@@ -396,6 +408,11 @@ export const downloadExcel = async (req, res) => {
     else if (filter === 'custom') filterLabel = `Custom (${customFrom || 'Start'} to ${customTo || 'End'})`;
     else if (filter === 'all') filterLabel = 'All Time';
 
+    let statusLabel = status.toUpperCase();
+    if (status === 'delivered') statusLabel = 'Delivered (Completed Sales)';
+    else if (status === 'all') statusLabel = 'All Active Orders';
+    else statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Essence Luxury Perfumes';
     workbook.created = new Date();
@@ -414,7 +431,7 @@ export const downloadExcel = async (req, res) => {
 
     sheet.mergeCells('A2:I2');
     const metaCell = sheet.getCell('A2');
-    metaCell.value = `Filter: ${filterLabel}  |  Generated on: ${new Date().toLocaleString('en-IN')}`;
+    metaCell.value = `Filter: ${filterLabel}  |  Status: ${statusLabel}  |  Generated on: ${new Date().toLocaleString('en-IN')}`;
     metaCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF555555' } };
     metaCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
@@ -525,7 +542,7 @@ export const downloadExcel = async (req, res) => {
     );
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="sales-report-${filter}-${Date.now()}.xlsx"`
+      `attachment; filename="sales-report-${filter}-${status}-${Date.now()}.xlsx"`
     );
 
     await workbook.xlsx.write(res);

@@ -344,7 +344,7 @@
           <p class="page-sub">Comprehensive overview of orders, revenue, discounts, and coupon analytics.</p>
         </div>
         <div class="report-actions">
-          <a href="/admin/sales-report/download/pdf?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>" class="btn-export btn-export-pdf">
+          <a href="/admin/sales-report/download/pdf?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>&status=<%= status %>" class="btn-export btn-export-pdf">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -352,7 +352,7 @@
             </svg>
             Download PDF
           </a>
-          <a href="/admin/sales-report/download/excel?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>" class="btn-export btn-export-excel">
+          <a href="/admin/sales-report/download/excel?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>&status=<%= status %>" class="btn-export btn-export-excel">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
@@ -369,16 +369,17 @@
       <div class="filter-card">
         <!-- Quick Filter Pills -->
         <div class="filter-pills">
-          <a href="/admin/sales-report?filter=daily" class="filter-pill <%= filter === 'daily' ? 'active' : '' %>">Daily (Today)</a>
-          <a href="/admin/sales-report?filter=weekly" class="filter-pill <%= filter === 'weekly' ? 'active' : '' %>">Weekly (Last 7 Days)</a>
-          <a href="/admin/sales-report?filter=yearly" class="filter-pill <%= filter === 'yearly' ? 'active' : '' %>">Yearly (This Year)</a>
-          <a href="/admin/sales-report?filter=all" class="filter-pill <%= filter === 'all' ? 'active' : '' %>">All Time</a>
+          <a href="/admin/sales-report?filter=daily&status=<%= status %>" class="filter-pill <%= filter === 'daily' ? 'active' : '' %>">Daily (Today)</a>
+          <a href="/admin/sales-report?filter=weekly&status=<%= status %>" class="filter-pill <%= filter === 'weekly' ? 'active' : '' %>">Weekly (Last 7 Days)</a>
+          <a href="/admin/sales-report?filter=yearly&status=<%= status %>" class="filter-pill <%= filter === 'yearly' ? 'active' : '' %>">Yearly (This Year)</a>
+          <a href="/admin/sales-report?filter=all&status=<%= status %>" class="filter-pill <%= filter === 'all' ? 'active' : '' %>">All Time</a>
           <a href="javascript:void(0)" onclick="toggleCustomRange()" class="filter-pill <%= filter === 'custom' ? 'active' : '' %>">Custom Date Range</a>
         </div>
 
         <!-- Custom Date Range Form -->
         <form method="GET" action="/admin/sales-report" id="customRangeForm" class="custom-range-form" style="<%= filter === 'custom' ? '' : 'display:none;' %>">
           <input type="hidden" name="filter" value="custom">
+          <input type="hidden" name="status" value="<%= status %>">
           <div class="date-field">
             <label for="fromDate">From Date</label>
             <input type="date" id="fromDate" name="from" value="<%= customFrom %>" required>
@@ -389,6 +390,23 @@
           </div>
           <button type="submit" class="btn-apply">Apply Filter</button>
         </form>
+
+        <!-- Order Status Selector -->
+        <div class="status-filter-row" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid #e5e7eb;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="statusSelect" style="font-size: 0.82rem; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em;">Order Status:</label>
+            <select id="statusSelect" onchange="applyStatusFilter(this.value)" style="padding: 0.4rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; background: #fff; color: #111; font-weight: 500; cursor: pointer;">
+              <option value="delivered" <%= status === 'delivered' ? 'selected' : '' %>>Delivered (Completed Sales — Default)</option>
+              <option value="shipped" <%= status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+              <option value="processing" <%= status === 'processing' ? 'selected' : '' %>>Processing</option>
+              <option value="placed" <%= status === 'placed' ? 'selected' : '' %>>Placed</option>
+              <option value="all" <%= status === 'all' ? 'selected' : '' %>>All Active Orders</option>
+            </select>
+          </div>
+          <span style="font-size: 0.78rem; color: #6b7280;">
+            Counting: <strong><%= status === 'delivered' ? 'Delivered Orders Only' : (status === 'all' ? 'All Active Orders' : status.toUpperCase()) %></strong>
+          </span>
+        </div>
       </div>
 
       <!-- Summary Metrics Grid -->
@@ -493,21 +511,21 @@
         <% if (totalPages > 1) { %>
           <div class="pagination">
             <% if (currentPage > 1) { %>
-              <a href="?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>&page=<%= currentPage - 1 %>">Prev</a>
+              <a href="?filter=<%= filter %>&status=<%= status %>&from=<%= customFrom %>&to=<%= customTo %>&page=<%= currentPage - 1 %>">Prev</a>
             <% } %>
 
             <% for (let p = 1; p <= totalPages; p++) { %>
               <% if (p === currentPage) { %>
                 <span class="current"><%= p %></span>
               <% } else if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) { %>
-                <a href="?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>&page=<%= p %>"><%= p %></a>
+                <a href="?filter=<%= filter %>&status=<%= status %>&from=<%= customFrom %>&to=<%= customTo %>&page=<%= p %>"><%= p %></a>
               <% } else if (p === currentPage - 3 || p === currentPage + 3) { %>
                 <span style="border:none; padding:0.4rem 0.2rem;">...</span>
               <% } %>
             <% } %>
 
             <% if (currentPage < totalPages) { %>
-              <a href="?filter=<%= filter %>&from=<%= customFrom %>&to=<%= customTo %>&page=<%= currentPage + 1 %>">Next</a>
+              <a href="?filter=<%= filter %>&status=<%= status %>&from=<%= customFrom %>&to=<%= customTo %>&page=<%= currentPage + 1 %>">Next</a>
             <% } %>
           </div>
         <% } %>
@@ -525,6 +543,14 @@
         form.style.display = 'none';
       }
     }
+
+    function applyStatusFilter(newStatus) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('status', newStatus);
+      url.searchParams.set('page', '1');
+      window.location.href = url.toString();
+    }
+  </script>
   </script>
 </body>
 </html>
