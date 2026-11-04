@@ -25,22 +25,24 @@ function computeItemStatusSummary(items) {
   const activeItems  = items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
   const allCancelled = activeItems.length === 0;
 
-  // Count per status
+  // Count per status (all items, including cancelled/returned)
   const counts = {};
   for (const i of items) {
     const s = i.item_status || 'placed';
     counts[s] = (counts[s] || 0) + 1;
   }
 
-  const distinctStatuses = Object.keys(counts).filter(s => s !== 'cancelled' && s !== 'returned');
+  // isMixed = true whenever items are not all in the exact same status
+  // (e.g. returned + cancelled + processing IS mixed)
+  const distinctStatuses = Object.keys(counts);
   const isMixed = distinctStatuses.length > 1;
 
-  // Build "1 × placed, 1 × processing" string
+  // Build "1 × placed, 1 × processing" human-readable string
   const breakdown = Object.entries(counts)
     .map(([s, n]) => `${n} × ${s.replace(/_/g, ' ')}`)
     .join(', ');
 
-  // Aggregate: show the earliest active status
+  // Aggregate display status = earliest active item status (ignores cancelled/returned)
   let orderStatusRaw;
   if (allCancelled) {
     orderStatusRaw = 'cancelled';
