@@ -311,6 +311,7 @@ export const createProduct = async (req, res) => {
       images: uploadedImages,
       price: Number(req.body.variant_price) || 0,
       stock: Number(req.body.variant_quantity) || 0,
+      gst_rate: req.body.gst_rate !== undefined ? Number(req.body.gst_rate) : 18,
       brand_id: brand_id || null,
       category_id: category_id || null,
       is_active: status === 'active' || status === 'on' || status === 'true',
@@ -480,6 +481,9 @@ export const updateProduct = async (req, res) => {
     product.brand_id = brand_id || null;
     product.category_id = category_id || null;
     product.is_active = status === 'active' || status === 'on' || status === 'true';
+    if (req.body.gst_rate !== undefined) {
+      product.gst_rate = Number(req.body.gst_rate);
+    }
 
     await product.save();
 

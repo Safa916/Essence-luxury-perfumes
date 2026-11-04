@@ -42,12 +42,18 @@ const productSchema = new mongoose.Schema(
       type: [String], // array of image URLs
       default: [],
     },
-    // Base price shown on the Product Management table.
+    // Base price shown on the Product Management table (customer-facing, GST included).
     price: {
       type: Number,
       required: [true, 'Price is required'],
       min: 0,
       default: 0,
+    },
+    // GST rate percentage (e.g. 18 for 18% GST). Customer price already includes this GST.
+    gst_rate: {
+      type: Number,
+      default: 18,
+      enum: [0, 3, 5, 12, 18, 28],
     },
     // Aggregate stock shown on the table (kept in sync with variant totals
     // by variantController.js's recalcProductStock()).

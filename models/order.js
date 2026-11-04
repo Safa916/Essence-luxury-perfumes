@@ -61,6 +61,18 @@ const orderSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.Decimal128,
           required: true,
         },
+        gst_rate: {
+          type: Number,
+          default: 18,
+        },
+        taxable_amount: {
+          type: mongoose.Schema.Types.Decimal128,
+          default: 0,
+        },
+        gst_amount: {
+          type: mongoose.Schema.Types.Decimal128,
+          default: 0,
+        },
         item_status: {
           type: String,
           enum: ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],

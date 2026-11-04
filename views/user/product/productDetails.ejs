@@ -70,6 +70,7 @@
           <% if (variants[0] && variants[0].compare_at_price && variants[0].compare_at_price > variants[0].price) { %>
             <span class="price-compare" id="priceCompare">&#8377;<%= variants[0].compare_at_price.toLocaleString('en-IN') %></span>
           <% } %>
+          <span class="gst-inclusive-badge" style="font-size:0.85rem; color:#78716c; font-weight:400; margin-left:8px;">&mdash; Inclusive of <%= product.gst_rate || 18 %>% GST</span>
         </div>
 
         <p class="product-description"><%= product.short_description || product.full_description %></p>

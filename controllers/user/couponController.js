@@ -17,10 +17,11 @@ function toNum(v) {
 // Recalculate all totals given subtotal + discount value
 function calcTotals(subtotal, discountValue) {
   const discount = Math.min(discountValue, subtotal); // can't discount more than subtotal
-  const taxable  = Math.max(subtotal - discount, 0);
-  const tax      = parseFloat((taxable * GST_RATE).toFixed(2));
-  const shipping = taxable >= FREE_SHIPPING_AT ? 0 : SHIPPING_FEE;
-  const total    = parseFloat((taxable + tax + shipping).toFixed(2));
+  const netAmount = Math.max(subtotal - discount, 0);
+  const taxable = parseFloat((netAmount / (1 + GST_RATE)).toFixed(2));
+  const tax = parseFloat((netAmount - taxable).toFixed(2));
+  const shipping = netAmount >= FREE_SHIPPING_AT ? 0 : SHIPPING_FEE;
+  const total = parseFloat((netAmount + shipping).toFixed(2));
   return { discount, tax, shipping, total };
 }
 

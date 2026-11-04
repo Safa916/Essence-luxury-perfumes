@@ -161,10 +161,11 @@ export const renderCheckout = async (req, res) => {
     const subtotal   = items.reduce((s, i) => s + i.item_total, 0);
     const coupon     = cart.applied_coupon?.code ? cart.applied_coupon : null;
     const discount   = coupon ? toNum(cart.applied_coupon.discount_value) : 0;
-    const taxable    = Math.max(subtotal - discount, 0);
-    const tax        = parseFloat((taxable * GST_RATE).toFixed(2));
-    const shipping   = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
-    const total      = parseFloat((taxable + tax + shipping).toFixed(2));
+    const netAmount  = Math.max(subtotal - discount, 0);
+    const taxable    = parseFloat((netAmount / (1 + GST_RATE)).toFixed(2));
+    const tax        = parseFloat((netAmount - taxable).toFixed(2));
+    const shipping   = netAmount >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
+    const total      = parseFloat((netAmount + shipping).toFixed(2));
 
     // 5. Default address (pre-select)
     const defaultAddr = addresses.find(a => a.is_default) || addresses[0] || null;
@@ -223,10 +224,11 @@ export const getCheckoutSummary = async (req, res) => {
 
     const coupon   = cart.applied_coupon?.code ? cart.applied_coupon : null;
     const discount = coupon ? toNum(cart.applied_coupon.discount_value) : 0;
-    const taxable  = Math.max(subtotal - discount, 0);
-    const tax      = parseFloat((taxable * GST_RATE).toFixed(2));
-    const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
-    const total    = parseFloat((taxable + tax + shipping).toFixed(2));
+    const netAmount= Math.max(subtotal - discount, 0);
+    const taxable  = parseFloat((netAmount / (1 + GST_RATE)).toFixed(2));
+    const tax      = parseFloat((netAmount - taxable).toFixed(2));
+    const shipping = netAmount >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
+    const total    = parseFloat((netAmount + shipping).toFixed(2));
     const maxCodLimit = await paymentConfigService.getMaxCodLimit();
     const isCodDisabled = maxCodLimit !== null && total > maxCodLimit;
 
@@ -411,6 +413,9 @@ export const placeOrder = async (req, res) => {
         image:             (i.product_id.images && i.product_id.images[0]) || '',
         quantity:          i.quantity,
         price_at_purchase: finalPrice,
+        gst_rate:          (i.product_id && i.product_id.gst_rate !== undefined) ? i.product_id.gst_rate : 18,
+        taxable_amount:    parseFloat((finalPrice > 0 ? (finalPrice / (1 + ((i.product_id && i.product_id.gst_rate !== undefined) ? i.product_id.gst_rate : 18) / 100)) : 0).toFixed(2)),
+        gst_amount:        parseFloat((finalPrice - (finalPrice > 0 ? (finalPrice / (1 + ((i.product_id && i.product_id.gst_rate !== undefined) ? i.product_id.gst_rate : 18) / 100)) : 0)).toFixed(2)),
         item_status:       'placed',
       };
     });
@@ -438,10 +443,11 @@ export const placeOrder = async (req, res) => {
       }
     }
 
-    const taxable  = Math.max(subtotal - discount, 0);
-    const tax      = parseFloat((taxable * GST_RATE).toFixed(2));
-    const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
-    const total    = parseFloat((taxable + tax + shipping).toFixed(2));
+    const netAmount= Math.max(subtotal - discount, 0);
+    const taxable  = parseFloat((netAmount / (1 + GST_RATE)).toFixed(2));
+    const tax      = parseFloat((netAmount - taxable).toFixed(2));
+    const shipping = netAmount >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
+    const total    = parseFloat((netAmount + shipping).toFixed(2));
 
     // 8. Enforce configurable maximum COD limit
     if (method === 'Cash on Delivery') {
@@ -698,10 +704,9 @@ export const createRazorpayOrder = async (req, res) => {
       }
     }
 
-    const taxable  = Math.max(subtotal - discount, 0);
-    const tax      = parseFloat((taxable * GST_RATE).toFixed(2));
-    const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
-    const total    = parseFloat((taxable + tax + shipping).toFixed(2));
+    const netAmount= Math.max(subtotal - discount, 0);
+    const shipping = netAmount >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
+    const total    = parseFloat((netAmount + shipping).toFixed(2));
 
     const razorpay = getRazorpayInstance();
     if (!razorpay) {
@@ -826,6 +831,9 @@ export const verifyRazorpayPayment = async (req, res) => {
         image:             (i.product_id.images && i.product_id.images[0]) || '',
         quantity:          i.quantity,
         price_at_purchase: offerCalc.finalPrice,
+        gst_rate:          (i.product_id && i.product_id.gst_rate !== undefined) ? i.product_id.gst_rate : 18,
+        taxable_amount:    parseFloat((offerCalc.finalPrice > 0 ? (offerCalc.finalPrice / (1 + ((i.product_id && i.product_id.gst_rate !== undefined) ? i.product_id.gst_rate : 18) / 100)) : 0).toFixed(2)),
+        gst_amount:        parseFloat((offerCalc.finalPrice - (offerCalc.finalPrice > 0 ? (offerCalc.finalPrice / (1 + ((i.product_id && i.product_id.gst_rate !== undefined) ? i.product_id.gst_rate : 18) / 100)) : 0)).toFixed(2)),
         item_status:       'placed',
       };
     });
@@ -852,10 +860,11 @@ export const verifyRazorpayPayment = async (req, res) => {
       }
     }
 
-    const taxable  = Math.max(subtotal - discount, 0);
-    const tax      = parseFloat((taxable * GST_RATE).toFixed(2));
-    const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
-    const total    = parseFloat((taxable + tax + shipping).toFixed(2));
+    const netAmount= Math.max(subtotal - discount, 0);
+    const taxable  = parseFloat((netAmount / (1 + GST_RATE)).toFixed(2));
+    const tax      = parseFloat((netAmount - taxable).toFixed(2));
+    const shipping = netAmount >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
+    const total    = parseFloat((netAmount + shipping).toFixed(2));
 
     // 6. ATOMIC STOCK RESERVATION
     const reservation = await reserveStockAtomically(validItems);

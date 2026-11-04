@@ -330,7 +330,7 @@
             <dd id="co-discount-val">−<%= fmt(_discount) %></dd>
           </div>
           <div class="totals-row">
-            <dt>GST (18%)</dt>
+            <dt>Included GST (18%)</dt>
             <dd id="co-tax"><%= fmt(_tax) %></dd>
           </div>
           <div class="totals-row">
@@ -759,10 +759,11 @@
 
         const discountEl = document.getElementById('co-discount-row');
         const discount = discountEl ? parseFloat(discountEl.dataset.discount || 0) : 0;
-        const taxable = Math.max(subtotal - discount, 0);
-        const tax = parseFloat((taxable * GST_RATE).toFixed(2));
-        const shipping = taxable >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
-        const total = parseFloat((taxable + tax + shipping).toFixed(2));
+        const netAmount = Math.max(subtotal - discount, 0);
+        const taxable = parseFloat((netAmount / (1 + GST_RATE)).toFixed(2));
+        const tax = parseFloat((netAmount - taxable).toFixed(2));
+        const shipping = netAmount >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_FEE;
+        const total = parseFloat((netAmount + shipping).toFixed(2));
 
         const sub = document.getElementById('co-subtotal');   if (sub) sub.textContent = fmt(subtotal);
         const taxEl = document.getElementById('co-tax');      if (taxEl) taxEl.textContent = fmt(tax);

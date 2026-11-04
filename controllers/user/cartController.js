@@ -247,8 +247,14 @@ export const renderCart = async (req, res) => {
 
         const effectiveUnitPrice = offerCalc.finalPrice;
         const effectiveTotalPrice = effectiveUnitPrice * item.quantity;
+        const gstRate = product.gst_rate !== undefined ? product.gst_rate : 18;
+        const itemTaxable = effectiveTotalPrice > 0 ? (effectiveTotalPrice / (1 + gstRate / 100)) : 0;
+        const itemGst = effectiveTotalPrice - itemTaxable;
 
         return {
+          gst_rate: gstRate,
+          taxable_amount: itemTaxable,
+          gst_amount: itemGst,
           cart_item_id: item._id,
           product_id: product._id,
           product_name: product.name,
@@ -276,7 +282,10 @@ export const renderCart = async (req, res) => {
       });
 
     // Subtotal always reflects ALL items, not just the current page
-    const subtotal = allItems.filter((i) => i.available).reduce((sum, i) => sum + i.total_price, 0);
+    const availableItems = allItems.filter((i) => i.available);
+    const subtotal = availableItems.reduce((sum, i) => sum + i.total_price, 0);
+    const totalGst = availableItems.reduce((sum, i) => sum + (i.gst_amount || 0), 0);
+    const totalTaxable = subtotal - totalGst;
 
     // Pagination
     const totalItems= allItems.length;
@@ -289,6 +298,8 @@ export const renderCart = async (req, res) => {
       user: req.user,
       items,
       subtotal,
+      totalGst,
+      totalTaxable,
       hasUnavailable,
       currentPage,
       totalPages,
