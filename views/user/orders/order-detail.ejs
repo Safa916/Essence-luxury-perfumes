@@ -143,9 +143,13 @@
         <section class="shipment">
           <h2 class="section-title">Items In Shipment</h2>
 
-          <% (o.items || []).forEach(function (it) { %>
+          <% (o.items || []).forEach(function (it) {
+               const isCancelledItem = (it.item_status === 'cancelled');
+               const productHref = (!isCancelledItem && it.product_slug) ? '/product/' + it.product_slug : null;
+          %>
             <article class="ship-item">
               <div class="ship-image">
+                <% if (productHref) { %><a href="<%= productHref %>" class="ship-image-link"><% } %>
                 <% if (it.image) { %>
                   <img src="<%= it.image %>" alt="<%= it.name %>">
                 <% } else { %>
@@ -157,11 +161,16 @@
                     </svg>
                   </div>
                 <% } %>
+                <% if (productHref) { %></a><% } %>
               </div>
 
               <div class="ship-info">
                 <div class="ship-top">
-                  <h3 class="ship-name"><%= it.name %></h3>
+                  <% if (productHref) { %>
+                    <a href="<%= productHref %>" class="ship-name-link"><h3 class="ship-name"><%= it.name %></h3></a>
+                  <% } else { %>
+                    <h3 class="ship-name"><%= it.name %></h3>
+                  <% } %>
                   <span class="ship-price"><%= inr(it.total || it.price) %></span>
                 </div>
                 <p class="ship-meta">

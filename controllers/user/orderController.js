@@ -112,12 +112,32 @@ export const listOrders = async (req, res) => {
         };
       });
 
+      // Compute an order-level display status
+      const allStatuses = (o.items || []).map(i => {
+        let s = i.item_status || 'placed';
+        if (o.order_status === 'returned' && s !== 'cancelled') s = 'returned';
+        return s;
+      });
+      const distinctStatuses = [...new Set(allStatuses)];
+      const isMixed = distinctStatuses.length > 1;
+      // Priority order for the display badge when statuses differ
+      const STATUS_PRIORITY = ['delivered', 'shipped', 'out_for_delivery', 'processing', 'placed', 'returned', 'cancelled'];
+      const displayStatusRaw = isMixed
+        ? (STATUS_PRIORITY.find(s => allStatuses.includes(s)) || allStatuses[0])
+        : allStatuses[0] || 'placed';
+
       return {
         _id          : o._id,
         order_number : o.order_number,
         placed_at    : o.placed_at,
         total_amount : toNum(o.total_amount),
         items        : items,
+        display_status      : displayStatusRaw,
+        display_status_label: STATUS_LABEL[displayStatusRaw] || displayStatusRaw,
+        isMixed,
+        mixed_summary: isMixed
+          ? distinctStatuses.map(s => ({ status: s, label: STATUS_LABEL[s] || s, count: allStatuses.filter(x => x === s).length }))
+          : null,
       };
     });
 
@@ -147,7 +167,7 @@ export const getOrderDetail = async (req, res) => {
       _id     : req.params.id,
       user_id : req.user._id,
     })
-      .populate('items.product_id', 'images')  // needed for old orders without snapshot image
+      .populate('items.product_id', 'images slug')  // needed for old orders without snapshot image
       .lean();
 
     if (!order) return res.redirect('/orders');
@@ -167,16 +187,17 @@ export const getOrderDetail = async (req, res) => {
         || (productDoc.images && productDoc.images[0])
         || '';
       return {
-        _id      : i._id,
-        name     : i.product_name || 'Product',
-        size     : i.size || '',
+        _id          : i._id,
+        name         : i.product_name || 'Product',
+        size         : i.size || '',
         image,
-        quantity : i.quantity,
-        price    : toNum(i.price_at_purchase),
-        total    : toNum(i.price_at_purchase) * i.quantity,
-        item_status: i.item_status || 'placed',
+        quantity     : i.quantity,
+        price        : toNum(i.price_at_purchase),
+        total        : toNum(i.price_at_purchase) * i.quantity,
+        item_status  : i.item_status || 'placed',
         cancel_reason: i.cancel_reason || null,
-        cancelled_at: i.cancelled_at || null,
+        cancelled_at : i.cancelled_at || null,
+        product_slug : productDoc.slug || null,
       };
     });
 

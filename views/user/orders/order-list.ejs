@@ -13,7 +13,7 @@
 <body>
 
   <%
-  
+
     const list          = (typeof orders !== 'undefined' && orders) ? orders : [];
     const _activeStatus = (typeof activeStatus !== 'undefined' && activeStatus) ? activeStatus : 'all';
     const _searchTerm   = (typeof search !== 'undefined' && search) ? search : '';
@@ -124,59 +124,68 @@
         <% } else { %>
 
           <% list.forEach(function (o) {
-               (o.items || []).forEach(function(it, index) {
-                 const st = it.status || 'placed';
+              const displaySt    = o.display_status || 'placed';
+              const allItems     = o.items || [];
+              const firstThree   = allItems.slice(0, 3);
+              const extraCount   = Math.max(0, allItems.length - 3);
           %>
-            <article class="order-card" data-status="<%= st %>">
+            <article class="order-card" data-status="<%= displaySt %>">
 
-              <!-- Product thumbnail -->
-              <div class="order-image">
-                <% if (it.image) { %>
-                  <img src="<%= it.image %>" alt="<%= it.name %>">
-                <% } else { %>
-                  <div class="order-image-placeholder" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.2">
-                      <rect x="3" y="3" width="18" height="18" rx="1"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                    </svg>
+              <!-- Stacked product thumbnails -->
+              <div class="order-thumbs">
+                <% firstThree.forEach(function (it) { %>
+                  <div class="order-thumb">
+                    <% if (it.image) { %>
+                      <img src="<%= it.image %>" alt="<%= it.name %>">
+                    <% } else { %>
+                      <div class="order-image-placeholder" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </div>
+                    <% } %>
                   </div>
+                <% }); %>
+                <% if (extraCount > 0) { %>
+                  <div class="order-thumb order-thumb-more">+<%= extraCount %></div>
                 <% } %>
               </div>
 
               <!-- Order info -->
               <div class="order-info">
-                <p class="order-id"><%= o.order_number %><% if (o.items.length > 1) { %> <span style="color:#888; font-size:0.9em;">(Item <%= index + 1 %> of <%= o.items.length %>)</span><% } %></p>
-                <h2 class="order-name"><%= it.name %></h2>
-                <p class="order-meta">
-                  <% if (it.size) { %><%= it.size %> · <% } %>
-                  Qty: <%= it.qty %>
-                </p>
+                <p class="order-id"><%= o.order_number %></p>
+                <h2 class="order-name">
+                  <%= allItems.map(function(it){ return it.name; }).slice(0, 2).join(', ') %><% if (allItems.length > 2) { %><span style="color:#888"> &amp; <%= allItems.length - 2 %> more</span><% } %>
+                </h2>
+                <p class="order-meta"><%= allItems.length %> item<%= allItems.length !== 1 ? 's' : '' %></p>
                 <p class="order-date">Placed on <%= formatDate(o.placed_at) %></p>
               </div>
 
               <!-- Status badge -->
               <div class="order-status-col">
                 <p class="order-col-label">Status</p>
-                <span class="status-badge status-<%= st %>">
+                <span class="status-badge status-<%= displaySt %>">
                   <span class="status-dot"></span>
-                  <%= it.status_label %>
+                  <% if (o.isMixed) { %>Mixed<% } else { %><%= o.display_status_label %><% } %>
                 </span>
+                <% if (o.isMixed && o.mixed_summary) { %>
+                  <p class="mixed-hint">
+                    <%= o.mixed_summary.map(function(s){ return s.count + '\u00d7 ' + s.label; }).join(' · ') %>
+                  </p>
+                <% } %>
               </div>
 
               <!-- Amount -->
               <div class="order-amount-col">
                 <p class="order-col-label">Total</p>
-                <p class="order-total"><%= inr(it.price * it.qty) %></p>
+                <p class="order-total"><%= inr(o.total_amount) %></p>
               </div>
 
               <!-- Action -->
               <div class="order-action">
-                <a href="/orders/<%= o._id %>?itemId=<%= it._id %>" class="btn btn-dark btn-sm">View Details</a>
+                <a href="/orders/<%= o._id %>" class="btn btn-dark btn-sm">View Details</a>
               </div>
 
             </article>
-          <%   }); 
-             }); %>
+          <%   }); %>
 
         <% } %>
       </section>
