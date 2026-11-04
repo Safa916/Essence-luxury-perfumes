@@ -172,41 +172,12 @@ export const getOrderDetail = async (req, res) => {
 
     if (!order) return res.redirect('/orders');
 
-    let st = order.order_status || 'placed';
     const addr = order.shipping_address || {};
 
     let rawItems = order.items || [];
     if (req.query.itemId) {
       rawItems = rawItems.filter(i => i._id.toString() === req.query.itemId);
     }
-
-    const items = rawItems.map(i => {
-      // Resolve image: snapshot (new orders) → populated product (old orders)
-      const productDoc = i.product_id || {};
-      const image = i.image
-        || (productDoc.images && productDoc.images[0])
-        || '';
-      return {
-        _id          : i._id,
-        name         : i.product_name || 'Product',
-        size         : i.size || '',
-        image,
-        quantity     : i.quantity,
-        price        : toNum(i.price_at_purchase),
-        total        : toNum(i.price_at_purchase) * i.quantity,
-        item_status  : i.item_status || 'placed',
-        cancel_reason: i.cancel_reason || null,
-        cancelled_at : i.cancelled_at || null,
-        product_slug : productDoc.slug || null,
-      };
-    });
-
-    // If viewing an isolated item, use its specific status for the page timeline/badges
-    if (req.query.itemId && items.length === 1) {
-      st = items[0].item_status;
-    }
-
-    const canCancel = ['placed', 'processing'].includes(st);
 
     const allReturns = await Return.find({ order_id: order._id }).lean();
     const returnMap = {};
@@ -217,7 +188,73 @@ export const getOrderDetail = async (req, res) => {
         returnMap[r.order_item_id.toString()] = r.status;
       }
     });
-    
+
+    const items = rawItems.map(i => {
+      // Resolve image: snapshot (new orders) → populated product (old orders)
+      const productDoc = i.product_id || {};
+      const image = i.image
+        || (productDoc.images && productDoc.images[0])
+        || '';
+      let iStatus = i.item_status || 'placed';
+      const itemRet = returnMap[i._id.toString()] || returnMap['ALL'];
+      if (itemRet === 'approved' || itemRet === 'refunded') {
+        iStatus = 'returned';
+      }
+      return {
+        _id          : i._id,
+        name         : i.product_name || 'Product',
+        size         : i.size || '',
+        image,
+        quantity     : i.quantity,
+        price        : toNum(i.price_at_purchase),
+        total        : toNum(i.price_at_purchase) * i.quantity,
+        item_status  : iStatus,
+        status_label : STATUS_LABEL[iStatus] || iStatus,
+        cancel_reason: i.cancel_reason || null,
+        cancelled_at : i.cancelled_at || null,
+        product_slug : productDoc.slug || null,
+      };
+    });
+
+    // Compute order-level status and forward tracking milestone
+    const allStatuses = items.map(i => i.item_status);
+    const activeItems = items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
+    const activeStatuses = activeItems.map(i => i.item_status);
+    const distinctStatuses = [...new Set(allStatuses)];
+    const isMixed = distinctStatuses.length > 1;
+
+    // Tracking milestones: placed (0) -> processing (0) -> shipped (1) -> out_for_delivery (1) -> delivered (2)
+    const FORWARD_STAGES = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
+    let maxStageIdx = 0;
+    if (activeStatuses.length > 0) {
+      maxStageIdx = Math.max(...activeStatuses.map(s => FORWARD_STAGES.indexOf(s) !== -1 ? FORWARD_STAGES.indexOf(s) : 0));
+    }
+    const furthestStatus = FORWARD_STAGES[maxStageIdx] || 'placed';
+
+    const stepMap = { placed: 0, processing: 0, shipped: 1, out_for_delivery: 1, delivered: 2 };
+    let stepIndex = stepMap[furthestStatus] !== undefined ? stepMap[furthestStatus] : 0;
+
+    let st = order.order_status || 'placed';
+    if (items.length > 0 && items.every(i => i.item_status === 'cancelled')) {
+      st = 'cancelled';
+    } else if (items.length > 0 && items.every(i => i.item_status === 'returned')) {
+      st = 'returned';
+    } else if (req.query.itemId && items.length === 1) {
+      st = items[0].item_status;
+      stepIndex = stepMap[st] !== undefined ? stepMap[st] : 0;
+    } else {
+      st = furthestStatus;
+    }
+
+    // Whole order cancellation is only allowed if ALL active items are in placed/processing
+    // (cannot cancel whole order if any item has already shipped or delivered)
+    const canCancel = activeItems.length > 0 && activeItems.every(i => ['placed', 'processing'].includes(i.item_status));
+
+    const mixedSummaryText = isMixed
+      ? distinctStatuses.map(s => `${allStatuses.filter(x => x === s).length}× ${STATUS_LABEL[s] || s}`).join(' · ')
+      : null;
+    const allDelivered = activeItems.length > 0 && activeItems.every(i => i.item_status === 'delivered');
+
     // For the isolated view's timeline
     let isReturnRequested = false;
     let isReturnRejected = false;
@@ -228,14 +265,10 @@ export const getOrderDetail = async (req, res) => {
     if (currentReturnStatus) {
       isReturnRequested = currentReturnStatus === 'requested';
       isReturnRejected = currentReturnStatus === 'rejected';
-      // Fallback for legacy returns: if return is approved/refunded but item_status wasn't updated
       if (currentReturnStatus === 'approved' || currentReturnStatus === 'refunded') {
         st = 'returned'; 
       }
     }
-
-    const stepMap   = { placed: 0, processing: 0, shipped: 1, out_for_delivery: 1, delivered: 2 };
-    const stepIndex = stepMap[st] !== undefined ? stepMap[st] : 0;
 
     res.render('user/orders/order-detail', {
       user  : req.user,
@@ -271,6 +304,11 @@ export const getOrderDetail = async (req, res) => {
         isReturnRequested,
         isReturnRejected,
         stepIndex,
+        isMixed,
+        mixedSummaryText,
+        display_status   : isMixed ? 'mixed' : st,
+        furthestStatus,
+        allDelivered,
         isCancelled      : st === 'cancelled',
         isReturned       : st === 'returned',
         cancellationReasons: CANCELLATION_REASONS,

@@ -131,21 +131,32 @@
           %>
             <article class="order-card" data-status="<%= displaySt %>">
 
-              <!-- Stacked product thumbnails -->
+              <!-- Product thumbnails (max 2 items displayed, with +N overlay if > 2) -->
               <div class="order-thumbs">
-                <% firstThree.forEach(function (it) { %>
+                <% if (allItems.length > 0) { %>
                   <div class="order-thumb">
-                    <% if (it.image) { %>
-                      <img src="<%= it.image %>" alt="<%= it.name %>">
+                    <% if (allItems[0].image) { %>
+                      <img src="<%= allItems[0].image %>" alt="<%= allItems[0].name %>">
                     <% } else { %>
                       <div class="order-image-placeholder" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                       </div>
                     <% } %>
                   </div>
-                <% }); %>
-                <% if (extraCount > 0) { %>
-                  <div class="order-thumb order-thumb-more">+<%= extraCount %></div>
+                <% } %>
+                <% if (allItems.length > 1) { %>
+                  <div class="order-thumb <%= allItems.length > 2 ? 'order-thumb-has-more' : '' %>">
+                    <% if (allItems[1].image) { %>
+                      <img src="<%= allItems[1].image %>" alt="<%= allItems[1].name %>">
+                    <% } else { %>
+                      <div class="order-image-placeholder" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </div>
+                    <% } %>
+                    <% if (allItems.length > 2) { %>
+                      <span class="order-thumb-overlay">+<%= allItems.length - 2 %></span>
+                    <% } %>
+                  </div>
                 <% } %>
               </div>
 

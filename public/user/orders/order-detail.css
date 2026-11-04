@@ -856,3 +856,69 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* -- Order Status Badges & Split Shipment Banner ----------------------- */
+.detail-ref-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0.35rem 0 0;
+  flex-wrap: wrap;
+}
+.detail-ref-row .detail-ref {
+  margin: 0;
+}
+
+.mixed-order-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 1.5rem 0 1rem;
+  padding: 0.85rem 1.15rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #1e6b8c;
+  background: rgba(30, 107, 140, 0.08);
+  border-left: 3px solid #1e6b8c;
+  line-height: 1.45;
+}
+.mixed-order-banner svg {
+  flex-shrink: 0;
+}
+
+.ship-item-status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.35rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.7rem;
+  border-radius: 2px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.status-placed           { color: #7b6fa0; background: rgba(123, 111, 160, 0.1); }
+.status-processing       { color: #b8862f; background: rgba(184, 134, 47, 0.1); }
+.status-shipped          { color: #3a7cbf; background: rgba(58, 124, 191, 0.1); }
+.status-out_for_delivery { color: #2e8a73; background: rgba(46, 138, 115, 0.1); }
+.status-delivered        { color: #4a7a45; background: rgba(74, 122, 69, 0.1); }
+.status-cancelled        { color: #b34028; background: rgba(179, 64, 40, 0.1); }
+.status-returned         { color: #888;    background: rgba(136, 136, 136, 0.1); }
+.status-mixed            { color: #1e6b8c; background: rgba(30, 107, 140, 0.1); }

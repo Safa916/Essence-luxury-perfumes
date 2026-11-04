@@ -32,7 +32,11 @@
     const canReturn         = o.canReturn          || false;
     const hasCancellableItems = (o.items || []).some(it => ['placed', 'processing'].includes(it.item_status || 'placed'));
     const canCancelAny      = canCancel || hasCancellableItems;
-    const steps       = ['Order Placed', 'Shipped', 'Delivered'];
+    const steps = [
+      'Order Placed',
+      (o.isMixed && stepIndex === 1) ? 'Shipped (Partial)' : 'Shipped',
+      (o.isMixed && stepIndex === 2 && !o.allDelivered) ? 'Delivered (Partial)' : 'Delivered'
+    ];
     const progress    = [0, 50, 100][stepIndex] || 0;
   %>
 
@@ -50,7 +54,13 @@
         <div class="detail-head-row">
           <div>
             <h1 class="page-title">Order Details</h1>
-            <p class="detail-ref">Reference #<%= o.orderId %></p>
+            <div class="detail-ref-row">
+              <p class="detail-ref">Reference #<%= o.orderId %></p>
+              <span class="status-badge status-<%= o.display_status || st %>">
+                <span class="status-dot"></span>
+                <% if (o.isMixed) { %>Mixed<% } else { %><%= o.status_label %><% } %>
+              </span>
+            </div>
           </div>
           <div class="detail-head-actions">
             <% if (canCancel) { %>
@@ -178,6 +188,13 @@
                   <span>Qty: <%= it.quantity %></span>
                   <span class="unit-price"><%= inr(it.price) %> each</span>
                 </p>
+
+                <div class="ship-item-status-row">
+                  <span class="status-badge status-<%= itemSt %>">
+                    <span class="status-dot"></span>
+                    <%= it.status_label || itemSt %>
+                  </span>
+                </div>
 
                 <div class="ship-actions">
                   <% 
