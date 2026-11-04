@@ -28,7 +28,9 @@ export const listOrders = async (req, res) => {
       dateFilter.placed_at = { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) };
     }
     // Status filter
-    const statusFilter = (status && status !== 'all') ? { 'items.item_status': status } : {};
+    const statusFilter = (status && status !== 'all')
+      ? { $or: [{ order_status: status }, { 'items.item_status': status }] }
+      : {};
 
     // Search: by order_number or customer name (join via user)
     let searchFilter = {};
@@ -137,10 +139,7 @@ export const renderOrderDetail = async (req, res) => {
       minimumFractionDigits: 2, maximumFractionDigits: 2,
     });
 
-    let rawItems = order.items || [];
-    if (req.query.itemId) {
-      rawItems = rawItems.filter(i => i._id.toString() === req.query.itemId);
-    }
+    const rawItems = order.items || [];
 
     const items = rawItems.map(i => {
       const p = i.product_id || {};
@@ -325,6 +324,14 @@ export const updateOrderStatus = async (req, res) => {
       await order.save();
     } else {
       order.order_status = status;
+      for (const item of order.items) {
+        if (item.item_status !== 'cancelled' && item.item_status !== 'returned') {
+          item.item_status = status;
+        }
+      }
+      if (status === 'delivered' && order.payment_status === 'pending') {
+        order.payment_status = 'paid';
+      }
       if (internal_notes) order.internal_notes = internal_notes;
       if (req.body.tracking_number) order.tracking_number = req.body.tracking_number;
       await order.save();
