@@ -192,20 +192,11 @@
 
               <td>
                 <div class="status-cell">
-                  <span class="badge badge-<%= s %>"><%= s.replace(/_/g, ' ') %></span>
-
-                  <% if (options.length) { %>
-                    <div class="pop-wrap">
-                      <button type="button" class="link-update" data-menu-toggle>Update</button>
-                      <div class="pop">
-                        <form method="POST" action="/admin/orders/<%= o._id %>/status">
-                          <p class="pop-title">Move to</p>
-                          <% options.forEach(function (opt) { %>
-                            <button type="submit" name="status" value="<%= opt %>" class="pop-item"><%= opt.charAt(0).toUpperCase() + opt.slice(1).replace(/_/g, ' ') %></button>
-                          <% }) %>
-                        </form>
-                      </div>
-                    </div>
+                  <% if (o.isMixed) { %>
+                    <span class="badge badge-mixed" title="<%= o.statusBreakdown %>">Mixed</span>
+                    <span class="status-breakdown" title="<%= o.statusBreakdown %>"><%= o.statusBreakdown %></span>
+                  <% } else { %>
+                    <span class="badge badge-<%= s %>"><%= s.replace(/_/g, ' ') %></span>
                   <% } %>
                 </div>
               </td>

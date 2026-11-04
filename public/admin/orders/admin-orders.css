@@ -332,7 +332,12 @@ body {
 }
 
 /* Status badge */
-.status-cell { display: flex; align-items: center; gap: 0.6rem; }
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
 
 .badge {
   padding: 0.28rem 0.55rem;
@@ -349,6 +354,20 @@ body {
 .badge-pending    { background: #fdf3c8; color: #946a00; }
 .badge-cancelled  { background: #fde0e0; color: #c0272d; }
 .badge-returned   { background: #ead9f7; color: #7a2fb0; }
+.badge-placed     { background: #e0e7ff; color: #3730a3; }
+.badge-mixed      { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+.status-breakdown {
+  display: block;
+  font-size: 0.6rem;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
 
 .link-update {
   padding: 0;

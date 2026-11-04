@@ -11,6 +11,50 @@ function toNum(d) {
   return parseFloat(d.toString());
 }
 
+/**
+ * Given an array of order items, work out whether the order has items in
+ * different statuses (a "mixed" order) and produce a human-readable breakdown.
+ *
+ * Returns:
+ *   isMixed       – true when at least two distinct item_statuses exist
+ *   orderStatusRaw– the aggregated status to display (min of forward statuses)
+ *   statusBreakdown – e.g. "1 × placed, 1 × processing"
+ */
+function computeItemStatusSummary(items) {
+  const FORWARD = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
+  const activeItems  = items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
+  const allCancelled = activeItems.length === 0;
+
+  // Count per status
+  const counts = {};
+  for (const i of items) {
+    const s = i.item_status || 'placed';
+    counts[s] = (counts[s] || 0) + 1;
+  }
+
+  const distinctStatuses = Object.keys(counts).filter(s => s !== 'cancelled' && s !== 'returned');
+  const isMixed = distinctStatuses.length > 1;
+
+  // Build "1 × placed, 1 × processing" string
+  const breakdown = Object.entries(counts)
+    .map(([s, n]) => `${n} × ${s.replace(/_/g, ' ')}`)
+    .join(', ');
+
+  // Aggregate: show the earliest active status
+  let orderStatusRaw;
+  if (allCancelled) {
+    orderStatusRaw = 'cancelled';
+  } else {
+    const indices = activeItems.map(i => {
+      const idx = FORWARD.indexOf(i.item_status);
+      return idx === -1 ? 0 : idx;
+    });
+    orderStatusRaw = FORWARD[Math.min(...indices)] || 'placed';
+  }
+
+  return { isMixed, orderStatusRaw, statusBreakdown: breakdown };
+}
+
 
 
 
@@ -76,7 +120,8 @@ export const listOrders = async (req, res) => {
     // Shape order data for the view
     const shaped = orders.map(o => {
       const user = o.user_id || {};
-      const items = (o.items || []).map(i => ({
+      const rawItems = (o.items || []);
+      const items = rawItems.map(i => ({
         _id: i._id,
         item_status: i.item_status || 'placed',
         product_name: i.product_name || 'Product',
@@ -85,11 +130,15 @@ export const listOrders = async (req, res) => {
         image: i.image || (i.product_id && i.product_id.images && i.product_id.images[0]) || '',
       }));
 
+      const { isMixed, orderStatusRaw, statusBreakdown } = computeItemStatusSummary(rawItems);
+
       return {
         _id            : o._id,
         orderId        : o.order_number,
         createdAt      : o.placed_at || o.created_at,
-        status         : o.order_status,
+        status         : orderStatusRaw,       // aggregated from items
+        isMixed        : isMixed,
+        statusBreakdown: statusBreakdown,
         total          : toNum(o.total_amount),
         payment_method : o.payment_method || 'cod',
         payment_status : o.payment_status || 'pending',
@@ -206,11 +255,17 @@ export const renderOrderDetail = async (req, res) => {
         })
       : '';
 
+    // Compute mixed-status info from actual item statuses
+    const { isMixed, orderStatusRaw, statusBreakdown } = computeItemStatusSummary(rawItems);
+
     res.render('admin/orders/admin-order-detail', {
       order: {
         _id           : order._id,
         orderId       : order.order_number,
-        status        : order.order_status,
+        status        : orderStatusRaw,        // aggregated from items
+        orderStatusRaw: orderStatusRaw,
+        isMixed       : isMixed,
+        statusBreakdown: statusBreakdown,
         cancel_reason : order.cancel_reason || null,
         dateStr,
         customer      : { name: userName, email: user.email || '' },
