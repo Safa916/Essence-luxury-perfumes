@@ -129,14 +129,13 @@
             <th>Items</th>
             <th>Order Status</th>
             <th>Payment</th>
-            <th>Pay Status</th>
-            <th>Total</th>
+            <th class="th-total">Total</th>
             <th class="th-actions">Actions</th>
           </tr>
         </thead>
         <tbody>
           <% if (list.length === 0) { %>
-            <tr><td colspan="9" class="empty-row">No orders found</td></tr>
+            <tr><td colspan="8" class="empty-row">No orders found</td></tr>
           <% } %>
 
           <% list.forEach(function (o) {
@@ -144,6 +143,12 @@
                const items = o.items || [];
                const s = (o.status || 'placed').toLowerCase();
                const options = nextStatuses[s] || [];
+               const pmRaw = (o.payment_method || 'cod').toLowerCase();
+               const pmLabel = { cod: 'Cash on Delivery', online: 'Online Payment', razorpay: 'Online Payment', wallet: 'Wallet' };
+               const pmDisplay = pmLabel[pmRaw] || o.payment_method || 'COD';
+               const psRaw = (o.payment_status || 'pending').toLowerCase();
+               const psClass = { paid: 'pay-paid', pending: 'pay-pending', failed: 'pay-failed', refunded: 'pay-refunded' }[psRaw] || 'pay-pending';
+               const psLabel = psRaw.charAt(0).toUpperCase() + psRaw.slice(1);
           %>
             <tr>
               <td class="cell-id">
@@ -158,29 +163,29 @@
                   <% } else { %>
                     <span class="avatar avatar-initials"><%= initials(cust.name) %></span>
                   <% } %>
-                  <div>
-                    <span class="customer-name"><%= cust.name %></span>
-                    <% if (cust.email) { %><div style="font-size: 0.72rem; color: #888;"><%= cust.email %></div><% } %>
+                  <div class="customer-info">
+                    <span class="customer-name" title="<%= cust.name %>"><%= cust.name %></span>
+                    <% if (cust.email) { %><span class="customer-email" title="<%= cust.email %>"><%= cust.email %></span><% } %>
                   </div>
                 </div>
               </td>
 
               <td>
-                <a href="/admin/orders/<%= o._id %>" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.6rem;">
-                  <div style="display: flex; align-items: center;">
-                    <% items.slice(0, 3).forEach(function(it, idx) { %>
-                      <span class="thumb" style="width: 32px; height: 32px; border-radius: 4px; overflow: hidden; display: inline-block; border: 1px solid #e5e7eb; margin-left: <%= idx > 0 ? '-10px' : '0' %>; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.08); flex-shrink: 0;">
-                        <% if (it.image) { %><img src="<%= it.image %>" alt="" style="width: 100%; height: 100%; object-fit: cover;"><% } %>
+                <a href="/admin/orders/<%= o._id %>" class="items-cell" title="<%= items.map(i => i.product_name).join(', ') %>">
+                  <div class="items-thumbs">
+                    <% items.slice(0, 2).forEach(function(it, idx) { %>
+                      <span class="thumb" style="<%= idx > 0 ? 'margin-left: -8px;' : '' %>">
+                        <% if (it.image) { %><img src="<%= it.image %>" alt=""><% } %>
                       </span>
                     <% }); %>
                   </div>
-                  <div>
-                    <span style="font-size: 0.82rem; font-weight: 600; color: #111;">
+                  <div class="items-text">
+                    <span class="items-count">
                       <%= items.length %> <%= items.length === 1 ? 'Product' : 'Products' %>
                     </span>
-                    <div style="font-size: 0.72rem; color: #666; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<%= items.map(i => i.product_name).join(', ') %>">
-                      <%= items.map(i => i.product_name).join(', ') %>
-                    </div>
+                    <% if (items[0] && items[0].product_name) { %>
+                      <span class="items-preview"><%= items[0].product_name %></span>
+                    <% } %>
                   </div>
                 </a>
               </td>
@@ -205,25 +210,17 @@
                 </div>
               </td>
 
+              <td class="cell-payment">
+                <div class="pay-wrap">
+                  <span class="pay-method"><%= pmDisplay %></span>
+                  <span class="pay-badge <%= psClass %>"><%= psLabel %></span>
+                </div>
+              </td>
+
               <td class="cell-total"><%= inr(o.total) %></td>
 
-              <%
-                const pmRaw = (o.payment_method || 'cod').toLowerCase();
-                const pmLabel = { cod: 'COD', online: 'Online', razorpay: 'Online', wallet: 'Wallet' };
-                const pmDisplay = pmLabel[pmRaw] || o.payment_method || 'COD';
-                const psRaw = (o.payment_status || 'pending').toLowerCase();
-                const psClass = { paid: 'pay-paid', pending: 'pay-pending', failed: 'pay-failed', refunded: 'pay-refunded' }[psRaw] || 'pay-pending';
-                const psLabel = psRaw.charAt(0).toUpperCase() + psRaw.slice(1);
-              %>
-              <td class="cell-payment">
-                <span class="pay-method"><%= pmDisplay %></span>
-              </td>
-              <td class="cell-paystatus">
-                <span class="pay-badge <%= psClass %>"><%= psLabel %></span>
-              </td>
-
               <td class="cell-actions">
-                <a href="/admin/orders/<%= o._id %>" style="display: inline-flex; align-items: center; gap: 4px; padding: 0.4rem 0.75rem; font-size: 0.8rem; font-weight: 600; color: #111; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; text-decoration: none; white-space: nowrap; transition: all 0.2s;" onmouseover="this.style.background='#111';this.style.color='#fff';" onmouseout="this.style.background='#f3f4f6';this.style.color='#111';">
+                <a href="/admin/orders/<%= o._id %>" class="btn-view-order">
                   View Products &rarr;
                 </a>
               </td>
