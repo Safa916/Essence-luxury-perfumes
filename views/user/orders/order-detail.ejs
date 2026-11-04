@@ -154,7 +154,8 @@
           <h2 class="section-title">Items In Shipment</h2>
 
           <% (o.items || []).forEach(function (it) {
-               const isCancelledItem = (it.item_status === 'cancelled');
+               const itemSt = it.item_status || 'placed';
+               const isCancelledItem = (itemSt === 'cancelled');
                const productHref = (!isCancelledItem && it.product_slug) ? '/product/' + it.product_slug : null;
           %>
             <article class="ship-item">
@@ -198,7 +199,6 @@
 
                 <div class="ship-actions">
                   <% 
-                     const itemSt = it.item_status || 'placed';
                      const itemCanCancel = ['placed', 'processing'].includes(itemSt);
                      const itemReturnStatus = typeof o.returnMap !== 'undefined' ? (o.returnMap[it._id] || o.returnMap['ALL']) : null;
                      const itemIsReturnRequested = itemReturnStatus === 'requested';
