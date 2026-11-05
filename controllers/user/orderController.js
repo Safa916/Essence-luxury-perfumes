@@ -713,7 +713,7 @@ export const downloadInvoice = async (req, res) => {
     doc.moveTo(L, TABLE_Y + 25).lineTo(L + PAGE_W, TABLE_Y + 25)
        .strokeColor('#E0DDD8').stroke();
 
-    // -- TABLE ROWS � only non-cancelled items --------------------------------
+    // -- TABLE ROWS: show ALL items; grey-out & badge returned/cancelled ----
     let rowY = TABLE_Y + 35;
     const savedInvTax = toNum(order.tax_amount) || 0;
     const savedInvTotal = toNum(order.total_amount) || 0;
@@ -725,18 +725,22 @@ export const downloadInvoice = async (req, res) => {
       Math.abs(savedInvTotal - (savedInvSubtotal - savedInvDiscount + savedInvShipping)) > 0.5;
 
     const EXCLUDED_STATUSES = ['cancelled', 'cancel_requested', 'returned'];
-    const activeItems = (order.items || []).filter(
-      (it) => !EXCLUDED_STATUSES.includes((it.item_status || '').toLowerCase())
-    );
+    const allOrderItems = order.items || [];
 
-    activeItems.forEach((item) => {
-      const name    = item.product_name || 'Product';
-      const size    = item.size || '';
-      const qty     = item.quantity || 1;
-      const price   = toNum(item.price_at_purchase);
-      const total   = price * qty;
-      const gstRate = item.gst_rate !== undefined ? item.gst_rate : 18;
-      
+    // Track total refunded amount for all returned/cancelled items
+    const totalRefundedOnInvoice = toNum(order.refunded_amount) || 0;
+
+    allOrderItems.forEach((item) => {
+      const name      = item.product_name || 'Product';
+      const size      = item.size || '';
+      const qty       = item.quantity || 1;
+      const price     = toNum(item.price_at_purchase);
+      const total     = price * qty;
+      const gstRate   = item.gst_rate !== undefined ? item.gst_rate : 18;
+      const itemSt    = (item.item_status || 'placed').toLowerCase();
+      const isExcluded = EXCLUDED_STATUSES.includes(itemSt);
+      const statusLabel = itemSt === 'returned' ? 'RETURNED' : (itemSt === 'cancel_requested' ? 'CANCEL REQ.' : 'CANCELLED');
+
       let taxable, gstAmt;
       if (isLegacyTaxAdded) {
         taxable = total;
@@ -750,27 +754,37 @@ export const downloadInvoice = async (req, res) => {
           : (total - taxable);
       }
 
-      doc.font('Helvetica-Bold').fontSize(9).fillColor('#1C1A16')
+      // Dim colours for excluded (returned/cancelled) items
+      const textColor = isExcluded ? '#A6A296' : '#1C1A16';
+      const subColor  = isExcluded ? '#C4C0B8' : '#6B675E';
+      const valColor  = isExcluded ? '#A6A296' : '#3d3b36';
+
+      doc.font('Helvetica-Bold').fontSize(9).fillColor(textColor)
          .text(name, COL.desc, rowY, { width: COL.qty - COL.desc - 10 });
 
       if (size) {
-        doc.font('Helvetica').fontSize(8).fillColor('#6B675E')
+        doc.font('Helvetica').fontSize(8).fillColor(subColor)
            .text('Size: ' + size, COL.desc, doc.y + 2);
       }
 
-      doc.font('Helvetica').fontSize(9).fillColor('#1C1A16')
+      if (isExcluded) {
+        doc.font('Helvetica').fontSize(7).fillColor('#B0400A')
+           .text('[' + statusLabel + ']', COL.desc, doc.y + 2);
+      }
+
+      doc.font('Helvetica').fontSize(9).fillColor(textColor)
          .text(String(qty).padStart(2, '0'), COL.qty, rowY, { width: 25, align: 'center' });
 
-      doc.font('Helvetica').fontSize(9).fillColor('#3d3b36')
+      doc.font('Helvetica').fontSize(9).fillColor(valColor)
          .text(inr(price), COL.price, rowY, { width: 60, align: 'right' });
 
-      doc.font('Helvetica').fontSize(9).fillColor('#3d3b36')
+      doc.font('Helvetica').fontSize(9).fillColor(valColor)
          .text(inr(taxable), COL.taxable, rowY, { width: 70, align: 'right' });
 
-      doc.font('Helvetica').fontSize(9).fillColor('#3d3b36')
+      doc.font('Helvetica').fontSize(9).fillColor(valColor)
          .text(gstRate + '% (' + inr(gstAmt) + ')', COL.gst, rowY, { width: 75, align: 'right' });
 
-      doc.font('Helvetica-Bold').fontSize(9).fillColor('#1C1A16')
+      doc.font('Helvetica-Bold').fontSize(9).fillColor(isExcluded ? '#A6A296' : '#1C1A16')
          .text(inr(total), COL.total, rowY, { width: COL.totalW, align: 'right' });
 
       rowY = Math.max(doc.y, rowY) + 20;
@@ -784,47 +798,45 @@ export const downloadInvoice = async (req, res) => {
     const TOT_X = L + PAGE_W - 220;
     const TOT_W = 220;
 
-    const FREE_SHIPPING_AT  = 2000;
-    const SHIPPING_FEE      = 99;
-
-    const activeSubtotal = activeItems.reduce(
+    // Always use the FULL order subtotal (all items, including returned/cancelled)
+    // so the invoice total matches the amount the customer was originally charged.
+    const fullSubtotal = allOrderItems.reduce(
       (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
     );
     const savedDiscount   = toNum(order.discount_amount) || 0;
     const savedTax        = toNum(order.tax_amount) || 0;
     const savedShipping   = toNum(order.shipping_fee) || 0;
-    const allSubtotal     = toNum(order.subtotal) || activeSubtotal;
-    const discountRatio   = allSubtotal > 0 ? (activeSubtotal / allSubtotal) : 1;
-    const appliedDiscount = parseFloat((savedDiscount * discountRatio).toFixed(2));
+    const allSubtotal     = toNum(order.subtotal) || fullSubtotal;
+    const appliedDiscount = savedDiscount;
 
-    const discountedSubtotal = Math.max(activeSubtotal - appliedDiscount, 0);
+    // The original billed total (what customer was actually charged)
+    const originalTotal = savedInvTotal;
 
-    const activeShipping = activeItems.length === 0
-      ? 0
-      : (savedShipping > 0 ? parseFloat((savedShipping * discountRatio).toFixed(2)) : (discountedSubtotal >= FREE_SHIPPING_AT ? 0 : SHIPPING_FEE));
+    // Amount refunded so far (from order record)
+    const refundedAmt = totalRefundedOnInvoice;
+
+    // Net payable = original total minus any refunds
+    const netPayable = Math.max(0, parseFloat((originalTotal - refundedAmt).toFixed(2)));
 
     let totals = [];
-    let activeTotal = 0;
 
     if (isLegacyTaxAdded) {
-      const proRatedTax = parseFloat((savedTax * discountRatio).toFixed(2));
-      const cgst = proRatedTax / 2;
-      const sgst = proRatedTax / 2;
-      activeTotal = parseFloat((discountedSubtotal + proRatedTax + activeShipping).toFixed(2));
+      const cgst = savedTax / 2;
+      const sgst = savedTax / 2;
 
-      totals.push(['SUBTOTAL', inr(activeSubtotal)]);
+      totals.push(['SUBTOTAL', inr(allSubtotal)]);
       if (appliedDiscount > 0) {
         totals.push(['COUPON DISCOUNT', '-' + inr(appliedDiscount)]);
       }
       totals.push(
-        ['TAXABLE VALUE', inr(discountedSubtotal)],
+        ['TAXABLE VALUE', inr(allSubtotal - appliedDiscount)],
         ['CGST (9%)', inr(cgst)],
         ['SGST (9%)', inr(sgst)],
-        ['TOTAL GST (18%)', inr(proRatedTax)],
-        ['SHIPPING FEE', activeShipping === 0 ? 'FREE' : inr(activeShipping)]
+        ['TOTAL GST (18%)', inr(savedTax)],
+        ['SHIPPING FEE', savedShipping === 0 ? 'FREE' : inr(savedShipping)]
       );
     } else {
-      const totalTaxable = activeItems.reduce((sum, it) => {
+      const fullTaxable = allOrderItems.reduce((sum, it) => {
         const r = it.gst_rate !== undefined ? it.gst_rate : 18;
         const tot = toNum(it.price_at_purchase) * (it.quantity || 1);
         const taxVal = it.taxable_amount && toNum(it.taxable_amount) > 0
@@ -832,13 +844,12 @@ export const downloadInvoice = async (req, res) => {
           : (tot > 0 ? (tot / (1 + r / 100)) : 0);
         return sum + taxVal;
       }, 0);
-      const effectiveTaxable = appliedDiscount > 0 ? (discountedSubtotal / 1.18) : totalTaxable;
-      const totalGst = discountedSubtotal - effectiveTaxable;
+      const effectiveTaxable = appliedDiscount > 0 ? ((fullSubtotal - appliedDiscount) / 1.18) : fullTaxable;
+      const totalGst = (fullSubtotal - appliedDiscount) - effectiveTaxable;
       const cgst = totalGst / 2;
       const sgst = totalGst / 2;
-      activeTotal = parseFloat((discountedSubtotal + activeShipping).toFixed(2));
 
-      totals.push(['SUBTOTAL (INCL. GST)', inr(activeSubtotal)]);
+      totals.push(['SUBTOTAL (INCL. GST)', inr(fullSubtotal)]);
       if (appliedDiscount > 0) {
         totals.push(['COUPON DISCOUNT', '-' + inr(appliedDiscount)]);
       }
@@ -847,8 +858,13 @@ export const downloadInvoice = async (req, res) => {
         ['CGST (9%)', inr(cgst)],
         ['SGST (9%)', inr(sgst)],
         ['TOTAL GST (18%)', inr(totalGst)],
-        ['SHIPPING FEE', activeShipping === 0 ? 'FREE' : inr(activeShipping)]
+        ['SHIPPING FEE', savedShipping === 0 ? 'FREE' : inr(savedShipping)]
       );
+    }
+
+    // Show refund row if any amount was refunded
+    if (refundedAmt > 0) {
+      totals.push(['AMOUNT REFUNDED', '-' + inr(refundedAmt)]);
     }
 
     rowY += 10;
@@ -866,10 +882,11 @@ export const downloadInvoice = async (req, res) => {
     // Total band
     rowY += 4;
     doc.rect(TOT_X - 10, rowY, TOT_W + 10, 38).fill('#1C1A16');
+    const totalBandLabel = refundedAmt >= originalTotal ? 'NET PAYABLE (REFUNDED)' : 'TOTAL PAYABLE';
     doc.font('Helvetica').fontSize(8).fillColor('#A6A296')
-       .text('TOTAL PAYABLE', TOT_X, rowY + 8, { characterSpacing: 1.5 });
+       .text(totalBandLabel, TOT_X, rowY + 8, { characterSpacing: 1.5 });
     doc.font('Helvetica-Bold').fontSize(13).fillColor('#F4F0E6')
-       .text(inr(activeTotal), COL.total, rowY + 10, { width: COL.totalW, align: 'right' });
+       .text(inr(netPayable), COL.total, rowY + 10, { width: COL.totalW, align: 'right' });
 
     // ── FOOTER ────────────────────────────────────────────────────────────────
     rowY += 70;
