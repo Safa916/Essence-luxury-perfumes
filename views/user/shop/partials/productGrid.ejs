@@ -64,8 +64,8 @@
             Currently Unavailable
           </button>
         <% } else if (inStockVariants <= 0 || product.stock <= 0) { %>
-          <button type="button" class="add-to-bag-btn btn-notify-me" data-product-id="<%= product._id %>">
-            Notify Me
+          <button type="button" class="add-to-bag-btn" disabled>
+            Out of Stock
           </button>
         <% } else if (inStockVariants > 1) { %>
           <a href="/product/<%= product.slug %>" class="add-to-bag-btn btn-select-options">
