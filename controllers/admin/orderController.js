@@ -1,3 +1,4 @@
+import Return from '../../models/return.js';
 import Order from '../../models/order.js';
 import User from '../../models/user.js';
 import Product from '../../models/product.js';
@@ -20,10 +21,9 @@ function toNum(d) {
  *   orderStatusRaw– the aggregated status to display (min of forward statuses)
  *   statusBreakdown – e.g. "1 × placed, 1 × processing"
  */
-function computeItemStatusSummary(items) {
+function computeItemStatusSummary(items, dbStatus = null) {
   const FORWARD = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
-  const activeItems  = items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
-  const allCancelled = activeItems.length === 0;
+  const activeItems = items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
 
   // Count per status (all items, including cancelled/returned)
   const counts = {};
@@ -33,7 +33,6 @@ function computeItemStatusSummary(items) {
   }
 
   // isMixed = true whenever items are not all in the exact same status
-  // (e.g. returned + cancelled + processing IS mixed)
   const distinctStatuses = Object.keys(counts);
   const isMixed = distinctStatuses.length > 1;
 
@@ -42,10 +41,25 @@ function computeItemStatusSummary(items) {
     .map(([s, n]) => `${n} × ${s.replace(/_/g, ' ')}`)
     .join(', ');
 
-  // Aggregate display status = earliest active item status (ignores cancelled/returned)
+  // Aggregate display status
   let orderStatusRaw;
-  if (allCancelled) {
-    orderStatusRaw = 'cancelled';
+  if (activeItems.length === 0) {
+    const allReturned  = items.length > 0 && items.every(i => (i.item_status || '') === 'returned');
+    const allCancelled = items.length > 0 && items.every(i => (i.item_status || '') === 'cancelled');
+
+    if (allReturned) {
+      orderStatusRaw = 'returned';
+    } else if (allCancelled) {
+      orderStatusRaw = 'cancelled';
+    } else if (dbStatus === 'returned' || dbStatus === 'cancelled') {
+      orderStatusRaw = dbStatus;
+    } else if ((counts['returned'] || 0) > 0 && (counts['cancelled'] || 0) === 0) {
+      orderStatusRaw = 'returned';
+    } else if ((counts['cancelled'] || 0) > 0 && (counts['returned'] || 0) === 0) {
+      orderStatusRaw = 'cancelled';
+    } else {
+      orderStatusRaw = dbStatus || 'mixed';
+    }
   } else {
     const indices = activeItems.map(i => {
       const idx = FORWARD.indexOf(i.item_status);
@@ -57,11 +71,6 @@ function computeItemStatusSummary(items) {
   return { isMixed, orderStatusRaw, statusBreakdown: breakdown };
 }
 
-
-
-
-
-// ─── GET /admin/orders ────────────────────────────────────────────────────────
 export const listOrders = async (req, res) => {
   try {
     const { status = 'all', search = '', range = '30', page = 1 } = req.query;
@@ -132,7 +141,7 @@ export const listOrders = async (req, res) => {
         image: i.image || (i.product_id && i.product_id.images && i.product_id.images[0]) || '',
       }));
 
-      const { isMixed, orderStatusRaw, statusBreakdown } = computeItemStatusSummary(rawItems);
+      const { isMixed, orderStatusRaw, statusBreakdown } = computeItemStatusSummary(rawItems, o.order_status);
 
       return {
         _id            : o._id,
@@ -267,7 +276,15 @@ export const renderOrderDetail = async (req, res) => {
       : '';
 
     // Compute mixed-status info from actual item statuses
-    const { isMixed, orderStatusRaw, statusBreakdown } = computeItemStatusSummary(rawItems);
+    let returnReason = order.return_reason || null;
+    if (!returnReason) {
+      try {
+        const retDoc = await Return.findOne({ order_id: order._id }).lean();
+        if (retDoc && retDoc.reason) returnReason = retDoc.reason;
+      } catch (_e) { /* ignore */ }
+    }
+
+    const { isMixed, orderStatusRaw, statusBreakdown } = computeItemStatusSummary(rawItems, order.order_status);
 
     res.render('admin/orders/admin-order-detail', {
       order: {
@@ -278,6 +295,7 @@ export const renderOrderDetail = async (req, res) => {
         isMixed       : isMixed,
         statusBreakdown: statusBreakdown,
         cancel_reason : order.cancel_reason || null,
+        return_reason : returnReason || order.return_reason || null,
         dateStr,
         customer      : { name: userName, email: user.email || '' },
         paymentMethod : order.payment_method || 'Cash on Delivery',
@@ -474,9 +492,14 @@ export const updateItemStatus = async (req, res) => {
 
     const activeItems = order.items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
     if (activeItems.length === 0) {
-      order.order_status = 'cancelled';
-      if (!order.cancel_reason) {
-        order.cancel_reason = item.cancel_reason || 'Cancelled by Admin';
+      const allReturned = order.items.length > 0 && order.items.every(i => i.item_status === 'returned');
+      if (allReturned) {
+        order.order_status = 'returned';
+      } else {
+        order.order_status = 'cancelled';
+        if (!order.cancel_reason) {
+          order.cancel_reason = item.cancel_reason || 'Cancelled by Admin';
+        }
       }
     } else {
       const statuses = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];

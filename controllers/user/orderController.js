@@ -415,8 +415,13 @@ export const cancelOrder = async (req, res) => {
     // Recalculate global order_status
     const activeItems = order.items.filter(i => i.item_status !== 'cancelled' && i.item_status !== 'returned');
     if (activeItems.length === 0) {
-      order.order_status = 'cancelled';
-      order.cancel_reason = finalReason;
+      const allReturned = order.items.length > 0 && order.items.every(i => i.item_status === 'returned');
+      if (allReturned) {
+        order.order_status = 'returned';
+      } else {
+        order.order_status = 'cancelled';
+        order.cancel_reason = finalReason;
+      }
       if (refunded) order.payment_status = 'refunded';
     } else {
       const statusWeights = { placed: 0, processing: 1, shipped: 2, out_for_delivery: 3, delivered: 4 };
