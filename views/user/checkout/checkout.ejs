@@ -368,6 +368,88 @@
   </main>
 
   
+    <!-- Order Confirmation Modal Popup -->
+  <div id="orderConfirmModal" class="co-confirm-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+    <div class="co-confirm-backdrop" id="confirmModalBackdrop"></div>
+    <div class="co-confirm-box">
+      <button type="button" class="co-confirm-close" id="confirmModalCloseBtn" aria-label="Close dialog">&times;</button>
+
+      <div class="co-confirm-header">
+        <span class="co-confirm-brand">ESSENCE LUXURY PERFUMES</span>
+        <h3 class="co-confirm-title" id="confirmModalTitle">Order Confirmation</h3>
+        <p class="co-confirm-sub">Please review your delivery address and payment details before proceeding.</p>
+      </div>
+
+      <div class="co-confirm-body">
+        <!-- Delivery Address -->
+        <div class="co-confirm-sec">
+          <div class="co-confirm-sec-head">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Delivery Address</span>
+          </div>
+          <div class="co-confirm-card" id="confirmAddressCard"></div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="co-confirm-sec">
+          <div class="co-confirm-sec-head">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <span>Payment Method</span>
+          </div>
+          <div class="co-confirm-card" id="confirmPaymentCard"></div>
+        </div>
+
+        <!-- Items Preview -->
+        <div class="co-confirm-sec">
+          <div class="co-confirm-sec-head">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>Items in Shipment (<span id="confirmItemCount">0</span>)</span>
+          </div>
+          <div class="co-confirm-items-wrap" id="confirmItemsList"></div>
+        </div>
+
+        <!-- Bill Details -->
+        <div class="co-confirm-sec">
+          <div class="co-confirm-sec-head">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Payment Breakdown</span>
+          </div>
+          <div class="co-confirm-bill">
+            <div class="co-confirm-bill-row">
+              <span>Subtotal (Incl. GST)</span>
+              <strong id="confirmSubtotal"></strong>
+            </div>
+            <div class="co-confirm-bill-row" id="confirmDiscountRow" style="display:none; color:#16a34a;">
+              <span id="confirmDiscountLabel">Discount</span>
+              <strong id="confirmDiscountVal"></strong>
+            </div>
+            <div class="co-confirm-bill-row">
+              <span>Included GST (18%)</span>
+              <span id="confirmTaxVal"></span>
+            </div>
+            <div class="co-confirm-bill-row">
+              <span>Shipping Fee</span>
+              <span id="confirmShippingVal"></span>
+            </div>
+            <div class="co-confirm-bill-row grand-total">
+              <span>Total Payable</span>
+              <strong id="confirmTotalVal"></strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="co-confirm-actions">
+        <button type="button" class="btn btn-confirm-back" id="confirmBackBtn">
+          Back to Edit
+        </button>
+        <button type="button" class="btn btn-confirm-proceed" id="confirmProceedBtn">
+          Confirm &amp; Pay &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Stock Alert Modal Popup -->
   <div id="stockAlertModal" class="co-stock-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="stockAlertTitle">
     <div class="co-stock-modal-backdrop" id="stockAlertBackdrop"></div>
@@ -544,11 +626,123 @@
     document.getElementById('stockAlertOkBtn')?.addEventListener('click', closeStockAlertPopup);
     document.getElementById('stockAlertBackdrop')?.addEventListener('click', closeStockAlertPopup);
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeStockAlertPopup();
+      if (e.key === 'Escape') {
+        closeStockAlertPopup();
+        closeOrderConfirmationModal();
+      }
     });
 
     // ── Checkout submission (COD, Wallet & Razorpay with Live Stock Check) ────
-    document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+    // ─── Order Confirmation Modal Logic ──────────────────────────────────────
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function openOrderConfirmationModal() {
+      const selectedAddrRadio = document.querySelector('input[name="addressId"]:checked');
+      const addrCard = selectedAddrRadio ? selectedAddrRadio.closest('.addr-card') : null;
+      if (addrCard) {
+        const name = addrCard.querySelector('.addr-name')?.textContent?.trim() || '';
+        const type = addrCard.querySelector('.addr-type-badge')?.textContent?.trim() || '';
+        const lines = Array.from(addrCard.querySelectorAll('.addr-line')).map(p => p.textContent.trim()).filter(Boolean);
+        document.getElementById('confirmAddressCard').innerHTML = `
+          <strong>${escapeHtml(name)} <span style="font-size:0.65rem; padding:1px 6px; border:1px solid #d4c8b8; border-radius:2px; text-transform:uppercase; margin-left:6px; color:#8c857b;">${escapeHtml(type)}</span></strong>
+          ${lines.map(l => `<p>${escapeHtml(l)}</p>`).join('')}
+        `;
+      }
+
+      const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'cod';
+      let payTitle = 'Cash on Delivery';
+      let paySub = 'Pay with cash upon delivery of your shipment';
+      let payIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b79461" stroke-width="1.8" style="vertical-align:middle; margin-right:6px;"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>';
+      if (selectedPayment === 'online') {
+        payTitle = 'Online Payment (Razorpay)';
+        paySub = 'UPI, Cards, NetBanking, Wallets (256-bit SSL encrypted)';
+        payIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b79461" stroke-width="1.8" style="vertical-align:middle; margin-right:6px;"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
+      } else if (selectedPayment === 'wallet') {
+        payTitle = 'Essence Wallet';
+        paySub = 'Instant deduction from your Essence Wallet balance';
+        payIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b79461" stroke-width="1.8" style="vertical-align:middle; margin-right:6px;"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M16 12.5h2.5"/></svg>';
+      }
+      document.getElementById('confirmPaymentCard').innerHTML = `
+        <strong>${payIcon}${escapeHtml(payTitle)}</strong>
+        <p>${escapeHtml(paySub)}</p>
+      `;
+
+      const items = Array.from(document.querySelectorAll('#checkoutSummaryItems .summary-item')).map(row => {
+        const img = row.querySelector('.summary-thumb img')?.getAttribute('src') || '';
+        const name = row.querySelector('.summary-name')?.textContent?.trim() || '';
+        const meta = row.querySelector('.summary-meta')?.childNodes[0]?.textContent?.trim() || '';
+        const qty = row.querySelector('.co-qty-value')?.textContent?.trim() || '1';
+        const price = row.querySelector('.co-item-total')?.textContent?.trim() || '';
+        return { img, name, meta, qty, price };
+      });
+      document.getElementById('confirmItemCount').textContent = items.length;
+      document.getElementById('confirmItemsList').innerHTML = items.map(it => `
+        <div class="co-confirm-item">
+          <div class="co-confirm-item-left">
+            <div class="co-confirm-item-thumb">
+              ${it.img ? `<img src="${escapeHtml(it.img)}" alt="${escapeHtml(it.name)}">` : ''}
+            </div>
+            <div class="co-confirm-item-info">
+              <p class="co-confirm-item-name">${escapeHtml(it.name)}</p>
+              <p class="co-confirm-item-meta">${escapeHtml(it.meta)} &middot; Qty: ${escapeHtml(it.qty)}</p>
+            </div>
+          </div>
+          <span class="co-confirm-item-price">${escapeHtml(it.price)}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('confirmSubtotal').textContent = document.getElementById('co-subtotal')?.textContent || '';
+      const discountRow = document.getElementById('co-discount-row');
+      if (discountRow && discountRow.style.display !== 'none') {
+        document.getElementById('confirmDiscountRow').style.display = 'flex';
+        document.getElementById('confirmDiscountLabel').textContent = document.getElementById('co-discount-label')?.textContent || 'Coupon Discount';
+        document.getElementById('confirmDiscountVal').textContent = document.getElementById('co-discount-val')?.textContent || '';
+      } else {
+        document.getElementById('confirmDiscountRow').style.display = 'none';
+      }
+      document.getElementById('confirmTaxVal').textContent = document.getElementById('co-tax')?.textContent || '';
+      document.getElementById('confirmShippingVal').textContent = document.getElementById('co-shipping')?.textContent || 'Free';
+      document.getElementById('confirmTotalVal').textContent = document.getElementById('co-total')?.textContent || '';
+
+      const confirmProceedBtn = document.getElementById('confirmProceedBtn');
+      if (selectedPayment === 'online') {
+        confirmProceedBtn.innerHTML = 'Confirm &amp; Pay Online &rarr;';
+      } else if (selectedPayment === 'wallet') {
+        confirmProceedBtn.innerHTML = 'Confirm &amp; Pay via Wallet &rarr;';
+      } else {
+        confirmProceedBtn.innerHTML = 'Confirm &amp; Place Order &rarr;';
+      }
+
+      const modal = document.getElementById('orderConfirmModal');
+      modal.style.display = 'flex';
+      requestAnimationFrame(() => modal.classList.add('is-open'));
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeOrderConfirmationModal() {
+      const modal = document.getElementById('orderConfirmModal');
+      if (!modal) return;
+      modal.classList.remove('is-open');
+      setTimeout(() => {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }, 250);
+    }
+
+    document.getElementById('confirmModalCloseBtn')?.addEventListener('click', closeOrderConfirmationModal);
+    document.getElementById('confirmBackBtn')?.addEventListener('click', closeOrderConfirmationModal);
+    document.getElementById('confirmModalBackdrop')?.addEventListener('click', closeOrderConfirmationModal);
+
+    // ─── Checkout Form Submit: Validates and Opens Confirmation Form ─────────
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
       const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'cod';
@@ -566,6 +760,21 @@
           return;
         }
       }
+
+      // Open confirmation modal
+      openOrderConfirmationModal();
+    });
+
+    // ─── Execute order placement when user confirms in modal ────────────────
+    document.getElementById('confirmProceedBtn')?.addEventListener('click', async function() {
+      closeOrderConfirmationModal();
+      await executeOrderPlacement();
+    });
+
+    async function executeOrderPlacement() {
+      const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'cod';
+      const addressInput = document.querySelector('input[name="addressId"]:checked');
+      if (!addressInput) return;
 
       const btn = document.getElementById('placeOrderBtn');
       const originalText = selectedPayment === 'online'
@@ -737,7 +946,7 @@
           showStockAlertPopup('Network connection error while placing order. Please try again.');
         }
       }
-    });
+    }
 
     // ── Checkout quantity controls ─────────────────────────────────────────────
     (function () {
