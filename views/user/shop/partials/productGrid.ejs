@@ -53,28 +53,34 @@
           <% } %>
         </a>
 
-        <% if (product.variant_count === 0) { %>
+        <%
+          const totalVariants = product.variant_count || 0;
+          const inStockVariants = typeof product.in_stock_variant_count !== 'undefined'
+            ? product.in_stock_variant_count
+            : (product.stock > 0 ? (totalVariants > 1 ? totalVariants : 1) : 0);
+        %>
+        <% if (totalVariants === 0) { %>
           <button type="button" class="add-to-bag-btn" disabled>
             Currently Unavailable
           </button>
-        <% } else if (product.variant_count > 1) { %>
+        <% } else if (inStockVariants <= 0 || product.stock <= 0) { %>
+          <button type="button" class="add-to-bag-btn btn-notify-me" data-product-id="<%= product._id %>">
+            Notify Me
+          </button>
+        <% } else if (inStockVariants > 1) { %>
           <a href="/product/<%= product.slug %>" class="add-to-bag-btn btn-select-options">
             Add to Atelier Bag
           </a>
-     <% } else if (product.stock <= 0) { %>
-  <button type="button" class="add-to-bag-btn btn-notify-me" data-product-id="<%= product._id %>">
-     Notify Me
-  </button>
-<% } else { %>
-  <button
-    type="button"
-    class="add-to-bag-btn"
-    data-product-id="<%= product._id %>"
-    data-default-variant-id="<%= product.default_variant_id %>"
-  >
-    Add to Atelier Bag
-  </button>
-<% } %>
+        <% } else { %>
+          <button
+            type="button"
+            class="add-to-bag-btn"
+            data-product-id="<%= product._id %>"
+            data-default-variant-id="<%= product.default_variant_id %>"
+          >
+            Add to Atelier Bag
+          </button>
+        <% } %>
       </div>
     <% }); %>
   </div>

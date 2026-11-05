@@ -166,7 +166,7 @@ async function buildProductQuery(query, userId) {
         as: 'category',
       },
     },
-    // First active, in-stock variant → used only when there's exactly 1 variant total
+    // First active, in-stock variant → used only when there's exactly 1 variant total or 1 variant in stock
     {
       $lookup: {
         from: 'variants',
@@ -179,7 +179,18 @@ async function buildProductQuery(query, userId) {
         as: 'defaultVariant',
       },
     },
-    // NEW: all active variants (any stock level) → used to count how many variants exist
+    // Active, in-stock variants → used to count how many variants are actually available to purchase
+    {
+      $lookup: {
+        from: 'variants',
+        let: { productId: '$_id' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$product_id', '$$productId'] }, deleted_at: null, is_active: true, quantity: { $gt: 0 } } },
+        ],
+        as: 'inStockVariants',
+      },
+    },
+    // All active variants (any stock level) → used to count how many variants exist
     {
       $lookup: {
         from: 'variants',
@@ -208,7 +219,8 @@ async function buildProductQuery(query, userId) {
               category: { $arrayElemAt: ['$category.name', 0] },
               category_id: 1,
               default_variant_id: { $arrayElemAt: ['$defaultVariant._id', 0] },
-              variant_count: { $size: '$allVariants' }, // NEW
+              variant_count: { $size: '$allVariants' },
+              in_stock_variant_count: { $size: '$inStockVariants' },
             },
           },
         ],
