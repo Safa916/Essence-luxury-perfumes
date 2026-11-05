@@ -19,9 +19,13 @@ body { font-family: 'Space Grotesk', sans-serif; background: #f8f8f8; color: #11
   font-size: 0.8rem;
   font-weight: 500;
   border-left: 3px solid;
+  overflow: hidden;
+  max-height: 80px;
+  transition: opacity 0.35s ease, max-height 0.35s ease, padding 0.35s ease, margin 0.35s ease;
 }
 .aod-flash--success { background: #d1fae5; border-color: #10b981; color: #065f46; }
 .aod-flash--error   { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+.aod-flash--dismiss { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; }
 
 /* ── Top bar ──────────────────────────────────────────────── */
 .aod-topbar {

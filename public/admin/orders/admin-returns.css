@@ -65,9 +65,13 @@ body { font-family: 'Space Grotesk', sans-serif; background: #f8f8f8; color: #11
   border-radius: 4px;
   font-size: 0.85rem;
   font-weight: 500;
+  overflow: hidden;
+  max-height: 80px;
+  transition: opacity 0.35s ease, max-height 0.35s ease, padding 0.35s ease, margin 0.35s ease;
 }
 .flash-success { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
 .flash-error { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+.flash-alert--dismiss { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; }
 
 /* ── Card ────────────────────────────────────────────────── */
 .card {

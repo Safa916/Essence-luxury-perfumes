@@ -413,10 +413,9 @@
     if (flash) {
       history.replaceState(null, '', window.location.pathname);
       setTimeout(() => {
-        flash.style.transition = 'opacity 0.4s';
-        flash.style.opacity = '0';
-        setTimeout(() => flash.remove(), 420);
-      }, 3500);
+        flash.classList.add('aod-flash--dismiss');
+        setTimeout(() => flash.remove(), 400);
+      }, 2000);
     }
   </script>
 

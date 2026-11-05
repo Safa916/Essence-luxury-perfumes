@@ -135,6 +135,16 @@
   <!-- SweetAlert2 for nice popups -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
+    // Auto-dismiss flash messages and clean the ?flash= from the URL
+    const flashEl = document.querySelector('.flash-alert');
+    if (flashEl) {
+      history.replaceState(null, '', window.location.pathname + (window.location.search.replace(/([?&])flash=[^&]*/g, '').replace(/^&/, '?') || ''));
+      setTimeout(() => {
+        flashEl.classList.add('flash-alert--dismiss');
+        setTimeout(() => flashEl.remove(), 400);
+      }, 2000);
+    }
+
     document.querySelectorAll('.btn-approve').forEach(btn => {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
