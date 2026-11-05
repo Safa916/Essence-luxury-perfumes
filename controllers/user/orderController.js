@@ -772,6 +772,8 @@ export const downloadInvoice = async (req, res) => {
            .text('[' + statusLabel + ']', COL.desc, doc.y + 2);
       }
 
+      const descBottomY = doc.y;
+
       doc.font('Helvetica').fontSize(9).fillColor(textColor)
          .text(String(qty).padStart(2, '0'), COL.qty, rowY, { width: 25, align: 'center' });
 
@@ -787,10 +789,10 @@ export const downloadInvoice = async (req, res) => {
       doc.font('Helvetica-Bold').fontSize(9).fillColor(isExcluded ? '#A6A296' : '#1C1A16')
          .text(inr(total), COL.total, rowY, { width: COL.totalW, align: 'right' });
 
-      rowY = Math.max(doc.y, rowY) + 20;
+      rowY = Math.max(descBottomY, rowY + 20) + 12;
 
       // Light row separator
-      doc.moveTo(L, rowY - 8).lineTo(L + PAGE_W, rowY - 8)
+      doc.moveTo(L, rowY - 6).lineTo(L + PAGE_W, rowY - 6)
          .strokeColor('#F2F2EF').lineWidth(0.5).stroke();
     });
 
@@ -798,26 +800,50 @@ export const downloadInvoice = async (req, res) => {
     const TOT_X = L + PAGE_W - 220;
     const TOT_W = 220;
 
-    // Always use the FULL order subtotal (all items, including returned/cancelled)
-    // so the invoice total matches the amount the customer was originally charged.
-    const fullSubtotal = allOrderItems.reduce(
+    // --- Categorise items ---------------------------------------------------
+    const CANCEL_STATUSES   = ['cancelled', 'cancel_requested'];
+    // "billed" = items customer was actually charged for (delivered ± returned)
+    const billedItems = allOrderItems.filter(
+      (it) => !CANCEL_STATUSES.includes((it.item_status || '').toLowerCase())
+    );
+    const cancelledItems = allOrderItems.filter(
+      (it) => CANCEL_STATUSES.includes((it.item_status || '').toLowerCase())
+    );
+
+    // For COD orders, cancelled items were NEVER charged — treat them as a
+    // separate deduction rather than a refund (no wallet credit was issued).
+    const isCOD = !['Wallet', 'Online Payment'].includes(order.payment_method || '');
+    const cancelledItemsTotal = cancelledItems.reduce(
       (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
     );
+
+    const billedSubtotal = billedItems.reduce(
+      (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
+    );
+    const fullSubtotal   = allOrderItems.reduce(
+      (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
+    );
+
     const savedDiscount   = toNum(order.discount_amount) || 0;
     const savedTax        = toNum(order.tax_amount) || 0;
     const savedShipping   = toNum(order.shipping_fee) || 0;
     const allSubtotal     = toNum(order.subtotal) || fullSubtotal;
     const appliedDiscount = savedDiscount;
 
-    // The original billed total (what customer was actually charged)
+    // originalTotal = what was actually recorded as due in the DB
     const originalTotal = savedInvTotal;
 
-    // Amount refunded so far (from order record)
+    // refundedAmt = wallet credits issued (prepaid: covers both cancel+return;
+    //               COD: covers only returned items)
     const refundedAmt = totalRefundedOnInvoice;
 
-    // Net payable = original total minus any refunds
-    const netPayable = Math.max(0, parseFloat((originalTotal - refundedAmt).toFixed(2)));
+    // For COD cancelled items there is no wallet refund, so deduct separately
+    const codCancelDeduction = isCOD ? cancelledItemsTotal : 0;
 
+    // Net payable after all deductions
+    const netPayable = Math.max(0, parseFloat((originalTotal - codCancelDeduction - refundedAmt).toFixed(2)));
+
+    // GST totals — base only on billed (non-cancelled) items
     let totals = [];
 
     if (isLegacyTaxAdded) {
@@ -828,30 +854,37 @@ export const downloadInvoice = async (req, res) => {
       if (appliedDiscount > 0) {
         totals.push(['COUPON DISCOUNT', '-' + inr(appliedDiscount)]);
       }
+      if (codCancelDeduction > 0) {
+        totals.push(['CANCELLED ITEM(S)', '-' + inr(codCancelDeduction)]);
+      }
       totals.push(
-        ['TAXABLE VALUE', inr(allSubtotal - appliedDiscount)],
+        ['TAXABLE VALUE', inr(billedSubtotal - appliedDiscount)],
         ['CGST (9%)', inr(cgst)],
         ['SGST (9%)', inr(sgst)],
         ['TOTAL GST (18%)', inr(savedTax)],
         ['SHIPPING FEE', savedShipping === 0 ? 'FREE' : inr(savedShipping)]
       );
     } else {
-      const fullTaxable = allOrderItems.reduce((sum, it) => {
-        const r = it.gst_rate !== undefined ? it.gst_rate : 18;
+      // GST breakdown on billed items only (excludes cancelled)
+      const billedTaxable = billedItems.reduce((sum, it) => {
+        const r   = it.gst_rate !== undefined ? it.gst_rate : 18;
         const tot = toNum(it.price_at_purchase) * (it.quantity || 1);
         const taxVal = it.taxable_amount && toNum(it.taxable_amount) > 0
           ? toNum(it.taxable_amount) * (it.quantity || 1)
           : (tot > 0 ? (tot / (1 + r / 100)) : 0);
         return sum + taxVal;
       }, 0);
-      const effectiveTaxable = appliedDiscount > 0 ? ((fullSubtotal - appliedDiscount) / 1.18) : fullTaxable;
-      const totalGst = (fullSubtotal - appliedDiscount) - effectiveTaxable;
+      const effectiveTaxable = appliedDiscount > 0 ? ((billedSubtotal - appliedDiscount) / 1.18) : billedTaxable;
+      const totalGst = (billedSubtotal - appliedDiscount) - effectiveTaxable;
       const cgst = totalGst / 2;
       const sgst = totalGst / 2;
 
       totals.push(['SUBTOTAL (INCL. GST)', inr(fullSubtotal)]);
       if (appliedDiscount > 0) {
         totals.push(['COUPON DISCOUNT', '-' + inr(appliedDiscount)]);
+      }
+      if (codCancelDeduction > 0) {
+        totals.push(['CANCELLED ITEM(S)', '-' + inr(codCancelDeduction)]);
       }
       totals.push(
         ['NET TAXABLE VALUE', inr(effectiveTaxable)],
@@ -862,7 +895,7 @@ export const downloadInvoice = async (req, res) => {
       );
     }
 
-    // Show refund row if any amount was refunded
+    // Show refund row if any amount was returned to wallet
     if (refundedAmt > 0) {
       totals.push(['AMOUNT REFUNDED', '-' + inr(refundedAmt)]);
     }
@@ -882,7 +915,7 @@ export const downloadInvoice = async (req, res) => {
     // Total band
     rowY += 4;
     doc.rect(TOT_X - 10, rowY, TOT_W + 10, 38).fill('#1C1A16');
-    const totalBandLabel = refundedAmt >= originalTotal ? 'NET PAYABLE (REFUNDED)' : 'TOTAL PAYABLE';
+    const totalBandLabel = netPayable === 0 ? 'NET PAYABLE (FULLY SETTLED)' : 'TOTAL PAYABLE';
     doc.font('Helvetica').fontSize(8).fillColor('#A6A296')
        .text(totalBandLabel, TOT_X, rowY + 8, { characterSpacing: 1.5 });
     doc.font('Helvetica-Bold').fontSize(13).fillColor('#F4F0E6')
