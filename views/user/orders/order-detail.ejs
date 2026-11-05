@@ -268,7 +268,11 @@
             <p class="card-label">Summary</p>
             <div class="kv"><span>Subtotal</span><strong><%= inr(o.subtotal) %></strong></div>
             <div class="kv"><span>Shipping</span><strong><%= o.shipping ? inr(o.shipping) : 'Free' %></strong></div>
-            <div class="kv"><span>Tax (GST)</span><strong><%= inr(o.tax) %></strong></div>
+            <% if (o.isLegacyTaxAdded) { %>
+              <div class="kv"><span>Tax (GST)</span><strong><%= inr(o.tax) %></strong></div>
+            <% } else if (o.tax) { %>
+              <div class="kv"><span>Included GST</span><strong><%= inr(o.tax) %></strong></div>
+            <% } %>
             <% if (o.discount) { %>
               <div class="kv"><span>Discount</span><strong>− <%= inr(o.discount) %></strong></div>
             <% } %>

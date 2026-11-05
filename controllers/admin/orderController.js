@@ -251,6 +251,15 @@ export const renderOrderDetail = async (req, res) => {
     };
     const nextStatuses = NEXT[order.order_status] || [];
 
+    const savedTotal     = toNum(order.total_amount);
+    const savedTax       = toNum(order.tax_amount);
+    const savedShipping  = toNum(order.shipping_fee);
+    const savedSubtotal  = toNum(order.subtotal);
+    const savedDiscount  = toNum(order.discount_amount);
+    const isLegacyTaxAdded = (savedTax > 0) &&
+      Math.abs(savedTotal - (savedSubtotal - savedDiscount + savedTax + savedShipping)) < 1.0 &&
+      Math.abs(savedTotal - (savedSubtotal - savedDiscount + savedShipping)) > 0.5;
+
     const dateStr = order.placed_at
       ? new Date(order.placed_at).toLocaleDateString('en-IN', {
           day: '2-digit', month: 'short', year: 'numeric',
@@ -276,6 +285,7 @@ export const renderOrderDetail = async (req, res) => {
         subtotal      : inr(toNum(order.subtotal)),
         shipping      : toNum(order.shipping_fee) > 0 ? inr(toNum(order.shipping_fee)) : 'Free',
         tax           : inr(toNum(order.tax_amount)),
+        isLegacyTaxAdded,
         discount      : toNum(order.discount_amount) > 0 ? inr(toNum(order.discount_amount)) : null,
         total         : inr(toNum(order.total_amount)),
         totalRaw      : toNum(order.total_amount),

@@ -188,7 +188,7 @@
             <% } %>
             <div class="aod-totals-row"><span>Subtotal</span><span><%= o.subtotal %></span></div>
             <div class="aod-totals-row"><span>Shipping</span><span><%= o.shipping %></span></div>
-            <div class="aod-totals-row"><span>Tax (GST)</span><span><%= o.tax %></span></div>
+            <div class="aod-totals-row"><span><%= o.isLegacyTaxAdded ? 'Tax (GST)' : 'Included GST' %></span><span><%= o.tax %></span></div>
             <% if (o.discount) { %>
               <div class="aod-totals-row"><span>Discount</span><span>− <%= o.discount %></span></div>
             <% } %>

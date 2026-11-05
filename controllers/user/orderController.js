@@ -293,6 +293,9 @@ export const getOrderDetail = async (req, res) => {
         subtotal     : toNum(order.subtotal),
         discount     : toNum(order.discount_amount),
         tax          : toNum(order.tax_amount),
+        isLegacyTaxAdded: (toNum(order.tax_amount) > 0) &&
+          Math.abs(toNum(order.total_amount) - (toNum(order.subtotal) - toNum(order.discount_amount) + toNum(order.tax_amount) + toNum(order.shipping_fee))) < 1.0 &&
+          Math.abs(toNum(order.total_amount) - (toNum(order.subtotal) - toNum(order.discount_amount) + toNum(order.shipping_fee))) > 0.5,
         shipping     : toNum(order.shipping_fee),
         total        : toNum(order.total_amount),
         coupon       : order.coupon_code || null,
@@ -710,8 +713,17 @@ export const downloadInvoice = async (req, res) => {
     doc.moveTo(L, TABLE_Y + 25).lineTo(L + PAGE_W, TABLE_Y + 25)
        .strokeColor('#E0DDD8').stroke();
 
-    // -- TABLE ROWS — only non-cancelled items --------------------------------
+    // -- TABLE ROWS ï¿½ only non-cancelled items --------------------------------
     let rowY = TABLE_Y + 35;
+    const savedInvTax = toNum(order.tax_amount) || 0;
+    const savedInvTotal = toNum(order.total_amount) || 0;
+    const savedInvSubtotal = toNum(order.subtotal) || 0;
+    const savedInvDiscount = toNum(order.discount_amount) || 0;
+    const savedInvShipping = toNum(order.shipping_fee) || 0;
+    const isLegacyTaxAdded = (savedInvTax > 0) &&
+      Math.abs(savedInvTotal - (savedInvSubtotal - savedInvDiscount + savedInvTax + savedInvShipping)) < 1.0 &&
+      Math.abs(savedInvTotal - (savedInvSubtotal - savedInvDiscount + savedInvShipping)) > 0.5;
+
     const EXCLUDED_STATUSES = ['cancelled', 'cancel_requested', 'returned'];
     const activeItems = (order.items || []).filter(
       (it) => !EXCLUDED_STATUSES.includes((it.item_status || '').toLowerCase())
@@ -725,13 +737,18 @@ export const downloadInvoice = async (req, res) => {
       const total   = price * qty;
       const gstRate = item.gst_rate !== undefined ? item.gst_rate : 18;
       
-      // Preserve saved taxable_amount and gst_amount when available; fallback to calculation
-      const taxable = item.taxable_amount && toNum(item.taxable_amount) > 0
-        ? toNum(item.taxable_amount) * qty
-        : (total > 0 ? (total / (1 + gstRate / 100)) : 0);
-      const gstAmt  = item.gst_amount && toNum(item.gst_amount) > 0
-        ? toNum(item.gst_amount) * qty
-        : (total - taxable);
+      let taxable, gstAmt;
+      if (isLegacyTaxAdded) {
+        taxable = total;
+        gstAmt  = taxable * (gstRate / 100);
+      } else {
+        taxable = item.taxable_amount && toNum(item.taxable_amount) > 0
+          ? toNum(item.taxable_amount) * qty
+          : (total > 0 ? (total / (1 + gstRate / 100)) : 0);
+        gstAmt  = item.gst_amount && toNum(item.gst_amount) > 0
+          ? toNum(item.gst_amount) * qty
+          : (total - taxable);
+      }
 
       doc.font('Helvetica-Bold').fontSize(9).fillColor('#1C1A16')
          .text(name, COL.desc, rowY, { width: COL.qty - COL.desc - 10 });
@@ -773,46 +790,69 @@ export const downloadInvoice = async (req, res) => {
     const activeSubtotal = activeItems.reduce(
       (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
     );
-    const savedDiscount  = toNum(order.discount_amount) || 0;
-    const allSubtotal    = toNum(order.subtotal) || activeSubtotal;
-    const discountRatio  = allSubtotal > 0 ? activeSubtotal / allSubtotal : 1;
+    const savedDiscount   = toNum(order.discount_amount) || 0;
+    const savedTax        = toNum(order.tax_amount) || 0;
+    const savedShipping   = toNum(order.shipping_fee) || 0;
+    const allSubtotal     = toNum(order.subtotal) || activeSubtotal;
+    const discountRatio   = allSubtotal > 0 ? (activeSubtotal / allSubtotal) : 1;
     const appliedDiscount = parseFloat((savedDiscount * discountRatio).toFixed(2));
 
     const discountedSubtotal = Math.max(activeSubtotal - appliedDiscount, 0);
 
-    // Sum taxable and tax portions
-    const totalTaxable = activeItems.reduce((sum, it) => {
-      const r = it.gst_rate !== undefined ? it.gst_rate : 18;
-      const tot = toNum(it.price_at_purchase) * (it.quantity || 1);
-      const taxVal = it.taxable_amount && toNum(it.taxable_amount) > 0
-        ? toNum(it.taxable_amount) * (it.quantity || 1)
-        : (tot > 0 ? (tot / (1 + r / 100)) : 0);
-      return sum + taxVal;
-    }, 0);
-    const effectiveTaxable = appliedDiscount > 0 ? (discountedSubtotal / 1.18) : totalTaxable;
-    const totalGst = discountedSubtotal - effectiveTaxable;
-    const cgst = totalGst / 2;
-    const sgst = totalGst / 2;
+    const activeShipping = activeItems.length === 0
+      ? 0
+      : (savedShipping > 0 ? parseFloat((savedShipping * discountRatio).toFixed(2)) : (discountedSubtotal >= FREE_SHIPPING_AT ? 0 : SHIPPING_FEE));
 
-    const activeShipping = activeItems.length === 0 ? 0 : (discountedSubtotal >= FREE_SHIPPING_AT ? 0 : SHIPPING_FEE);
-    const activeTotal    = parseFloat((discountedSubtotal + activeShipping).toFixed(2));
+    let totals = [];
+    let activeTotal = 0;
+
+    if (isLegacyTaxAdded) {
+      const proRatedTax = parseFloat((savedTax * discountRatio).toFixed(2));
+      const cgst = proRatedTax / 2;
+      const sgst = proRatedTax / 2;
+      activeTotal = parseFloat((discountedSubtotal + proRatedTax + activeShipping).toFixed(2));
+
+      totals.push(['SUBTOTAL', inr(activeSubtotal)]);
+      if (appliedDiscount > 0) {
+        totals.push(['COUPON DISCOUNT', '-' + inr(appliedDiscount)]);
+      }
+      totals.push(
+        ['TAXABLE VALUE', inr(discountedSubtotal)],
+        ['CGST (9%)', inr(cgst)],
+        ['SGST (9%)', inr(sgst)],
+        ['TOTAL GST (18%)', inr(proRatedTax)],
+        ['SHIPPING FEE', activeShipping === 0 ? 'FREE' : inr(activeShipping)]
+      );
+    } else {
+      const totalTaxable = activeItems.reduce((sum, it) => {
+        const r = it.gst_rate !== undefined ? it.gst_rate : 18;
+        const tot = toNum(it.price_at_purchase) * (it.quantity || 1);
+        const taxVal = it.taxable_amount && toNum(it.taxable_amount) > 0
+          ? toNum(it.taxable_amount) * (it.quantity || 1)
+          : (tot > 0 ? (tot / (1 + r / 100)) : 0);
+        return sum + taxVal;
+      }, 0);
+      const effectiveTaxable = appliedDiscount > 0 ? (discountedSubtotal / 1.18) : totalTaxable;
+      const totalGst = discountedSubtotal - effectiveTaxable;
+      const cgst = totalGst / 2;
+      const sgst = totalGst / 2;
+      activeTotal = parseFloat((discountedSubtotal + activeShipping).toFixed(2));
+
+      totals.push(['SUBTOTAL (INCL. GST)', inr(activeSubtotal)]);
+      if (appliedDiscount > 0) {
+        totals.push(['COUPON DISCOUNT', '-' + inr(appliedDiscount)]);
+      }
+      totals.push(
+        ['NET TAXABLE VALUE', inr(effectiveTaxable)],
+        ['CGST (9%)', inr(cgst)],
+        ['SGST (9%)', inr(sgst)],
+        ['TOTAL GST (18%)', inr(totalGst)],
+        ['SHIPPING FEE', activeShipping === 0 ? 'FREE' : inr(activeShipping)]
+      );
+    }
 
     rowY += 10;
     doc.moveTo(L, rowY).lineTo(L + PAGE_W, rowY).strokeColor('#E0DDD8').lineWidth(1).stroke();
-
-    const totals = [
-      ['SUBTOTAL (INCL. GST)', inr(activeSubtotal)],
-    ];
-    if (appliedDiscount > 0) {
-      totals.push(['COUPON DISCOUNT', '-' + inr(appliedDiscount)]);
-    }
-    totals.push(
-      ['NET TAXABLE VALUE', inr(effectiveTaxable)],
-      ['CGST (9%)', inr(cgst)],
-      ['SGST (9%)', inr(sgst)],
-      ['TOTAL GST (18%)', inr(totalGst)],
-      ['SHIPPING FEE', activeShipping === 0 ? 'FREE' : inr(activeShipping)]
-    );
 
     rowY += 12;
     totals.forEach(([label, valStr]) => {
