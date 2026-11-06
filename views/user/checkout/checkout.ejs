@@ -330,12 +330,11 @@
             <dd id="co-discount-val">−<%= fmt(_discount) %></dd>
           </div>
           <div class="totals-row">
-            <dt>Included GST (18%)</dt>
-            <dd id="co-tax"><%= fmt(_tax) %></dd>
-          </div>
-          <div class="totals-row">
             <dt>Shipping</dt>
             <dd id="co-shipping"><% if (_shipping === 0) { %><span class="free-tag">Free</span><% } else { %><%= fmt(_shipping) %><% } %></dd>
+          </div>
+          <div class="totals-tax-note" style="text-align:right; font-size:0.68rem; color:#8e8e93; font-style:italic; margin-top:-0.35rem; margin-bottom:0.25rem;">
+            (Includes <span id="co-tax"><%= fmt(_tax) %></span> GST)
           </div>
         </dl>
 
@@ -416,7 +415,7 @@
           </div>
           <div class="co-confirm-bill">
             <div class="co-confirm-bill-row">
-              <span>Subtotal (Incl. GST)</span>
+              <span>Subtotal</span>
               <strong id="confirmSubtotal"></strong>
             </div>
             <div class="co-confirm-bill-row" id="confirmDiscountRow" style="display:none; color:#16a34a;">
@@ -424,12 +423,11 @@
               <strong id="confirmDiscountVal"></strong>
             </div>
             <div class="co-confirm-bill-row">
-              <span>Included GST (18%)</span>
-              <span id="confirmTaxVal"></span>
-            </div>
-            <div class="co-confirm-bill-row">
               <span>Shipping Fee</span>
               <span id="confirmShippingVal"></span>
+            </div>
+            <div class="co-confirm-bill-tax-note" style="text-align:right; font-size:0.75rem; color:#8e8e93; font-style:italic; margin-top:-0.2rem; margin-bottom:0.2rem;">
+              (Includes <span id="confirmTaxVal"></span> GST)
             </div>
             <div class="co-confirm-bill-row grand-total">
               <span>Total Payable</span>

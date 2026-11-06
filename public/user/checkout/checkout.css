@@ -550,6 +550,16 @@
 .totals-row dd { margin: 0; font-weight: 500; }
 .totals-row.is-discount dd { color: var(--gold); }
 
+.totals-tax-note {
+  text-align: right;
+  font-size: 0.68rem;
+  color: var(--ink-muted, #8e8e93);
+  font-style: italic;
+  margin-top: -0.35rem;
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.02em;
+}
+
 .total-row {
   display: flex;
   justify-content: space-between;
@@ -1394,6 +1404,16 @@
   align-items: center;
   font-size: 0.8rem;
   color: #635d52;
+}
+
+.co-confirm-bill-tax-note {
+  text-align: right;
+  font-size: 0.74rem;
+  color: #8e8e93;
+  font-style: italic;
+  margin-top: -0.15rem;
+  margin-bottom: 0.15rem;
+  letter-spacing: 0.02em;
 }
 
 .co-confirm-bill-row.grand-total {
