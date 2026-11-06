@@ -396,15 +396,16 @@
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <label for="statusSelect" style="font-size: 0.82rem; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em;">Order Status:</label>
             <select id="statusSelect" onchange="applyStatusFilter(this.value)" style="padding: 0.4rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; background: #fff; color: #111; font-weight: 500; cursor: pointer;">
-              <option value="delivered" <%= status === 'delivered' ? 'selected' : '' %>>Delivered (Completed Sales — Default)</option>
-              <option value="shipped" <%= status === 'shipped' ? 'selected' : '' %>>Shipped</option>
-              <option value="processing" <%= status === 'processing' ? 'selected' : '' %>>Processing</option>
+              <option value="all" <%= status === 'all' ? 'selected' : '' %>>All Active Orders (Default)</option>
               <option value="placed" <%= status === 'placed' ? 'selected' : '' %>>Placed</option>
-              <option value="all" <%= status === 'all' ? 'selected' : '' %>>All Active Orders</option>
+              <option value="processing" <%= status === 'processing' ? 'selected' : '' %>>Processing</option>
+              <option value="shipped" <%= status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+              <option value="out_for_delivery" <%= status === 'out_for_delivery' ? 'selected' : '' %>>Out for Delivery</option>
+              <option value="delivered" <%= status === 'delivered' ? 'selected' : '' %>>Delivered (Completed Sales)</option>
             </select>
           </div>
           <span style="font-size: 0.78rem; color: #6b7280;">
-            Counting: <strong><%= status === 'delivered' ? 'Delivered Orders Only' : (status === 'all' ? 'All Active Orders' : status.toUpperCase()) %></strong>
+            Counting: <strong><%= status === 'all' ? 'All Active Orders' : status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) %></strong>
           </span>
         </div>
       </div>

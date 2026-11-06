@@ -13,7 +13,7 @@ function toNum(d) {
  */
 function buildSalesFilter(query) {
   const filter = query.filter || 'daily';
-  const status = query.status || 'delivered';
+  const status = query.status || 'all';
   const now = new Date();
 
   let startDate = null;
@@ -47,16 +47,20 @@ function buildSalesFilter(query) {
     }
   }
 
-  // Base match: In real-world e-commerce, sales report defaults to delivered orders (actual completed sales)
-  const match = {
-    payment_status: { $ne: 'failed' },
-  };
+  // Base match: exclude failed payments
+  // For delivered orders: include all payment statuses except failed (COD pending is fine for delivered)
+  // For active orders (placed/processing/shipped): only include orders where payment is confirmed (paid)
+  //   OR the order is COD (payment_method = 'cod'/'cash_on_delivery') which will be collected
+  const match = {};
 
   if (status && status !== 'all') {
     match.order_status = status;
+    // For non-delivered active statuses, show paid (online) + pending (COD) orders — exclude failed only
+    match.payment_status = { $ne: 'failed' };
   } else {
-    // If 'all', count all active orders but exclude cancelled and returned
+    // 'all' — show everything except cancelled, returned, and failed payments
     match.order_status = { $nin: ['cancelled', 'returned'] };
+    match.payment_status = { $ne: 'failed' };
   }
 
   if (startDate && endDate) {
@@ -267,9 +271,13 @@ export const downloadPdf = async (req, res) => {
     else if (filter === 'custom') filterLabel = `CUSTOM (${customFrom || 'Start'} TO ${customTo || 'End'})`;
     else if (filter === 'all') filterLabel = 'ALL TIME';
 
-    let statusLabel = status.toUpperCase();
+    let statusLabel = status.toUpperCase().replace(/_/g, ' ');
     if (status === 'delivered') statusLabel = 'DELIVERED (COMPLETED SALES)';
-    else if (status === 'all') statusLabel = 'ALL ACTIVE';
+    else if (status === 'all') statusLabel = 'ALL ACTIVE ORDERS';
+    else if (status === 'placed') statusLabel = 'PLACED';
+    else if (status === 'processing') statusLabel = 'PROCESSING';
+    else if (status === 'shipped') statusLabel = 'SHIPPED';
+    else if (status === 'out_for_delivery') statusLabel = 'OUT FOR DELIVERY';
 
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
 
@@ -408,10 +416,10 @@ export const downloadExcel = async (req, res) => {
     else if (filter === 'custom') filterLabel = `Custom (${customFrom || 'Start'} to ${customTo || 'End'})`;
     else if (filter === 'all') filterLabel = 'All Time';
 
-    let statusLabel = status.toUpperCase();
+    let statusLabel = status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     if (status === 'delivered') statusLabel = 'Delivered (Completed Sales)';
     else if (status === 'all') statusLabel = 'All Active Orders';
-    else statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+    else if (status === 'out_for_delivery') statusLabel = 'Out for Delivery';
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Essence Luxury Perfumes';
