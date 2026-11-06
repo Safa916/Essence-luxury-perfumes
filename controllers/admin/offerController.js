@@ -166,6 +166,19 @@ export const createOffer = async (req, res) => {
 
     const isActive = status === 'active' || status === 'true' || status === true || status === '1';
 
+    // If activating an offer for a target, deactivate any older active offers on that same target
+    if (isActive) {
+      await Offer.updateMany(
+        {
+          apply_to,
+          target_ids: new mongoose.Types.ObjectId(target_id),
+          status: 'active',
+          deleted_at: null,
+        },
+        { $set: { status: 'draft' } }
+      );
+    }
+
     await Offer.create({
       name: name.trim(),
       internal_code: code,
@@ -274,6 +287,19 @@ export const updateOffer = async (req, res) => {
     }
 
     const isActive = status === 'active' || status === 'true' || status === true || status === '1';
+
+    if (isActive) {
+      await Offer.updateMany(
+        {
+          _id: { $ne: offer._id },
+          apply_to,
+          target_ids: new mongoose.Types.ObjectId(target_id),
+          status: 'active',
+          deleted_at: null,
+        },
+        { $set: { status: 'draft' } }
+      );
+    }
 
     offer.name = name.trim();
     offer.discount_type = 'percentage';

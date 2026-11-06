@@ -126,6 +126,12 @@
     if (compare && compare > price) {
       html += `<span class="price-compare" id="priceCompare">${formatINR(compare)}</span>`;
     }
+    const hasOffer = btn.dataset.hasOffer === 'true';
+    const offerPct = parseInt(btn.dataset.offerPct, 10) || 0;
+    if (hasOffer && offerPct > 0) {
+      html += ` <span class="product-offer-badge" id="productOfferBadge" style="font-size:0.75rem; font-weight:700; color:#16a34a; background:#f0fdf4; padding:0.18rem 0.5rem; border-radius:3px; margin-left:6px;">${offerPct}% OFF</span>`;
+    }
+    html += ` <span class="gst-inclusive-badge" style="font-size:0.85rem; color:#78716c; font-weight:400; margin-left:8px;">&mdash; Inclusive of 18% GST</span>`;
     priceRow.innerHTML = html;
 
     updateStockIndicator(stock);

@@ -35,7 +35,9 @@ async function getActiveOffers() {
         ],
       },
     ],
-  }).lean();
+  })
+    .sort({ created_at: -1 })
+    .lean();
 
   return offers;
 }
@@ -74,7 +76,12 @@ function evaluateOffer(offer, price) {
 
 /**
  * Calculate the best offer for a specific product and category against its original price.
- * Compares Product Offer vs Category Offer and chooses the LARGER discount.
+ * 
+ * Precedence Rule:
+ * 1. Direct Product Offer takes precedence over Category Offer.
+ *    (When an admin explicitly sets an offer on a specific product, it intentionally overrides general category promotions)
+ * 2. Category Offer applies as a fallback when there is no active Product Offer on this product.
+ * 3. When multiple offers exist for the same target, the most recently created active offer takes precedence.
  * 
  * @param {Object} params
  * @param {string|ObjectId} params.productId
@@ -107,44 +114,47 @@ function calculateProductDiscount({ productId, categoryId, price, activeOffers =
   let bestCategoryDiscount = 0;
   let bestCategoryPercentage = 0;
 
+  // Since activeOffers is sorted by created_at: -1, the first match for a target is the latest created active offer
   for (const offer of activeOffers) {
     const targetIds = (offer.target_ids || []).map((id) => id.toString());
 
     if (offer.apply_to === 'product' && targetIds.includes(pIdStr)) {
-      const evalRes = evaluateOffer(offer, originalPrice);
-      if (evalRes.discount > bestProductDiscount) {
-        bestProductDiscount = evalRes.discount;
-        bestProductPercentage = evalRes.percentage;
-        bestProductOffer = offer;
+      if (!bestProductOffer) {
+        const evalRes = evaluateOffer(offer, originalPrice);
+        if (evalRes.discount > 0) {
+          bestProductDiscount = evalRes.discount;
+          bestProductPercentage = evalRes.percentage;
+          bestProductOffer = offer;
+        }
       }
     } else if (offer.apply_to === 'category' && targetIds.includes(cIdStr)) {
-      const evalRes = evaluateOffer(offer, originalPrice);
-      if (evalRes.discount > bestCategoryDiscount) {
-        bestCategoryDiscount = evalRes.discount;
-        bestCategoryPercentage = evalRes.percentage;
-        bestCategoryOffer = offer;
+      if (!bestCategoryOffer) {
+        const evalRes = evaluateOffer(offer, originalPrice);
+        if (evalRes.discount > 0) {
+          bestCategoryDiscount = evalRes.discount;
+          bestCategoryPercentage = evalRes.percentage;
+          bestCategoryOffer = offer;
+        }
       }
     }
   }
 
-  // Compare Product Offer vs Category Offer and apply the larger discount
+  // Specific Product Offer takes precedence over broad Category Offer
   let appliedOffer = null;
   let finalDiscount = 0;
   let finalPercentage = 0;
   let offerType = null;
 
-  if (bestProductDiscount > 0 || bestCategoryDiscount > 0) {
-    if (bestProductDiscount >= bestCategoryDiscount) {
-      appliedOffer = bestProductOffer;
-      finalDiscount = bestProductDiscount;
-      finalPercentage = bestProductPercentage;
-      offerType = 'product';
-    } else {
-      appliedOffer = bestCategoryOffer;
-      finalDiscount = bestCategoryDiscount;
-      finalPercentage = bestCategoryPercentage;
-      offerType = 'category';
-    }
+  if (bestProductOffer && bestProductDiscount > 0) {
+    appliedOffer = bestProductOffer;
+    finalDiscount = bestProductDiscount;
+    finalPercentage = bestProductPercentage;
+    offerType = 'product';
+  } else if (bestCategoryOffer && bestCategoryDiscount > 0) {
+    appliedOffer = bestCategoryOffer;
+    finalDiscount = bestCategoryDiscount;
+    finalPercentage = bestCategoryPercentage;
+    offerType = 'category';
   }
 
   const finalPrice = parseFloat(Math.max(0, originalPrice - finalDiscount).toFixed(2));

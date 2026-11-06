@@ -67,12 +67,35 @@ export const getUsersPage = async (req, res) => {
 
 // POST /admin/users/:id/toggle-block
 export const toggleBlockUser = async (req, res) => {
+  const isAjax = req.xhr || req.headers.accept?.includes('application/json') || req.headers['content-type'] === 'application/json';
+
   try {
     const user = await User.findById(req.params.id);
 
-    if (user) {
-      user.is_active = !user.is_active; // is_active = false means blocked
-      await user.save();
+    if (!user) {
+      if (isAjax) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          message: 'User not found.',
+        });
+      }
+      return res.redirect('/admin/users');
+    }
+
+    user.is_active = !user.is_active; // is_active = false means blocked
+    await user.save();
+
+    const totalActive = await User.countDocuments({ is_active: true });
+
+    if (isAjax) {
+      return res.json({
+        success: true,
+        is_active: user.is_active,
+        totalActive,
+        message: user.is_active
+          ? `${user.full_name || 'User'} has been unblocked.`
+          : `${user.full_name || 'User'} has been blocked.`,
+      });
     }
 
     // send the admin back to the same search/page they were on
@@ -80,9 +103,14 @@ export const toggleBlockUser = async (req, res) => {
     res.redirect(backTo);
   } catch (err) {
     console.error('Error toggling block status:', err);
+    if (isAjax) {
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Something went wrong while updating user status.',
+      });
+    }
     res.redirect('/admin/users');
   }
-
 };
 
 
