@@ -114,6 +114,8 @@
     }
     input:checked + .slider { background-color:#111; }
     input:checked + .slider:before { transform:translateX(16px); }
+    .switch.switch-disabled, .switch.switch-disabled .slider { cursor:not-allowed; }
+    .switch.switch-disabled { opacity:0.45; }
 
     /* Action buttons */
     .action-btns { display:flex; align-items:center; gap:0.5rem; }
@@ -326,11 +328,17 @@
                   </td>
 
                   <td>
-                    <div class="status-wrap status-<%= o.status === 'active' ? 'active' : (o.status === 'expired' ? 'expired' : 'inactive') %>">
+                    <div class="status-wrap status-<%= o.status === 'active' ? 'active' : (o.status === 'expired' ? 'expired' : 'inactive') %>" id="statusWrap-<%= o._id %>">
                       <span class="status-dot"></span>
-                      <span><%= o.status %></span>
-                      <label class="switch">
-                        <input type="checkbox" class="toggle-status" data-id="<%= o._id %>" <%= o.raw_status === 'active' ? 'checked' : '' %>>
+                      <span class="status-label"><%= o.status %></span>
+                      <label class="switch <%= o.status === 'expired' ? 'switch-disabled' : '' %>"
+                             title="<%= o.status === 'expired' ? 'Expired offer — edit to extend end date' : 'Toggle offer status' %>">
+                        <input type="checkbox"
+                               class="toggle-status"
+                               data-id="<%= o._id %>"
+                               data-status="<%= o.status %>"
+                               <%= o.status === 'active' ? 'checked' : '' %>
+                               <%= o.status === 'expired' ? 'disabled' : '' %>>
                         <span class="slider"></span>
                       </label>
                     </div>
@@ -531,20 +539,122 @@
       });
     });
 
-    // Toggle status live
+    // Global sleek toast for admin
+    function adminToast(message, type = 'success') {
+      let toastContainer = document.getElementById('adminToastContainer');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'adminToastContainer';
+        toastContainer.style.cssText = 'position:fixed;top:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+        document.body.appendChild(toastContainer);
+      }
+
+      const toast = document.createElement('div');
+      const bg = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#1f2937');
+      const icon = type === 'success' ? '✓' : (type === 'error' ? '✕' : 'ℹ');
+
+      toast.style.cssText = [
+        'display:flex',
+        'align-items:center',
+        'gap:10px',
+        'background:#ffffff',
+        'color:#111827',
+        'border-left:4px solid ' + bg,
+        'padding:12px 18px',
+        'border-radius:6px',
+        'box-shadow:0 10px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1)',
+        'font-size:0.85rem',
+        'font-weight:600',
+        'font-family:sans-serif',
+        'transform:translateX(120%)',
+        'opacity:0',
+        'transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),opacity 0.25s ease',
+        'pointer-events:auto',
+        'max-width:380px'
+      ].join(';');
+
+      toast.innerHTML = '<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:' + bg + '20;color:' + bg + ';font-weight:700;font-size:0.75rem;">' + icon + '</span><span>' + message + '</span>';
+
+      toastContainer.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.style.transform = 'translateX(0)';
+        toast.style.opacity = '1';
+      });
+
+      setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Inform user when clicking a disabled/expired offer switch
+    document.querySelectorAll('.switch.switch-disabled').forEach(sw => {
+      sw.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        adminToast('Cannot activate an expired offer. Please edit and extend the end date first.', 'error');
+      });
+    });
+
+    // Toggle status live without full page reload
     document.querySelectorAll('.toggle-status').forEach(toggle => {
       toggle.addEventListener('change', async function() {
         const id = this.dataset.id;
+        const currentWrap = document.getElementById('statusWrap-' + id);
+        const currentLabel = currentWrap ? currentWrap.querySelector('.status-label') : null;
+
+        // Prevent rapid re-clicks
+        this.disabled = true;
+
         try {
-          const res = await fetch(`/admin/offers/${id}/toggle`, { method: 'POST' });
+          const res = await fetch('/admin/offers/' + id + '/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
           const data = await res.json();
-          if (!data.success) {
+
+          if (!res.ok || !data.success) {
             this.checked = !this.checked;
+            adminToast(data.message || 'Failed to update offer status.', 'error');
           } else {
-            window.location.reload();
+            const newStatus = data.status; // 'active' or 'draft'
+            this.checked = (newStatus === 'active');
+            this.dataset.status = newStatus;
+
+            if (currentWrap) {
+              currentWrap.classList.remove('status-active', 'status-inactive', 'status-expired');
+              currentWrap.classList.add(newStatus === 'active' ? 'status-active' : 'status-inactive');
+            }
+            if (currentLabel) {
+              currentLabel.textContent = newStatus;
+            }
+
+            if (data.deactivatedIds && data.deactivatedIds.length) {
+              data.deactivatedIds.forEach(deactId => {
+                const otherToggle = document.querySelector('.toggle-status[data-id="' + deactId + '"]');
+                if (otherToggle) {
+                  otherToggle.checked = false;
+                  otherToggle.dataset.status = 'draft';
+                }
+                const otherWrap = document.getElementById('statusWrap-' + deactId);
+                if (otherWrap) {
+                  otherWrap.classList.remove('status-active', 'status-expired');
+                  otherWrap.classList.add('status-inactive');
+                  const otherLabel = otherWrap.querySelector('.status-label');
+                  if (otherLabel) otherLabel.textContent = 'draft';
+                }
+              });
+            }
+
+            adminToast(data.message || ('Offer status updated to ' + newStatus + '.'), 'success');
           }
-        } catch (e) {
+        } catch (err) {
+          console.error('Toggle error:', err);
           this.checked = !this.checked;
+          adminToast('Network error while updating offer status.', 'error');
+        } finally {
+          this.disabled = false;
         }
       });
     });

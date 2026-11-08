@@ -30,7 +30,22 @@ export const listOffers = async (req, res) => {
       query.apply_to = type;
     }
 
-    if (status !== 'all' && ['active', 'draft', 'expired', 'paused'].includes(status)) {
+    const now = new Date();
+    if (status === 'active') {
+      query.status = 'active';
+      query.$and = (query.$and || []).concat([
+        { $or: [{ end_date: null }, { end_date: { $gte: now } }] },
+      ]);
+    } else if (status === 'expired') {
+      query.$and = (query.$and || []).concat([
+        { $or: [{ status: 'expired' }, { end_date: { $lt: now } }] },
+      ]);
+    } else if (status === 'draft') {
+      query.status = 'draft';
+      query.$and = (query.$and || []).concat([
+        { $or: [{ end_date: null }, { end_date: { $gte: now } }] },
+      ]);
+    } else if (status !== 'all' && ['paused'].includes(status)) {
       query.status = status;
     }
 
@@ -61,8 +76,6 @@ export const listOffers = async (req, res) => {
 
     const productMap = new Map(products.map((p) => [p._id.toString(), p.name]));
     const categoryMap = new Map(categories.map((c) => [c._id.toString(), c.name]));
-
-    const now = new Date();
     const offers = offersRaw.map((o) => {
       const targetNames = (o.target_ids || []).map((id) => {
         const idStr = id.toString();
@@ -71,7 +84,7 @@ export const listOffers = async (req, res) => {
 
       const isExpired = o.end_date && new Date(o.end_date) < now;
       let effectiveStatus = o.status;
-      if (o.status === 'active' && isExpired) {
+      if (isExpired) {
         effectiveStatus = 'expired';
       }
 
@@ -407,16 +420,69 @@ export const toggleOffer = async (req, res) => {
   try {
     const offer = await Offer.findOne({ _id: req.params.id, deleted_at: null });
     if (!offer) {
-      return res.json({ success: false, message: 'Offer not found' });
+      return res.status(404).json({ success: false, message: 'Offer not found' });
     }
 
-    offer.status = offer.status === 'active' ? 'draft' : 'active';
+    const now = new Date();
+    const isExpired = offer.end_date && new Date(offer.end_date) < now;
+
+    // If currently active, switch to draft
+    if (offer.status === 'active') {
+      offer.status = 'draft';
+      await offer.save();
+      return res.json({
+        success: true,
+        status: 'draft',
+        message: 'Offer moved to draft.',
+      });
+    }
+
+    // If attempting to activate an expired offer
+    if (isExpired) {
+      if (offer.status !== 'expired') {
+        offer.status = 'expired';
+        await offer.save();
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot activate an expired offer. Please edit and extend the end date first.',
+      });
+    }
+
+    // Deactivate other active offers on the same target(s) to avoid collisions
+    let deactivatedIds = [];
+    if (offer.target_ids && offer.target_ids.length > 0) {
+      const conflicting = await Offer.find({
+        _id: { $ne: offer._id },
+        apply_to: offer.apply_to,
+        target_ids: { $in: offer.target_ids },
+        status: 'active',
+        deleted_at: null,
+      }).select('_id');
+      deactivatedIds = conflicting.map((c) => c._id.toString());
+
+      if (deactivatedIds.length > 0) {
+        await Offer.updateMany(
+          { _id: { $in: deactivatedIds } },
+          { $set: { status: 'draft' } }
+        );
+      }
+    }
+
+    offer.status = 'active';
     await offer.save();
 
-    res.json({ success: true, status: offer.status });
+    return res.json({
+      success: true,
+      status: 'active',
+      deactivatedIds,
+      message: deactivatedIds.length > 0
+        ? 'Offer activated. Conflicting active offer on the same target was moved to draft.'
+        : 'Offer activated successfully.',
+    });
   } catch (err) {
     console.error('toggleOffer error:', err);
-    res.json({ success: false, message: 'Failed to update status' });
+    return res.status(500).json({ success: false, message: 'Failed to update status' });
   }
 };
 
