@@ -604,7 +604,8 @@ export const downloadInvoice = async (req, res) => {
       .lean();
 
     if (!order) return res.redirect('/orders');
-// PDFDocument imported at top
+
+    // PDFDocument imported at top
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
     // HTTP headers — triggers browser "Save As" dialog
@@ -624,12 +625,20 @@ export const downloadInvoice = async (req, res) => {
         maximumFractionDigits: 2,
       });
 
-    const addr = order.shipping_address || {};
+    const fmt2 = (n) => Number(n || 0).toFixed(2);
+
+    const addr    = order.shipping_address || {};
     const dateStr = order.placed_at
       ? new Date(order.placed_at).toLocaleDateString('en-IN', {
           day: '2-digit', month: 'short', year: 'numeric',
         })
       : '';
+
+    // ── Determine intra-state vs inter-state ─────────────────────────────────
+    // Store is registered in Kerala (KL). Compare with customer's state.
+    const STORE_STATE = 'kerala';
+    const custState   = (addr.state || '').toLowerCase().trim();
+    const isIntraState = custState === STORE_STATE || custState === 'kl';
 
     const PAGE_W = doc.page.width  - 100; // usable width (margin 50 each side)
     const L = 50;                          // left margin
@@ -694,83 +703,71 @@ export const downloadInvoice = async (req, res) => {
     doc.moveTo(L, TABLE_Y).lineTo(L + PAGE_W, TABLE_Y)
        .strokeColor('#E0DDD8').lineWidth(1).stroke();
 
-    // ── TABLE HEADER ──────────────────────────────────────────────────────────
-    // Column x-positions — keep PRICE column within the page right edge (L + PAGE_W)
-        // Columns layout with Taxable Value and GST breakdown
+    // ── ITEMS TABLE HEADER ────────────────────────────────────────────────────
+    // Columns: Description | Qty | Rate (Incl. GST) | Amount (Incl. GST)
     const COL = {
-      desc   : L,
-      qty    : L + 175,
-      price  : L + 205,
-      taxable: L + 270,
-      gst    : L + 345,
-      total  : L + 425,
-      totalW : L + PAGE_W - (L + 425),
+      desc  : L,
+      qty   : L + 290,
+      rate  : L + 330,
+      total : L + 400,
+      totalW: (L + PAGE_W) - (L + 400),
     };
 
     doc.font('Helvetica').fontSize(7).fillColor('#6B675E');
-    doc.text('DESCRIPTION', COL.desc, TABLE_Y + 10, { characterSpacing: 1.2 });
-    doc.text('QTY', COL.qty, TABLE_Y + 10, { width: 25, align: 'center', characterSpacing: 1 });
-    doc.text('PRICE', COL.price, TABLE_Y + 10, { width: 60, align: 'right', characterSpacing: 1 });
-    doc.text('TAXABLE', COL.taxable, TABLE_Y + 10, { width: 70, align: 'right', characterSpacing: 1 });
-    doc.text('GST RATE & AMT', COL.gst, TABLE_Y + 10, { width: 75, align: 'right', characterSpacing: 1 });
-    doc.text('TOTAL', COL.total, TABLE_Y + 10, { width: COL.totalW, align: 'right', characterSpacing: 1 });
+    doc.text('ITEM DETAILS',           COL.desc,  TABLE_Y + 10, { characterSpacing: 1.2 });
+    doc.text('QTY',                    COL.qty,   TABLE_Y + 10, { width: 35, align: 'center', characterSpacing: 1 });
+    doc.text('RATE (INCL. GST)',        COL.rate,  TABLE_Y + 10, { width: 65, align: 'right', characterSpacing: 1 });
+    doc.text('AMOUNT (INCL. GST)',      COL.total, TABLE_Y + 10, { width: COL.totalW, align: 'right', characterSpacing: 1 });
 
     doc.moveTo(L, TABLE_Y + 25).lineTo(L + PAGE_W, TABLE_Y + 25)
        .strokeColor('#E0DDD8').stroke();
 
-    // -- TABLE ROWS: show ALL items; grey-out & badge returned/cancelled ----
-    let rowY = TABLE_Y + 35;
-    const savedInvTax = toNum(order.tax_amount) || 0;
-    const savedInvTotal = toNum(order.total_amount) || 0;
-    const savedInvSubtotal = toNum(order.subtotal) || 0;
+    // ── Shared order-level values ─────────────────────────────────────────────
+    const savedInvTax      = toNum(order.tax_amount)      || 0;
+    const savedInvTotal    = toNum(order.total_amount)    || 0;
+    const savedInvSubtotal = toNum(order.subtotal)        || 0;
     const savedInvDiscount = toNum(order.discount_amount) || 0;
-    const savedInvShipping = toNum(order.shipping_fee) || 0;
+    const savedInvShipping = toNum(order.shipping_fee)    || 0;
+
+    // Legacy detection: if tax was added on top of subtotal (old pricing model)
     const isLegacyTaxAdded = (savedInvTax > 0) &&
       Math.abs(savedInvTotal - (savedInvSubtotal - savedInvDiscount + savedInvTax + savedInvShipping)) < 1.0 &&
       Math.abs(savedInvTotal - (savedInvSubtotal - savedInvDiscount + savedInvShipping)) > 0.5;
 
     const EXCLUDED_STATUSES = ['cancelled', 'cancel_requested', 'returned'];
-    const allOrderItems = order.items || [];
+    const allOrderItems     = order.items || [];
 
-    // Track total refunded amount for all returned/cancelled items
     const totalRefundedOnInvoice = toNum(order.refunded_amount) || 0;
 
+    // ── TABLE ROWS ────────────────────────────────────────────────────────────
+    let rowY = TABLE_Y + 35;
+
     allOrderItems.forEach((item) => {
-      const name      = item.product_name || 'Product';
-      const size      = item.size || '';
-      const qty       = item.quantity || 1;
-      const price     = toNum(item.price_at_purchase);
-      const total     = price * qty;
-      const gstRate   = item.gst_rate !== undefined ? item.gst_rate : 18;
-      const itemSt    = (item.item_status || 'placed').toLowerCase();
+      const name     = item.product_name || 'Product';
+      const size     = item.size || '';
+      const qty      = item.quantity || 1;
+      const price    = toNum(item.price_at_purchase);   // per-unit incl. GST
+      const lineAmt  = price * qty;                     // line total incl. GST
+      const gstRate  = item.gst_rate !== undefined ? item.gst_rate : 18;
+      const itemSt   = (item.item_status || 'placed').toLowerCase();
       const isExcluded = EXCLUDED_STATUSES.includes(itemSt);
-      const statusLabel = itemSt === 'returned' ? 'RETURNED' : (itemSt === 'cancel_requested' ? 'CANCEL REQ.' : 'CANCELLED');
+      const statusLabel = itemSt === 'returned' ? 'RETURNED'
+                        : itemSt === 'cancel_requested' ? 'CANCEL REQ.'
+                        : 'CANCELLED';
 
-      let taxable, gstAmt;
-      if (isLegacyTaxAdded) {
-        taxable = total;
-        gstAmt  = taxable * (gstRate / 100);
-      } else {
-        taxable = item.taxable_amount && toNum(item.taxable_amount) > 0
-          ? toNum(item.taxable_amount) * qty
-          : (total > 0 ? (total / (1 + gstRate / 100)) : 0);
-        gstAmt  = item.gst_amount && toNum(item.gst_amount) > 0
-          ? toNum(item.gst_amount) * qty
-          : (total - taxable);
-      }
-
-      // Dim colours for excluded (returned/cancelled) items
       const textColor = isExcluded ? '#A6A296' : '#1C1A16';
       const subColor  = isExcluded ? '#C4C0B8' : '#6B675E';
       const valColor  = isExcluded ? '#A6A296' : '#3d3b36';
 
+      // Description cell: "Name | Size: X | GST: Y%"
       doc.font('Helvetica-Bold').fontSize(9).fillColor(textColor)
          .text(name, COL.desc, rowY, { width: COL.qty - COL.desc - 10 });
 
-      if (size) {
-        doc.font('Helvetica').fontSize(8).fillColor(subColor)
-           .text('Size: ' + size, COL.desc, doc.y + 2);
-      }
+      const descSubParts = [];
+      if (size) descSubParts.push(`Size: ${size}`);
+      descSubParts.push(`GST: ${gstRate}%`);
+      doc.font('Helvetica').fontSize(7.5).fillColor(subColor)
+         .text(descSubParts.join('  ·  '), COL.desc, doc.y + 2, { width: COL.qty - COL.desc - 10 });
 
       if (isExcluded) {
         doc.font('Helvetica').fontSize(7).fillColor('#B0400A')
@@ -779,20 +776,17 @@ export const downloadInvoice = async (req, res) => {
 
       const descBottomY = doc.y;
 
+      // Qty
       doc.font('Helvetica').fontSize(9).fillColor(textColor)
-         .text(String(qty).padStart(2, '0'), COL.qty, rowY, { width: 25, align: 'center' });
+         .text(String(qty).padStart(2, '0'), COL.qty, rowY, { width: 35, align: 'center' });
 
+      // Rate (Incl. GST) — per unit
       doc.font('Helvetica').fontSize(9).fillColor(valColor)
-         .text(inr(price), COL.price, rowY, { width: 60, align: 'right' });
+         .text(inr(price), COL.rate, rowY, { width: 65, align: 'right' });
 
-      doc.font('Helvetica').fontSize(9).fillColor(valColor)
-         .text(inr(taxable), COL.taxable, rowY, { width: 70, align: 'right' });
-
-      doc.font('Helvetica').fontSize(9).fillColor(valColor)
-         .text(gstRate + '% (' + inr(gstAmt) + ')', COL.gst, rowY, { width: 75, align: 'right' });
-
+      // Amount (Incl. GST) — line total
       doc.font('Helvetica-Bold').fontSize(9).fillColor(isExcluded ? '#A6A296' : '#1C1A16')
-         .text(inr(total), COL.total, rowY, { width: COL.totalW, align: 'right' });
+         .text(inr(lineAmt), COL.total, rowY, { width: COL.totalW, align: 'right' });
 
       rowY = Math.max(descBottomY, rowY + 20) + 12;
 
@@ -801,13 +795,8 @@ export const downloadInvoice = async (req, res) => {
          .strokeColor('#F2F2EF').lineWidth(0.5).stroke();
     });
 
-    // -- TOTALS & GST BREAKDOWN ------------------------------------------------
-    const TOT_X = L + PAGE_W - 220;
-    const TOT_W = 220;
-
-    // --- Categorise items ---------------------------------------------------
-    const CANCEL_STATUSES   = ['cancelled', 'cancel_requested'];
-    // "billed" = items customer was actually charged for (delivered ± returned)
+    // ── Categorise items for totals ───────────────────────────────────────────
+    const CANCEL_STATUSES = ['cancelled', 'cancel_requested'];
     const billedItems = allOrderItems.filter(
       (it) => !CANCEL_STATUSES.includes((it.item_status || '').toLowerCase())
     );
@@ -815,8 +804,6 @@ export const downloadInvoice = async (req, res) => {
       (it) => CANCEL_STATUSES.includes((it.item_status || '').toLowerCase())
     );
 
-    // For COD orders, cancelled items were NEVER charged — treat them as a
-    // separate deduction rather than a refund (no wallet credit was issued).
     const isCOD = !['Wallet', 'Online Payment'].includes(order.payment_method || '');
     const cancelledItemsTotal = cancelledItems.reduce(
       (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
@@ -825,52 +812,29 @@ export const downloadInvoice = async (req, res) => {
     const billedSubtotal = billedItems.reduce(
       (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
     );
-    const fullSubtotal   = allOrderItems.reduce(
+    const fullSubtotal = allOrderItems.reduce(
       (sum, it) => sum + toNum(it.price_at_purchase) * (it.quantity || 1), 0
     );
 
     const savedDiscount   = toNum(order.discount_amount) || 0;
-    const savedTax        = toNum(order.tax_amount) || 0;
-    const savedShipping   = toNum(order.shipping_fee) || 0;
+    const savedTax        = toNum(order.tax_amount)      || 0;
+    const savedShipping   = toNum(order.shipping_fee)    || 0;
     const allSubtotal     = toNum(order.subtotal) || fullSubtotal;
     const appliedDiscount = savedDiscount;
-
-    // originalTotal = what was actually recorded as due in the DB
-    const originalTotal = savedInvTotal;
-
-    // refundedAmt = wallet credits issued (prepaid: covers both cancel+return;
-    //               COD: covers only returned items)
-    const refundedAmt = totalRefundedOnInvoice;
-
-    // For COD cancelled items there is no wallet refund, so deduct separately
+    const originalTotal   = savedInvTotal;
+    const refundedAmt     = totalRefundedOnInvoice;
     const codCancelDeduction = isCOD ? cancelledItemsTotal : 0;
-
-    // Net payable after all deductions
     const netPayable = Math.max(0, parseFloat((originalTotal - codCancelDeduction - refundedAmt).toFixed(2)));
 
-    // GST totals — base only on billed (non-cancelled) items
-    let totals = [];
+    // ── Compute GST totals (on billed items only) ─────────────────────────────
+    let totalGstAmt, totalTaxableAmt;
 
     if (isLegacyTaxAdded) {
-      const cgst = savedTax / 2;
-      const sgst = savedTax / 2;
-
-      totals.push(['SUBTOTAL', inr(allSubtotal)]);
-      if (appliedDiscount > 0) {
-        totals.push(['COUPON DISCOUNT', '-' + inr(appliedDiscount)]);
-      }
-      if (codCancelDeduction > 0) {
-        totals.push(['CANCELLED ITEM(S)', '-' + inr(codCancelDeduction)]);
-      }
-      totals.push(
-        ['TAXABLE VALUE', inr(billedSubtotal - appliedDiscount)],
-        ['CGST (9%)', inr(cgst)],
-        ['SGST (9%)', inr(sgst)],
-        ['TOTAL GST (18%)', inr(savedTax)],
-        ['SHIPPING FEE', savedShipping === 0 ? 'FREE' : inr(savedShipping)]
-      );
+      // Legacy: GST was added on top — taxable = subtotal before GST
+      totalTaxableAmt = billedSubtotal - appliedDiscount;
+      totalGstAmt     = savedTax;
     } else {
-      // GST breakdown on billed items only (excludes cancelled)
+      // Inclusive model: back-calculate taxable value from inclusive prices
       const billedTaxable = billedItems.reduce((sum, it) => {
         const r   = it.gst_rate !== undefined ? it.gst_rate : 18;
         const tot = toNum(it.price_at_purchase) * (it.quantity || 1);
@@ -879,55 +843,153 @@ export const downloadInvoice = async (req, res) => {
           : (tot > 0 ? (tot / (1 + r / 100)) : 0);
         return sum + taxVal;
       }, 0);
-      const effectiveTaxable = appliedDiscount > 0 ? ((billedSubtotal - appliedDiscount) / 1.18) : billedTaxable;
-      const totalGst = (billedSubtotal - appliedDiscount) - effectiveTaxable;
-      const cgst = totalGst / 2;
-      const sgst = totalGst / 2;
-
-      totals.push(['SUBTOTAL (INCL. GST)', inr(fullSubtotal)]);
-      if (appliedDiscount > 0) {
-        totals.push(['COUPON DISCOUNT', '-' + inr(appliedDiscount)]);
-      }
-      if (codCancelDeduction > 0) {
-        totals.push(['CANCELLED ITEM(S)', '-' + inr(codCancelDeduction)]);
-      }
-      totals.push(
-        ['NET TAXABLE VALUE', inr(effectiveTaxable)],
-        ['CGST (9%)', inr(cgst)],
-        ['SGST (9%)', inr(sgst)],
-        ['TOTAL GST (18%)', inr(totalGst)],
-        ['SHIPPING FEE', savedShipping === 0 ? 'FREE' : inr(savedShipping)]
-      );
+      // Apply discount proportionally if present
+      const billedInclTotal = billedSubtotal - appliedDiscount;
+      // Effective taxable = billedInclTotal ÷ (1 + avgGstRate)
+      // Approximate using weighted taxable
+      const discountRatio   = billedSubtotal > 0 ? (1 - appliedDiscount / billedSubtotal) : 1;
+      totalTaxableAmt = billedTaxable * discountRatio;
+      totalGstAmt     = billedInclTotal - totalTaxableAmt;
     }
 
-    // Show refund row if any amount was returned to wallet
-    if (refundedAmt > 0) {
-      totals.push(['AMOUNT REFUNDED', '-' + inr(refundedAmt)]);
-    }
+    const cgstAmt = totalGstAmt / 2;
+    const sgstAmt = totalGstAmt / 2;
+    const igstAmt = totalGstAmt;
 
+    // ── SUMMARY BLOCK (bottom-right) ──────────────────────────────────────────
     rowY += 10;
     doc.moveTo(L, rowY).lineTo(L + PAGE_W, rowY).strokeColor('#E0DDD8').lineWidth(1).stroke();
+    rowY += 14;
 
-    rowY += 12;
-    totals.forEach(([label, valStr]) => {
-      doc.font('Helvetica').fontSize(8).fillColor('#6B675E')
+    const TOT_X = L + PAGE_W - 220;
+    const TOT_W = 220;
+    const VAL_X = L + PAGE_W - 110;
+    const VAL_W = 110;
+
+    // Helper: render one summary row
+    const summaryRow = (label, value, bold = false) => {
+      doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(8).fillColor('#6B675E')
          .text(label, TOT_X, rowY);
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#1C1A16')
-         .text(valStr, COL.total, rowY, { width: COL.totalW, align: 'right' });
+      doc.font(bold ? 'Helvetica-Bold' : 'Helvetica-Bold').fontSize(8).fillColor('#1C1A16')
+         .text(value, VAL_X, rowY, { width: VAL_W, align: 'right' });
       rowY += 15;
-    });
+    };
 
-    // Total band
+    // Subtotal row
+    summaryRow('SUBTOTAL', inr(allSubtotal));
+
+    // Coupon discount
+    if (appliedDiscount > 0) {
+      summaryRow('COUPON DISCOUNT', '- ' + inr(appliedDiscount));
+    }
+
+    // Cancelled items deduction (COD only)
+    if (codCancelDeduction > 0) {
+      summaryRow('CANCELLED ITEM(S)', '- ' + inr(codCancelDeduction));
+    }
+
+    // Shipping
+    summaryRow('SHIPPING', savedShipping === 0 ? 'FREE' : inr(savedShipping));
+
+    // Refund row
+    if (refundedAmt > 0) {
+      summaryRow('AMOUNT REFUNDED', '- ' + inr(refundedAmt));
+    }
+
+    // Muted GST note between shipping and total
+    const gstNoteText = `(Includes total GST of Rs. ${fmt2(totalGstAmt)})`;
+    doc.font('Helvetica').fontSize(7).fillColor('#A6A296')
+       .text(gstNoteText, TOT_X, rowY, { width: TOT_W, align: 'right' });
+    rowY += 14;
+
+    // Total payable band
     rowY += 4;
     doc.rect(TOT_X - 10, rowY, TOT_W + 10, 38).fill('#1C1A16');
     const totalBandLabel = netPayable === 0 ? 'NET PAYABLE (FULLY SETTLED)' : 'TOTAL PAYABLE';
     doc.font('Helvetica').fontSize(8).fillColor('#A6A296')
        .text(totalBandLabel, TOT_X, rowY + 8, { characterSpacing: 1.5 });
     doc.font('Helvetica-Bold').fontSize(13).fillColor('#F4F0E6')
-       .text(inr(netPayable), COL.total, rowY + 10, { width: COL.totalW, align: 'right' });
+       .text(inr(netPayable), VAL_X, rowY + 10, { width: VAL_W, align: 'right' });
+
+    // ── LEGAL TAX BREAKDOWN TABLE ─────────────────────────────────────────────
+    rowY += 55;
+    doc.moveTo(L, rowY).lineTo(L + PAGE_W, rowY).strokeColor('#E0DDD8').lineWidth(0.8).stroke();
+    rowY += 10;
+
+    doc.font('Helvetica').fontSize(7).fillColor('#6B675E')
+       .text('TAX BREAKDOWN (FOR COMPLIANCE)', L, rowY, { characterSpacing: 1.5 });
+    rowY += 12;
+
+    // Tax breakdown table background
+    doc.rect(L, rowY, PAGE_W, 20).fill('#F8F7F5');
+
+    if (isIntraState) {
+      // Intra-State: CGST + SGST
+      const taxW = PAGE_W / 6;
+      const cols = [L, L + taxW, L + taxW * 2, L + taxW * 3, L + taxW * 4, L + taxW * 5];
+      const headers = ['TAXABLE VALUE', 'CGST RATE %', 'CGST AMT', 'SGST RATE %', 'SGST AMT', 'TOTAL TAX'];
+
+      headers.forEach((h, i) => {
+        doc.font('Helvetica').fontSize(6.5).fillColor('#6B675E')
+           .text(h, cols[i] + 2, rowY + 6, { width: taxW - 4, align: i > 0 ? 'right' : 'left', characterSpacing: 0.5 });
+      });
+
+      rowY += 20;
+      doc.rect(L, rowY, PAGE_W, 18).fill('#FFFFFF');
+
+      const halfGst = 9; // CGST 9% + SGST 9% = 18%
+      const values = [
+        inr(totalTaxableAmt),
+        halfGst.toFixed(1) + '%',
+        inr(cgstAmt),
+        halfGst.toFixed(1) + '%',
+        inr(sgstAmt),
+        inr(totalGstAmt),
+      ];
+      values.forEach((v, i) => {
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#1C1A16')
+           .text(v, cols[i] + 2, rowY + 5, { width: taxW - 4, align: i > 0 ? 'right' : 'left' });
+      });
+    } else {
+      // Inter-State: IGST
+      const taxW = PAGE_W / 4;
+      const cols = [L, L + taxW, L + taxW * 2, L + taxW * 3];
+      const headers = ['TAXABLE VALUE', 'IGST RATE %', 'IGST AMT', 'TOTAL TAX'];
+
+      headers.forEach((h, i) => {
+        doc.font('Helvetica').fontSize(6.5).fillColor('#6B675E')
+           .text(h, cols[i] + 2, rowY + 6, { width: taxW - 4, align: i > 0 ? 'right' : 'left', characterSpacing: 0.5 });
+      });
+
+      rowY += 20;
+      doc.rect(L, rowY, PAGE_W, 18).fill('#FFFFFF');
+
+      const igstRate = 18; // flat 18% IGST for inter-state
+      const values = [
+        inr(totalTaxableAmt),
+        igstRate.toFixed(1) + '%',
+        inr(igstAmt),
+        inr(igstAmt),
+      ];
+      values.forEach((v, i) => {
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#1C1A16')
+           .text(v, cols[i] + 2, rowY + 5, { width: taxW - 4, align: i > 0 ? 'right' : 'left' });
+      });
+    }
+
+    rowY += 18;
+    doc.moveTo(L, rowY).lineTo(L + PAGE_W, rowY).strokeColor('#E0DDD8').lineWidth(0.5).stroke();
+
+    // Tax type label (intra / inter state)
+    rowY += 6;
+    const taxTypeLabel = isIntraState
+      ? 'Intra-State Supply  ·  CGST 9% + SGST 9%'
+      : 'Inter-State Supply  ·  IGST 18%';
+    doc.font('Helvetica').fontSize(7).fillColor('#A6A296')
+       .text(taxTypeLabel, L, rowY, { align: 'center', width: PAGE_W });
 
     // ── FOOTER ────────────────────────────────────────────────────────────────
-    rowY += 70;
+    rowY += 22;
     doc.moveTo(L, rowY).lineTo(L + PAGE_W, rowY).strokeColor('#E0DDD8').lineWidth(1).stroke();
     rowY += 14;
     doc.font('Helvetica').fontSize(8).fillColor('#6B675E')
