@@ -88,25 +88,74 @@ export const checkProductSku = async (req, res) => {
 function validateProductInput(data, imageCount) {
   const errors = {};
 
-  if (!data.name || !data.name.trim()) errors.name = 'Product name is required.';
-  if (!data.sku || !data.sku.trim()) errors.sku = 'SKU is required.';
-  if (!data.full_description || !data.full_description.trim()) {
-    errors.full_description = 'Product description is required.';
+  // 1. Name validation
+  const name = (data.name || '').trim();
+  if (!name) {
+    errors.name = 'Product name is required.';
+  } else if (name.length < 3 || name.length > 100) {
+    errors.name = 'Product name must be between 3 and 100 characters.';
+  } else if ((name.match(/[a-zA-Z]/g) || []).length < 3) {
+    errors.name = 'Product name must contain letters (symbols or numbers only are not allowed).';
+  } else if (!/^[a-zA-Z0-9\s&',.\-()/]+$/.test(name)) {
+    errors.name = "Product name contains invalid characters. Only letters, numbers, spaces, and (&, ', ., -, /, ()) are allowed.";
   }
+
+  // 2. SKU validation
+  const sku = (data.sku || '').trim().toUpperCase();
+  if (!sku) {
+    errors.sku = 'SKU is required.';
+  } else if (sku.length < 3 || sku.length > 30) {
+    errors.sku = 'SKU must be between 3 and 30 characters.';
+  } else if ((sku.match(/[A-Z0-9]/g) || []).length < 2) {
+    errors.sku = 'SKU must contain letters or numbers (e.g. CHANEL-CN-50ML).';
+  } else if (!/^[A-Z0-9]+([-_][A-Z0-9]+)*$/.test(sku)) {
+    errors.sku = 'SKU must start and end with letters or numbers, using only single hyphens or underscores in between.';
+  }
+
+  // 3. Description validation
+  const desc = (data.full_description || '').trim();
+  if (!desc) {
+    errors.full_description = 'Product description is required.';
+  } else if (desc.length < 15) {
+    errors.full_description = 'Product description must be at least 15 characters.';
+  } else if ((desc.match(/[a-zA-Z]/g) || []).length < 10) {
+    errors.full_description = 'Product description must contain meaningful text with letters.';
+  }
+
+  // 4. Category & Brand
   if (!data.category_id) errors.category_id = 'Please select a category.';
   if (!data.brand_id) errors.brand_id = 'Please select a brand.';
 
-  if (!data.variant_concentration || !data.variant_concentration.trim()) {
+  // 5. Variant validations
+  const concentration = (data.variant_concentration || '').trim();
+  if (!concentration) {
     errors.variant_concentration = 'Concentration is required.';
+  } else if (concentration.length < 2 || !/[a-zA-Z]/.test(concentration)) {
+    errors.variant_concentration = 'Please enter a valid concentration (e.g. Eau de Parfum).';
   }
-  if (!data.variant_size_ml || Number(data.variant_size_ml) <= 0) {
-    errors.variant_size_ml = 'Size is required.';
+
+  const size = Number(data.variant_size_ml);
+  if (!data.variant_size_ml || isNaN(size) || size <= 0 || !Number.isInteger(size)) {
+    errors.variant_size_ml = 'Size must be a positive integer in ml (e.g. 50, 100).';
   }
-  if (data.variant_quantity === undefined || data.variant_quantity === '' || Number(data.variant_quantity) < 0) {
-    errors.variant_quantity = 'Stock level is required.';
+
+  const qty = Number(data.variant_quantity);
+  if (data.variant_quantity === undefined || data.variant_quantity === '' || isNaN(qty) || qty < 0 || !Number.isInteger(qty)) {
+    errors.variant_quantity = 'Stock level must be a non-negative integer (0 or more).';
   }
-  if (!data.variant_price || Number(data.variant_price) <= 0) {
-    errors.variant_price = 'Variant price is required.';
+
+  const price = Number(data.variant_price);
+  if (!data.variant_price || isNaN(price) || price <= 0) {
+    errors.variant_price = 'Variant price must be greater than 0.';
+  }
+
+  if (data.variant_sale_price !== undefined && data.variant_sale_price !== '') {
+    const salePrice = Number(data.variant_sale_price);
+    if (isNaN(salePrice) || salePrice <= 0) {
+      errors.variant_sale_price = 'Sale price must be greater than 0.';
+    } else if (salePrice >= price) {
+      errors.variant_sale_price = 'Sale price must be less than regular price.';
+    }
   }
 
   if (imageCount < 3) errors.images = 'At least 3 product images are required.';
@@ -417,9 +466,37 @@ export const updateProduct = async (req, res) => {
     }
 
     const errors = {};
-    if (!name || !name.trim()) errors.name = 'Product name is required.';
-    if (!sku || !sku.trim()) errors.sku = 'SKU is required.';
-    if (!full_description || !full_description.trim()) errors.full_description = 'Product description is required.';
+    const trimmedNameVal = (name || '').trim();
+    if (!trimmedNameVal) {
+      errors.name = 'Product name is required.';
+    } else if (trimmedNameVal.length < 3 || trimmedNameVal.length > 100) {
+      errors.name = 'Product name must be between 3 and 100 characters.';
+    } else if ((trimmedNameVal.match(/[a-zA-Z]/g) || []).length < 3) {
+      errors.name = 'Product name must contain letters (symbols or numbers only are not allowed).';
+    } else if (!/^[a-zA-Z0-9\s&',.\-()/]+$/.test(trimmedNameVal)) {
+      errors.name = "Product name contains invalid characters. Only letters, numbers, spaces, and (&, ', ., -, /, ()) are allowed.";
+    }
+
+    const trimmedSkuVal = (sku || '').trim().toUpperCase();
+    if (!trimmedSkuVal) {
+      errors.sku = 'SKU is required.';
+    } else if (trimmedSkuVal.length < 3 || trimmedSkuVal.length > 30) {
+      errors.sku = 'SKU must be between 3 and 30 characters.';
+    } else if ((trimmedSkuVal.match(/[A-Z0-9]/g) || []).length < 2) {
+      errors.sku = 'SKU must contain letters or numbers (e.g. CHANEL-CN-50ML).';
+    } else if (!/^[A-Z0-9]+([-_][A-Z0-9]+)*$/.test(trimmedSkuVal)) {
+      errors.sku = 'SKU must start and end with letters or numbers, using only single hyphens or underscores in between.';
+    }
+
+    const trimmedDescVal = (full_description || '').trim();
+    if (!trimmedDescVal) {
+      errors.full_description = 'Product description is required.';
+    } else if (trimmedDescVal.length < 15) {
+      errors.full_description = 'Product description must be at least 15 characters.';
+    } else if ((trimmedDescVal.match(/[a-zA-Z]/g) || []).length < 10) {
+      errors.full_description = 'Product description must contain meaningful text with letters.';
+    }
+
     if (!category_id) errors.category_id = 'Please select a category.';
     if (!brand_id) errors.brand_id = 'Please select a brand.';
     if (images.length < 3) errors.images = 'At least 3 product images are required.';
