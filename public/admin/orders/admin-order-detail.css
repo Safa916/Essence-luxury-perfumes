@@ -257,6 +257,16 @@ body { font-family: 'Space Grotesk', sans-serif; background: #f8f8f8; color: #11
   color: #555;
   margin-bottom: 0.5rem;
 }
+.aod-totals-gst-note {
+  text-align: right;
+  font-size: 0.74rem;
+  color: #8e8e93;
+  font-style: italic;
+  margin-top: -2px;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
 .aod-totals-total {
   display: flex;
   justify-content: space-between;

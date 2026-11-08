@@ -196,9 +196,13 @@
             <% } %>
             <div class="aod-totals-row"><span>Subtotal</span><span><%= o.subtotal %></span></div>
             <div class="aod-totals-row"><span>Shipping</span><span><%= o.shipping %></span></div>
-            <div class="aod-totals-row"><span><%= o.isLegacyTaxAdded ? 'Tax (GST)' : 'Included GST' %></span><span><%= o.tax %></span></div>
             <% if (o.discount) { %>
-              <div class="aod-totals-row"><span>Discount</span><span>− <%= o.discount %></span></div>
+              <div class="aod-totals-row" style="color:#16a34a;"><span>Discount</span><span>− <%= o.discount %></span></div>
+            <% } %>
+            <% if (o.isLegacyTaxAdded && o.tax) { %>
+              <div class="aod-totals-row"><span>Tax (GST)</span><span><%= o.tax %></span></div>
+            <% } else if (o.tax) { %>
+              <div class="aod-totals-gst-note">(Includes <%= o.tax %> GST)</div>
             <% } %>
             <div class="aod-totals-total"><span>TOTAL</span><span><%= o.total %></span></div>
           </div>
@@ -350,6 +354,8 @@
   </dialog>
   <% } %>
 
+  <!-- SweetAlert2 for confirmation dialogs -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     // Open status modal
     const openBtn = document.getElementById('openStatusModal');
@@ -426,19 +432,65 @@
       })[m]);
     }
 
-    // Handle single item status change via AJAX
+    // Handle single item status change via AJAX (with SweetAlert confirmation)
     async function handleItemStatusChange(select) {
       const newStatus = select.value;
       if (!newStatus) return;
 
+      // Status display labels for confirmation dialog
+      const STATUS_LABELS = {
+        processing: 'Processing',
+        shipped: 'Shipped',
+        out_for_delivery: 'Out for Delivery',
+        delivered: 'Delivered',
+        cancelled: 'Cancelled',
+      };
+      const statusLabel = STATUS_LABELS[newStatus] || newStatus;
+
       let cancelReason = '';
+
       if (newStatus === 'cancelled') {
-        const reason = prompt('Please enter a cancellation reason for this item:');
-        if (reason === null) {
+        // For cancelled: ask reason inside the confirmation
+        const { value: reason, isConfirmed } = await Swal.fire({
+          title: 'Cancel this item?',
+          input: 'text',
+          inputLabel: 'Cancellation reason',
+          inputPlaceholder: 'e.g. Out of stock, customer requested...',
+          inputAttributes: { autocomplete: 'off' },
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, cancel it',
+          confirmButtonColor: '#d93025',
+          cancelButtonText: 'Go back',
+          cancelButtonColor: '#6b7280',
+          preConfirm: (val) => {
+            if (!val || !val.trim()) {
+              Swal.showValidationMessage('Please enter a reason');
+            }
+            return val;
+          },
+        });
+        if (!isConfirmed) {
           select.value = '';
           return;
         }
-        cancelReason = reason.trim() || 'Cancelled by Admin';
+        cancelReason = (reason || '').trim() || 'Cancelled by Admin';
+      } else {
+        // For all other transitions: simple confirmation
+        const result = await Swal.fire({
+          title: `Move to ${statusLabel}?`,
+          text: `Are you sure you want to change this item's status to "${statusLabel}"? This action cannot be undone.`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#111827',
+          cancelButtonColor: '#6b7280',
+          confirmButtonText: `Yes, move to ${statusLabel}`,
+          cancelButtonText: 'Cancel',
+        });
+        if (!result.isConfirmed) {
+          select.value = '';
+          return;
+        }
       }
 
       const form = select.closest('form');
@@ -506,10 +558,28 @@
     if (statusForm) {
       statusForm.addEventListener('submit', async function(e) {
         e.preventDefault();
+        const formData = new FormData(statusForm);
+        const targetStatus = formData.get('status') || '';
+        const targetLabel = targetStatus.replace(/_/g, ' ').toUpperCase();
+
+        const confirmMsg = `Are you sure you want to update all active items in this order to "${targetLabel}"?`;
+        const confirmed = typeof Swal !== 'undefined'
+          ? (await Swal.fire({
+              title: 'Update All Items?',
+              text: confirmMsg,
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonColor: '#111827',
+              cancelButtonColor: '#6b7280',
+              confirmButtonText: 'Yes, update all',
+              cancelButtonText: 'Cancel'
+            })).isConfirmed
+          : window.confirm(confirmMsg);
+
+        if (!confirmed) return;
+
         const submitBtn = statusForm.querySelector('.aod-modal-submit');
         if (submitBtn) submitBtn.disabled = true;
-
-        const formData = new FormData(statusForm);
         const payload = {
           status: formData.get('status'),
           cancel_reason: formData.get('cancel_reason') || '',
