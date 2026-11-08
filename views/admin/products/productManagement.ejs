@@ -193,6 +193,10 @@
     </div>
   </div>
 
+  <script>
+    // Clear product creation image cache upon navigating to product management
+    try { sessionStorage.removeItem('addProduct_images'); } catch (_) {}
+  </script>
   <script src="/admin/js/productManagement.js"></script>
 </body>
 </html>

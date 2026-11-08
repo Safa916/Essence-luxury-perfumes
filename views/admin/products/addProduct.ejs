@@ -461,7 +461,20 @@
           }
         }
       });
+
+      // ── Image persistence: restore on server-error re-render ──────────────
+      <% if (typeof errors !== 'undefined' && errors && Object.keys(errors).length > 0) { %>
+        // Server returned validation errors — restore previously selected images
+        if (typeof window.restoreImagesFromSession === 'function') {
+          window.restoreImagesFromSession();
+        }
+      <% } else { %>
+        // Fresh page load (no errors) — clear any stale saved images
+        sessionStorage.removeItem('addProduct_images');
+      <% } %>
     });
+
+
   </script>
 
 </body>

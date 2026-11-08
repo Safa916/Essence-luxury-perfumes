@@ -160,6 +160,7 @@
       if (inputs[idx]) inputs[idx].remove();
 
       slot.remove();
+      saveImagesToSession();
       // Restore an empty placeholder if we dropped below the min
       if (countNewSlots() < MIN_IMAGES && MODE === 'add') {
         const empty = document.createElement('div');
@@ -186,6 +187,71 @@
     inp.files = dt.files;
     document.querySelector('.product-form').appendChild(inp);
   }
+
+
+  // ── SessionStorage image persistence (add mode) ───────────────────────────
+
+  /**
+   * Serialises all current croppedFiles as base64 data-URLs and saves them
+   * in sessionStorage so they can be restored if the server re-renders the
+   * page with validation errors.
+   * Only active in add mode — edit mode has its own existing-images flow.
+   */
+  function saveImagesToSession() {
+    if (MODE !== 'add') return;
+    const promises = croppedFiles.map(function (f) {
+      return new Promise(function (resolve) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          resolve({ name: f.name, type: f.type, dataUrl: e.target.result });
+        };
+        reader.readAsDataURL(f);
+      });
+    });
+    Promise.all(promises).then(function (arr) {
+      try {
+        sessionStorage.setItem('addProduct_images', JSON.stringify(arr));
+      } catch (_) { /* quota exceeded — silently skip */ }
+    });
+  }
+
+  /**
+   * Restores previously saved images from sessionStorage.
+   * Called from addProduct.ejs when the page is re-rendered with errors.
+   * Exposed as window.restoreImagesFromSession so the EJS script tag can call it.
+   */
+  window.restoreImagesFromSession = function restoreImagesFromSession() {
+    if (MODE !== 'add') return;
+    const stored = sessionStorage.getItem('addProduct_images');
+    if (!stored) return;
+    let arr;
+    try { arr = JSON.parse(stored); } catch (_) {
+      sessionStorage.removeItem('addProduct_images');
+      return;
+    }
+    if (!Array.isArray(arr) || !arr.length) return;
+
+    arr.forEach(function (item) {
+      fetch(item.dataUrl)
+        .then(function (r) { return r.blob(); })
+        .then(function (blob) {
+          const file = new File([blob], item.name, { type: item.type || 'image/jpeg' });
+          croppedFiles.push(file);
+          injectFileInput(file);
+          const url = URL.createObjectURL(file);
+          addPreviewThumb(file, url);
+        })
+        .catch(function () { /* ignore individual image restore failures */ });
+    });
+  };
+
+  /**
+   * Clears the saved images from sessionStorage.
+   * Called by addProduct.ejs on the submit event (form is about to navigate away).
+   */
+  window.clearProductImageSession = function () {
+    sessionStorage.removeItem('addProduct_images');
+  };
 
   // ── Cropper pipeline ──────────────────────────────────────────────────────
 
@@ -259,6 +325,7 @@
       injectFileInput(croppedFile);
       const url = URL.createObjectURL(croppedFile);
       addPreviewThumb(croppedFile, url);
+      saveImagesToSession();
       processNextInQueue();
     }
 
@@ -273,6 +340,7 @@
       croppedFiles.push(file);
       injectFileInput(file);
       addPreviewThumb(file, url);
+      saveImagesToSession();
       processNextInQueue();
     }
   }
