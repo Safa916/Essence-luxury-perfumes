@@ -131,16 +131,25 @@ export const createOffer = async (req, res) => {
       status,
     } = req.body;
 
-    // Validations
-    if (!name || !name.trim()) {
+    // Name validations
+    const trimmedName = (name || '').trim();
+    if (!trimmedName) {
       return res.redirect('/admin/offers?error=name_required');
     }
+    if (trimmedName.length < 3 || trimmedName.length > 100) {
+      return res.redirect('/admin/offers?error=name_length');
+    }
+    if (!/[a-zA-Z]/.test(trimmedName)) {
+      return res.redirect('/admin/offers?error=name_invalid');
+    }
 
+    // Discount value validation
     const val = parseFloat(discount_value);
     if (isNaN(val) || val <= 0 || val > 90) {
       return res.redirect('/admin/offers?error=percentage_out_of_range');
     }
 
+    // Apply to & Target validations
     if (!['product', 'category'].includes(apply_to)) {
       return res.redirect('/admin/offers?error=invalid_apply_to');
     }
@@ -149,11 +158,44 @@ export const createOffer = async (req, res) => {
       return res.redirect('/admin/offers?error=target_required');
     }
 
+    // Purchase & discount amount validations
+    const minPurchase = minimum_purchase_amount !== undefined && minimum_purchase_amount !== ''
+      ? parseFloat(minimum_purchase_amount)
+      : 0;
+    if (isNaN(minPurchase) || minPurchase < 0) {
+      return res.redirect('/admin/offers?error=min_purchase_invalid');
+    }
+
+    let maxDiscount = null;
+    if (maximum_discount_amount !== undefined && maximum_discount_amount !== '') {
+      maxDiscount = parseFloat(maximum_discount_amount);
+      if (isNaN(maxDiscount) || maxDiscount <= 0) {
+        return res.redirect('/admin/offers?error=max_discount_invalid');
+      }
+    }
+
+    // Date validations
     let startDateObj = start_date ? new Date(start_date) : null;
     let endDateObj = end_date ? new Date(end_date) : null;
 
+    if (startDateObj && isNaN(startDateObj.getTime())) {
+      return res.redirect('/admin/offers?error=invalid_dates');
+    }
+    if (endDateObj && isNaN(endDateObj.getTime())) {
+      return res.redirect('/admin/offers?error=invalid_dates');
+    }
     if (startDateObj && endDateObj && endDateObj < startDateObj) {
       return res.redirect('/admin/offers?error=invalid_dates');
+    }
+
+    const isActive = status === 'active' || status === 'true' || status === true || status === '1';
+
+    if (isActive && endDateObj) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (endDateObj < today) {
+        return res.redirect('/admin/offers?error=end_date_past');
+      }
     }
 
     const code = (internal_code || '').trim().toUpperCase() || `OFF-${Date.now().toString(36).toUpperCase()}`;
@@ -163,8 +205,6 @@ export const createOffer = async (req, res) => {
     if (existingCode) {
       return res.redirect('/admin/offers?error=code_exists');
     }
-
-    const isActive = status === 'active' || status === 'true' || status === true || status === '1';
 
     // If activating an offer for a target, deactivate any older active offers on that same target
     if (isActive) {
@@ -180,14 +220,14 @@ export const createOffer = async (req, res) => {
     }
 
     await Offer.create({
-      name: name.trim(),
+      name: trimmedName,
       internal_code: code,
       discount_type: 'percentage',
       discount_value: val,
       apply_to,
       target_ids: [new mongoose.Types.ObjectId(target_id)],
-      minimum_purchase_amount: parseFloat(minimum_purchase_amount) || 0,
-      maximum_discount_amount: parseFloat(maximum_discount_amount) || null,
+      minimum_purchase_amount: minPurchase,
+      maximum_discount_amount: maxDiscount,
       start_date: startDateObj,
       end_date: endDateObj,
       status: isActive ? 'active' : 'draft',
@@ -257,24 +297,67 @@ export const updateOffer = async (req, res) => {
       status,
     } = req.body;
 
-    if (!name || !name.trim()) {
+    // Name validations
+    const trimmedName = (name || '').trim();
+    if (!trimmedName) {
       return res.redirect(`/admin/offers/${req.params.id}/edit?error=name_required`);
     }
+    if (trimmedName.length < 3 || trimmedName.length > 100) {
+      return res.redirect(`/admin/offers/${req.params.id}/edit?error=name_length`);
+    }
+    if (!/[a-zA-Z]/.test(trimmedName)) {
+      return res.redirect(`/admin/offers/${req.params.id}/edit?error=name_invalid`);
+    }
 
+    // Discount value validation
     const val = parseFloat(discount_value);
     if (isNaN(val) || val <= 0 || val > 90) {
       return res.redirect(`/admin/offers/${req.params.id}/edit?error=percentage_out_of_range`);
     }
 
+    // Target validation
     if (!target_id || !mongoose.Types.ObjectId.isValid(target_id)) {
       return res.redirect(`/admin/offers/${req.params.id}/edit?error=target_required`);
     }
 
+    // Purchase & discount amount validations
+    const minPurchase = minimum_purchase_amount !== undefined && minimum_purchase_amount !== ''
+      ? parseFloat(minimum_purchase_amount)
+      : 0;
+    if (isNaN(minPurchase) || minPurchase < 0) {
+      return res.redirect(`/admin/offers/${req.params.id}/edit?error=min_purchase_invalid`);
+    }
+
+    let maxDiscount = null;
+    if (maximum_discount_amount !== undefined && maximum_discount_amount !== '') {
+      maxDiscount = parseFloat(maximum_discount_amount);
+      if (isNaN(maxDiscount) || maxDiscount <= 0) {
+        return res.redirect(`/admin/offers/${req.params.id}/edit?error=max_discount_invalid`);
+      }
+    }
+
+    // Date validations
     let startDateObj = start_date ? new Date(start_date) : null;
     let endDateObj = end_date ? new Date(end_date) : null;
 
+    if (startDateObj && isNaN(startDateObj.getTime())) {
+      return res.redirect(`/admin/offers/${req.params.id}/edit?error=invalid_dates`);
+    }
+    if (endDateObj && isNaN(endDateObj.getTime())) {
+      return res.redirect(`/admin/offers/${req.params.id}/edit?error=invalid_dates`);
+    }
     if (startDateObj && endDateObj && endDateObj < startDateObj) {
       return res.redirect(`/admin/offers/${req.params.id}/edit?error=invalid_dates`);
+    }
+
+    const isActive = status === 'active' || status === 'true' || status === true || status === '1';
+
+    if (isActive && endDateObj) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (endDateObj < today) {
+        return res.redirect(`/admin/offers/${req.params.id}/edit?error=end_date_past`);
+      }
     }
 
     const code = (internal_code || '').trim().toUpperCase();
@@ -285,8 +368,6 @@ export const updateOffer = async (req, res) => {
       }
       offer.internal_code = code;
     }
-
-    const isActive = status === 'active' || status === 'true' || status === true || status === '1';
 
     if (isActive) {
       await Offer.updateMany(
@@ -301,13 +382,13 @@ export const updateOffer = async (req, res) => {
       );
     }
 
-    offer.name = name.trim();
+    offer.name = trimmedName;
     offer.discount_type = 'percentage';
     offer.discount_value = val;
     offer.apply_to = apply_to;
     offer.target_ids = [new mongoose.Types.ObjectId(target_id)];
-    offer.minimum_purchase_amount = parseFloat(minimum_purchase_amount) || 0;
-    offer.maximum_discount_amount = parseFloat(maximum_discount_amount) || null;
+    offer.minimum_purchase_amount = minPurchase;
+    offer.maximum_discount_amount = maxDiscount;
     offer.start_date = startDateObj;
     offer.end_date = endDateObj;
     offer.status = isActive ? 'active' : 'draft';

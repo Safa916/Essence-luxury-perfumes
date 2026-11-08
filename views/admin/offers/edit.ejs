@@ -79,7 +79,8 @@
     }
     .btn-cancel:hover { background:#d1d5db; }
 
-    .field-error { font-size:0.72rem; color:#dc2626; margin-top:0.3rem; display:none; }
+    .field-error { font-size:0.72rem; color:#dc2626; margin-top:0.3rem; display:none; font-weight:500; }
+    .form-group input.is-invalid, .form-group select.is-invalid { border-color:#dc2626 !important; background-color:#fef2f2 !important; }
   </style>
 </head>
 <body>
@@ -91,7 +92,24 @@
         <h2 class="edit-title">Edit Offer</h2>
         <p class="edit-sub">Update promotional campaign details</p>
 
-        <form method="POST" action="/admin/offers/<%= offer._id %>/edit" id="editOfferForm">
+        <% if (typeof query !== 'undefined' && query && query.error) { %>
+          <div class="flash flash-error" style="background:#fef2f2; border-left:3px solid #ef4444; color:#991b1b; padding:0.75rem 1rem; margin-bottom:1.5rem; font-size:0.82rem; border-radius:3px;">
+            <%= query.error === 'name_required' ? 'Offer name is required.' :
+                query.error === 'name_length' ? 'Offer name must be between 3 and 100 characters.' :
+                query.error === 'name_invalid' ? 'Offer name must contain letters.' :
+                query.error === 'invalid_discount' ? 'Valid discount amount or percentage is required.' :
+                query.error === 'percentage_out_of_range' ? 'Discount percentage must be between 1% and 90%.' :
+                query.error === 'target_required' ? 'Please select a valid product or category.' :
+                query.error === 'min_purchase_invalid' ? 'Minimum purchase amount cannot be negative.' :
+                query.error === 'max_discount_invalid' ? 'Maximum discount amount must be greater than 0.' :
+                query.error === 'invalid_dates' ? 'End date cannot be earlier than start date.' :
+                query.error === 'end_date_past' ? 'Active offer end date cannot be in the past.' :
+                query.error === 'code_exists' ? 'An offer with this code already exists.' :
+                'An error occurred. Please check your inputs.' %>
+          </div>
+        <% } %>
+
+        <form method="POST" action="/admin/offers/<%= offer._id %>/edit" id="editOfferForm" novalidate>
           <div class="form-group">
             <label>Offer Name *</label>
             <input type="text" name="name" id="offerName" value="<%= offer.name %>" required maxlength="100">
@@ -147,14 +165,16 @@
             </div>
             <div class="form-group">
               <label>Minimum Purchase (₹)</label>
-              <input type="number" name="minimum_purchase_amount" step="0.01" min="0" value="<%= offer.minimum_purchase_amount || '' %>" placeholder="0.00">
+              <input type="number" name="minimum_purchase_amount" id="minPurchase" step="0.01" min="0" value="<%= offer.minimum_purchase_amount || '' %>" placeholder="0.00">
+              <div class="field-error" id="minPurchaseError"></div>
             </div>
           </div>
 
           <div class="form-group" id="maxDiscountGroup">
             <label>Maximum Discount (₹)</label>
-            <input type="number" name="maximum_discount_amount" step="0.01" min="0" value="<%= offer.maximum_discount_amount || '' %>" placeholder="0.00">
+            <input type="number" name="maximum_discount_amount" id="maxDiscount" step="0.01" min="0" value="<%= offer.maximum_discount_amount || '' %>" placeholder="0.00">
             <small style="font-size:0.7rem; color:#6b7280;">*Set max discount amount for percentage offers</small>
+            <div class="field-error" id="maxDiscountError"></div>
           </div>
 
           <div class="form-row">
@@ -225,40 +245,175 @@
       });
     });
 
-    document.getElementById('editOfferForm').addEventListener('submit', function(e) {
-      let hasErr = false;
-      const name = document.getElementById('offerName').value.trim();
-      const nameErr = document.getElementById('nameError');
-      if (!name) {
-        nameErr.textContent = 'Offer name cannot be blank';
+    // Client-side validation helpers
+    const nameInput = document.getElementById('offerName');
+    const nameErr = document.getElementById('nameError');
+    const targetSel = document.getElementById('targetSelect');
+    const targetErr = document.getElementById('targetError');
+    const discValInput = document.getElementById('discountValue');
+    const discErr = document.getElementById('discountError');
+    const minPurchInput = document.getElementById('minPurchase');
+    const minPurchErr = document.getElementById('minPurchaseError');
+    const maxDiscInput = document.getElementById('maxDiscount');
+    const maxDiscErr = document.getElementById('maxDiscountError');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const dateErr = document.getElementById('dateError');
+    const activeCheckbox = document.querySelector('input[name="status"]');
+
+    function validateName() {
+      const val = nameInput.value.trim();
+      nameErr.style.display = 'none';
+      nameInput.classList.remove('is-invalid');
+
+      if (!val) {
+        nameErr.textContent = 'Offer name is required.';
         nameErr.style.display = 'block';
-        hasErr = true;
-      } else {
-        nameErr.style.display = 'none';
+        nameInput.classList.add('is-invalid');
+        return false;
       }
+      if (val.length < 3) {
+        nameErr.textContent = 'Offer name must be at least 3 characters.';
+        nameErr.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        return false;
+      }
+      if (val.length > 100) {
+        nameErr.textContent = 'Offer name cannot exceed 100 characters.';
+        nameErr.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        return false;
+      }
+      if (!/[a-zA-Z]/.test(val)) {
+        nameErr.textContent = 'Offer name must contain letters.';
+        nameErr.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        return false;
+      }
+      return true;
+    }
 
-      const target = document.getElementById('targetSelect').value;
-      const targetErr = document.getElementById('targetError');
-      if (!target) {
-        targetErr.textContent = 'Please select a product or category';
+    function validateTarget() {
+      const val = targetSel.value;
+      targetErr.style.display = 'none';
+      targetSel.classList.remove('is-invalid');
+
+      if (!val) {
+        targetErr.textContent = 'Please select a product or category.';
         targetErr.style.display = 'block';
-        hasErr = true;
-      } else {
-        targetErr.style.display = 'none';
+        targetSel.classList.add('is-invalid');
+        return false;
       }
+      return true;
+    }
 
-      const sDate = document.getElementById('startDate').value;
-      const eDate = document.getElementById('endDate').value;
-      const dateErr = document.getElementById('dateError');
+    function validateDiscount() {
+      const val = parseFloat(discValInput.value);
+      discErr.style.display = 'none';
+      discValInput.classList.remove('is-invalid');
+
+      if (isNaN(val) || discValInput.value === '') {
+        discErr.textContent = 'Discount value is required.';
+        discErr.style.display = 'block';
+        discValInput.classList.add('is-invalid');
+        return false;
+      }
+      if (val <= 0 || val > 90) {
+        discErr.textContent = 'Discount percentage must be between 1% and 90%.';
+        discErr.style.display = 'block';
+        discValInput.classList.add('is-invalid');
+        return false;
+      }
+      return true;
+    }
+
+    function validateMinPurchase() {
+      minPurchErr.style.display = 'none';
+      minPurchInput.classList.remove('is-invalid');
+
+      if (minPurchInput.value !== '') {
+        const val = parseFloat(minPurchInput.value);
+        if (isNaN(val) || val < 0) {
+          minPurchErr.textContent = 'Minimum purchase cannot be negative.';
+          minPurchErr.style.display = 'block';
+          minPurchInput.classList.add('is-invalid');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function validateMaxDiscount() {
+      maxDiscErr.style.display = 'none';
+      maxDiscInput.classList.remove('is-invalid');
+
+      if (maxDiscInput.value !== '') {
+        const val = parseFloat(maxDiscInput.value);
+        if (isNaN(val) || val <= 0) {
+          maxDiscErr.textContent = 'Maximum discount must be greater than 0.';
+          maxDiscErr.style.display = 'block';
+          maxDiscInput.classList.add('is-invalid');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function validateDates() {
+      dateErr.style.display = 'none';
+      endDateInput.classList.remove('is-invalid');
+      startDateInput.classList.remove('is-invalid');
+
+      const sDate = startDateInput.value;
+      const eDate = endDateInput.value;
+
       if (sDate && eDate && new Date(eDate) < new Date(sDate)) {
-        dateErr.textContent = 'End date cannot be earlier than start date';
+        dateErr.textContent = 'End date cannot be earlier than start date.';
         dateErr.style.display = 'block';
-        hasErr = true;
-      } else {
-        dateErr.style.display = 'none';
+        endDateInput.classList.add('is-invalid');
+        return false;
       }
 
-      if (hasErr) e.preventDefault();
+      if (activeCheckbox && activeCheckbox.checked && eDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(eDate) < today) {
+          dateErr.textContent = 'Active offer end date cannot be in the past.';
+          dateErr.style.display = 'block';
+          endDateInput.classList.add('is-invalid');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    nameInput.addEventListener('input', validateName);
+    nameInput.addEventListener('blur', validateName);
+    targetSel.addEventListener('change', validateTarget);
+    discValInput.addEventListener('input', validateDiscount);
+    discValInput.addEventListener('blur', validateDiscount);
+    minPurchInput.addEventListener('input', validateMinPurchase);
+    maxDiscInput.addEventListener('input', validateMaxDiscount);
+    startDateInput.addEventListener('change', validateDates);
+    endDateInput.addEventListener('change', validateDates);
+
+    document.getElementById('editOfferForm').addEventListener('submit', function(e) {
+      const isNameOk = validateName();
+      const isTargetOk = validateTarget();
+      const isDiscOk = validateDiscount();
+      const isMinPurchOk = validateMinPurchase();
+      const isMaxDiscOk = validateMaxDiscount();
+      const isDateOk = validateDates();
+
+      if (!isNameOk || !isTargetOk || !isDiscOk || !isMinPurchOk || !isMaxDiscOk || !isDateOk) {
+        e.preventDefault();
+        if (!isNameOk) nameInput.focus();
+        else if (!isTargetOk) targetSel.focus();
+        else if (!isDiscOk) discValInput.focus();
+        else if (!isMinPurchOk) minPurchInput.focus();
+        else if (!isMaxDiscOk) maxDiscInput.focus();
+        else if (!isDateOk) endDateInput.focus();
+      }
     });
   </script>
 </body>

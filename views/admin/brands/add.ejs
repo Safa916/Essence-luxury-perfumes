@@ -199,6 +199,19 @@
       background: #333333;
     }
 
+    .field-error {
+      font-size: 0.72rem;
+      color: #dc2626;
+      margin-top: 6px;
+      display: none;
+      font-weight: 500;
+    }
+
+    .form-input.is-invalid {
+      border-color: #dc2626 !important;
+      background-color: #fef2f2 !important;
+    }
+
     .error-banner {
       background: #fff5f5;
       border-left: 3px solid #e53e3e;
@@ -232,19 +245,22 @@
       <% } %>
 
       <div class="bm-card">
-        <form action="/admin/brands/add" method="POST" id="addBrandForm">
+        <form action="/admin/brands/add" method="POST" id="addBrandForm" novalidate>
           <!-- Brand Name -->
           <div class="form-group">
-            <label for="brandName" class="form-label">Brand Name</label>
+            <label for="brandName" class="form-label">Brand Name *</label>
             <input
               type="text"
               name="name"
               id="brandName"
               class="form-input"
               placeholder="e.g. LATHAFA"
+              value="<%= typeof brand !== 'undefined' && brand ? brand.name : '' %>"
               required
+              maxlength="50"
               autocomplete="off"
             >
+            <div class="field-error" id="nameError"></div>
           </div>
 
           <!-- Brand Tagline / Subtitle -->
@@ -256,7 +272,10 @@
               id="brandTagline"
               class="form-input"
               placeholder="e.g. Only pour beaucoup, par chaque, pour toujours"
+              value="<%= typeof brand !== 'undefined' && brand ? brand.tagline : '' %>"
+              maxlength="150"
             >
+            <div class="field-error" id="taglineError"></div>
           </div>
 
           <!-- Active Visibility Status -->
@@ -266,7 +285,7 @@
               <p>Determine if this brand is visible in public storefronts and search results.</p>
             </div>
             <label class="switch">
-              <input type="checkbox" name="is_active" checked>
+              <input type="checkbox" name="is_active" <%= typeof brand === 'undefined' || !brand || brand.is_active ? 'checked' : '' %>>
               <span class="slider"></span>
             </label>
           </div>
@@ -281,5 +300,74 @@
     </div>
   </main>
 
+  <script>
+    const form = document.getElementById('addBrandForm');
+    const nameInput = document.getElementById('brandName');
+    const taglineInput = document.getElementById('brandTagline');
+    const nameError = document.getElementById('nameError');
+    const taglineError = document.getElementById('taglineError');
+
+    function validateName() {
+      const val = nameInput.value.trim();
+      nameError.style.display = 'none';
+      nameInput.classList.remove('is-invalid');
+
+      if (!val) {
+        nameError.textContent = 'Brand name is required.';
+        nameError.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        return false;
+      }
+      if (val.length < 2) {
+        nameError.textContent = 'Brand name must be at least 2 characters long.';
+        nameError.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        return false;
+      }
+      if (val.length > 50) {
+        nameError.textContent = 'Brand name cannot exceed 50 characters.';
+        nameError.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        return false;
+      }
+      if (!/^[a-zA-Z0-9\s'&.-]+$/.test(val) || !/[a-zA-Z]/.test(val)) {
+        nameError.textContent = 'Brand name must contain letters and only valid characters (letters, numbers, spaces, &, ', ., -).';
+        nameError.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        return false;
+      }
+      return true;
+    }
+
+    function validateTagline() {
+      const val = taglineInput.value.trim();
+      taglineError.style.display = 'none';
+      taglineInput.classList.remove('is-invalid');
+
+      if (val.length > 150) {
+        taglineError.textContent = 'Tagline cannot exceed 150 characters.';
+        taglineError.style.display = 'block';
+        taglineInput.classList.add('is-invalid');
+        return false;
+      }
+      return true;
+    }
+
+    nameInput.addEventListener('input', validateName);
+    nameInput.addEventListener('blur', validateName);
+    taglineInput.addEventListener('input', validateTagline);
+    taglineInput.addEventListener('blur', validateTagline);
+
+    form.addEventListener('submit', function(e) {
+      const isNameValid = validateName();
+      const isTaglineValid = validateTagline();
+
+      if (!isNameValid || !isTaglineValid) {
+        e.preventDefault();
+        if (!isNameValid) nameInput.focus();
+        else taglineInput.focus();
+      }
+    });
+  </script>
 </body>
 </html>

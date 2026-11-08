@@ -58,7 +58,12 @@ export const listBrands = async (req, res) => {
 
 // ── GET /admin/brands/add ─────────────────────────────────────────────────────
 export const renderAdd = (req, res) => {
-  res.render('admin/brands/add', { activePage: 'brand', admin: req.admin, errors: [] });
+  res.render('admin/brands/add', {
+    activePage: 'brand',
+    admin: req.admin,
+    errors: [],
+    brand: { name: '', tagline: '', is_active: true },
+  });
 };
 
 // ── POST /admin/brands/add ────────────────────────────────────────────────────
@@ -66,23 +71,47 @@ export const createBrand = async (req, res) => {
   try {
     const { name, tagline, is_active } = req.body;
     const errors = [];
+    const trimmedName = (name || '').trim();
+    const trimmedTagline = (tagline || '').trim();
+    const activeBool = is_active === 'on' || is_active === 'true' || is_active === true;
 
-    if (!name || !name.trim()) errors.push('Brand name is required.');
+    if (!trimmedName) {
+      errors.push('Brand name is required.');
+    } else if (trimmedName.length < 2) {
+      errors.push('Brand name must be at least 2 characters long.');
+    } else if (trimmedName.length > 50) {
+      errors.push('Brand name cannot exceed 50 characters.');
+    } else if (!/^[a-zA-Z0-9\s'&.-]+$/.test(trimmedName) || !/[a-zA-Z]/.test(trimmedName)) {
+      errors.push("Brand name must contain letters and only valid characters (letters, numbers, spaces, &, ', ., -).");
+    }
+
+    if (trimmedTagline && trimmedTagline.length > 150) {
+      errors.push('Brand tagline cannot exceed 150 characters.');
+    }
 
     // Slug uniqueness check
-    const slug = slugify(name || '');
-    const existing = await Brand.findOne({ slug });
-    if (existing) errors.push('A brand with this name already exists.');
+    const slug = slugify(trimmedName);
+    if (slug) {
+      const existing = await Brand.findOne({ slug });
+      if (existing) {
+        errors.push('A brand with this name already exists.');
+      }
+    }
 
     if (errors.length) {
-      return res.render('admin/brands/add', { activePage: 'brand', admin: req.admin, errors });
+      return res.render('admin/brands/add', {
+        activePage: 'brand',
+        admin: req.admin,
+        errors,
+        brand: { name: trimmedName, tagline: trimmedTagline, is_active: activeBool },
+      });
     }
 
     await Brand.create({
-      name: name.trim(),
+      name: trimmedName,
       slug,
-      tagline: (tagline || '').trim(),
-      is_active: is_active === 'on' || is_active === 'true' || is_active === true,
+      tagline: trimmedTagline,
+      is_active: activeBool,
     });
 
     res.redirect('/admin/brands');
@@ -112,30 +141,45 @@ export const updateBrand = async (req, res) => {
 
     const { name, tagline, is_active } = req.body;
     const errors = [];
+    const trimmedName = (name || '').trim();
+    const trimmedTagline = (tagline || '').trim();
+    const activeBool = is_active === 'on' || is_active === 'true' || is_active === true;
 
-    if (!name || !name.trim()) errors.push('Brand name is required.');
+    if (!trimmedName) {
+      errors.push('Brand name is required.');
+    } else if (trimmedName.length < 2) {
+      errors.push('Brand name must be at least 2 characters long.');
+    } else if (trimmedName.length > 50) {
+      errors.push('Brand name cannot exceed 50 characters.');
+    } else if (!/^[a-zA-Z0-9\s'&.-]+$/.test(trimmedName) || !/[a-zA-Z]/.test(trimmedName)) {
+      errors.push("Brand name must contain letters and only valid characters (letters, numbers, spaces, &, ', ., -).");
+    }
+
+    if (trimmedTagline && trimmedTagline.length > 150) {
+      errors.push('Brand tagline cannot exceed 150 characters.');
+    }
+
+    const newSlug = slugify(trimmedName);
+    if (newSlug) {
+      const conflict = await Brand.findOne({ slug: newSlug, _id: { $ne: brand._id } });
+      if (conflict) {
+        errors.push('Another brand with this name already exists.');
+      }
+    }
 
     if (errors.length) {
       return res.render('admin/brands/edit', {
-        activePage: 'brand', admin: req.admin,
-        brand: brand.toObject(), errors,
+        activePage: 'brand',
+        admin: req.admin,
+        brand: { _id: brand._id, name: trimmedName, tagline: trimmedTagline, is_active: activeBool },
+        errors,
       });
     }
 
-    const newSlug = slugify(name);
-    const conflict = await Brand.findOne({ slug: newSlug, _id: { $ne: brand._id } });
-    if (conflict) {
-      return res.render('admin/brands/edit', {
-        activePage: 'brand', admin: req.admin,
-        brand: brand.toObject(),
-        errors: ['Another brand with this name already exists.'],
-      });
-    }
-
-    brand.name      = name.trim();
+    brand.name      = trimmedName;
     brand.slug      = newSlug;
-    brand.tagline   = (tagline || '').trim();
-    brand.is_active = is_active === 'on' || is_active === 'true' || is_active === true;
+    brand.tagline   = trimmedTagline;
+    brand.is_active = activeBool;
 
     await brand.save();
     res.redirect('/admin/brands');
