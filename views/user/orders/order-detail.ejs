@@ -140,6 +140,12 @@
                const itemSt = it.item_status || 'placed';
                const isCancelledItem = (itemSt === 'cancelled');
                const productHref = (!isCancelledItem && it.product_slug) ? '/product/' + it.product_slug : null;
+               const itemReturnStatus = typeof o.returnMap !== 'undefined' ? (o.returnMap[it._id] || o.returnMap['ALL']) : null;
+               const itemIsReturnRequested = itemReturnStatus === 'requested';
+               const itemIsReturnRejected = itemReturnStatus === 'rejected';
+               const itemIsReturnProcessed = itemReturnStatus === 'refunded' || itemReturnStatus === 'approved';
+               const itemCanReturn = itemSt === 'delivered' && !itemReturnStatus;
+               const itemCanCancel = ['placed', 'processing'].includes(itemSt);
           %>
             <article class="ship-item">
               <div class="ship-image">
@@ -224,14 +230,6 @@
                 <% } %>
 
                 <div class="ship-actions">
-                  <% 
-                     const itemCanCancel = ['placed', 'processing'].includes(itemSt);
-                     const itemReturnStatus = typeof o.returnMap !== 'undefined' ? (o.returnMap[it._id] || o.returnMap['ALL']) : null;
-                     const itemIsReturnRequested = itemReturnStatus === 'requested';
-                     const itemIsReturnRejected = itemReturnStatus === 'rejected';
-                     const itemIsReturnProcessed = itemReturnStatus === 'refunded' || itemReturnStatus === 'approved';
-                     const itemCanReturn = itemSt === 'delivered' && !itemReturnStatus;
-                  %>
                   <% if (itemCanReturn) { %>
                     <a href="/orders/<%= o._id %>/return?itemId=<%= it._id %>" class="btn btn-small">Return Item</a>
                   <% } else if (itemSt === 'returned' || itemSt === 'cancelled' || itemIsReturnProcessed) { %>
