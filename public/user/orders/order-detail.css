@@ -932,3 +932,123 @@
 .status-cancelled        { color: #b34028; background: rgba(179, 64, 40, 0.1); }
 .status-returned         { color: #888;    background: rgba(136, 136, 136, 0.1); }
 .status-mixed            { color: #1e6b8c; background: rgba(30, 107, 140, 0.1); }
+
+/* ---------- Item-level Status Timeline (Separate per product) ---------- */
+.item-timeline {
+  --dot: 18px;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  margin: 1.1rem 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  max-width: 440px;
+  width: 100%;
+}
+
+.item-timeline::before,
+.item-timeline::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--dot) / 2 - 1px);
+  left: 0;
+  height: 2px;
+}
+
+.item-timeline::before {
+  right: 0;
+  background: var(--panel-deep, #e5e7eb);
+}
+
+.item-timeline::after {
+  width: var(--progress, 0%);
+  background: var(--ink, #111827);
+  transition: width 0.4s ease;
+}
+
+.item-timeline .tl-step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.item-timeline .tl-step:first-child { align-items: flex-start; }
+.item-timeline .tl-step:nth-child(2) { align-items: center; }
+.item-timeline .tl-step:last-child  { align-items: flex-end; }
+
+.item-timeline .tl-dot {
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white, #ffffff);
+  border: 2px solid var(--panel-deep, #e5e7eb);
+  color: var(--white, #ffffff);
+}
+
+.item-timeline .tl-step.done .tl-dot {
+  background: var(--ink, #111827);
+  border-color: var(--ink, #111827);
+}
+
+.item-timeline .tl-step.current .tl-dot {
+  box-shadow: 0 0 0 3px rgba(183, 148, 97, 0.25);
+}
+
+.item-timeline .tl-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--d-label, #9ca3af);
+  white-space: nowrap;
+}
+
+.item-timeline .tl-step.done .tl-label {
+  color: var(--ink, #111827);
+}
+
+/* Item cancelled and returned mini banners */
+.item-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.9rem 0 1.1rem;
+  padding: 0.65rem 0.95rem;
+  font-size: 0.78rem;
+  border-radius: 2px;
+  max-width: 460px;
+}
+
+.item-status-banner--cancelled {
+  color: var(--red, #dc2626);
+  background: rgba(220, 38, 38, 0.06);
+  border-left: 2px solid var(--red, #dc2626);
+}
+
+.item-status-banner--returned {
+  color: #92612a;
+  background: rgba(180, 105, 40, 0.06);
+  border-left: 2px solid #b46928;
+}
+
+.item-status-banner--return-requested {
+  color: #2a6b9b;
+  background: rgba(42, 107, 155, 0.07);
+  border-left: 2px solid #2a6b9b;
+}
+
+@media (max-width: 640px) {
+  .item-timeline {
+    margin: 1rem 0;
+    max-width: 100%;
+  }
+  .item-timeline .tl-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.05em;
+  }
+}

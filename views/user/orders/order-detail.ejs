@@ -115,36 +115,19 @@
         </div>
       <% } %>
 
-      <!-- Timeline / status banners -->
-      <% if (isCancelled) { %>
+      <!-- Order-level banners (if whole order was cancelled or returned) -->
+      <% const allItemsCancelled = (o.items || []).length > 0 && o.items.every(it => (it.item_status || 'placed') === 'cancelled'); %>
+      <% const allItemsReturned = (o.items || []).length > 0 && o.items.every(it => (it.item_status || 'placed') === 'returned'); %>
+      <% if (isCancelled || allItemsCancelled) { %>
         <div class="cancel-banner">
           <span class="status-dot"></span>
           <span>This order was cancelled.<% if (o.cancel_reason) { %> Reason: <em><%= o.cancel_reason %></em><% } %></span>
         </div>
-      <% } else if (isReturned) { %>
+      <% } else if (isReturned || allItemsReturned) { %>
         <div class="cancel-banner cancel-banner--returned">
           <span class="status-dot"></span>
-          <span>This order has been returned.</span>
+          <span>This entire order has been returned.</span>
         </div>
-      <% } else { %>
-        <% if (isReturnRequested) { %>
-          <div class="return-request-banner">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 12l4-4m-4 4 4 4"/></svg>
-            Return request submitted — awaiting admin approval.
-          </div>
-        <% } %>
-        <ol class="timeline" style="--progress: <%= progress %>%;">
-          <% steps.forEach(function (label, i) { %>
-            <li class="tl-step <%= i <= stepIndex ? 'done' : '' %> <%= i === stepIndex ? 'current' : '' %>">
-              <span class="tl-dot">
-                <% if (i <= stepIndex) { %>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <% } %>
-              </span>
-              <span class="tl-label"><%= label %></span>
-            </li>
-          <% }) %>
-        </ol>
       <% } %>
 
       <div class="detail-grid">
@@ -196,6 +179,49 @@
                     <%= it.status_label || itemSt %>
                   </span>
                 </div>
+
+                <!-- Per-Product Status Line -->
+                <% if (itemSt === 'cancelled') { %>
+                  <div class="item-status-banner item-status-banner--cancelled">
+                    <span class="status-dot"></span>
+                    <span>Item cancelled.<% if (it.cancel_reason || o.cancel_reason) { %> Reason: <em><%= it.cancel_reason || o.cancel_reason %></em><% } %></span>
+                  </div>
+                <% } else if (itemSt === 'returned' || itemIsReturnProcessed) { %>
+                  <div class="item-status-banner item-status-banner--returned">
+                    <span class="status-dot" style="background:#b46928;"></span>
+                    <span>Item returned.<% if (it.cancel_reason) { %> Reason: <em><%= it.cancel_reason %></em><% } %></span>
+                  </div>
+                <% } else { %>
+                  <% if (itemIsReturnRequested) { %>
+                    <div class="item-status-banner item-status-banner--return-requested">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 12l4-4m-4 4 4 4"/></svg>
+                      <span>Return request submitted — awaiting admin approval.</span>
+                    </div>
+                  <% } %>
+
+                  <%
+                    const itemStepMap = { placed: 0, processing: 0, shipped: 1, out_for_delivery: 1, delivered: 2 };
+                    const itStepIdx = itemStepMap[itemSt] !== undefined ? itemStepMap[itemSt] : 0;
+                    const itProgress = (itemSt === 'delivered') ? 100 : ((itemSt === 'shipped' || itemSt === 'out_for_delivery') ? 50 : 0);
+                    const itSteps = [
+                      'Order Placed',
+                      itemSt === 'out_for_delivery' ? 'Out for Delivery' : 'Shipped',
+                      'Delivered'
+                    ];
+                  %>
+                  <ol class="item-timeline" style="--progress: <%= itProgress %>%;">
+                    <% itSteps.forEach(function (lbl, stepI) { %>
+                      <li class="tl-step <%= stepI <= itStepIdx ? 'done' : '' %> <%= stepI === itStepIdx ? 'current' : '' %>">
+                        <span class="tl-dot">
+                          <% if (stepI <= itStepIdx) { %>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          <% } %>
+                        </span>
+                        <span class="tl-label"><%= lbl %></span>
+                      </li>
+                    <% }); %>
+                  </ol>
+                <% } %>
 
                 <div class="ship-actions">
                   <% 
