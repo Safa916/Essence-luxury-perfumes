@@ -115,6 +115,7 @@
     .modal {
       background:#fff; width:100%; max-width:520px;
       padding:2rem; position:relative; margin:1rem;
+      max-height:90vh; overflow-y:auto;
     }
     .modal-title { font-size:1.1rem; font-weight:700; margin:0 0 1.5rem; }
     .modal-close {
@@ -409,7 +410,8 @@
             <label>Usage Limit Per User *</label>
             <input
               type="number" id="f-limit-user" name="usage_limit_per_user"
-              min="1" step="1" value="1" placeholder="1"
+              step="1" value="1" placeholder="1"
+              oninput="validateUserLimitLive()"
             >
             <p class="form-hint">How many times each customer can redeem this code (default: 1).</p>
             <span class="field-error" id="err-limit-user">Usage limit per user must be at least 1.</span>
@@ -418,7 +420,8 @@
             <label>Total Usage Limit <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
             <input
               type="number" id="f-limit-total" name="total_usage_limit"
-              min="1" step="1" placeholder="Leave blank for unlimited"
+              step="1" placeholder="Leave blank for unlimited"
+              oninput="validateTotalLimitLive()"
             >
             <p class="form-hint">Total overall redemptions across all users.</p>
             <span class="field-error" id="err-limit-total">Total usage limit must be at least 1.</span>
@@ -488,10 +491,11 @@
       if (!input) return true;
       const raw = input.value.trim();
 
+      if (input.validity && input.validity.badInput) {
+        return showErr('f-limit-user', 'err-limit-user', 'Usage limit per user cannot be negative. Must be at least 1.');
+      }
+
       if (raw === '') {
-        if (input.validity && (input.validity.badInput || input.validity.rangeUnderflow)) {
-          return showErr('f-limit-user', 'err-limit-user', 'Usage limit per user cannot be negative. Must be at least 1.');
-        }
         return showErr('f-limit-user', 'err-limit-user', 'Usage limit per user is required and must be at least 1.');
       }
 
@@ -557,12 +561,14 @@
       fLimitUserEl.addEventListener('input', validateUserLimitLive);
       fLimitUserEl.addEventListener('change', validateUserLimitLive);
       fLimitUserEl.addEventListener('blur', validateUserLimitLive);
+      fLimitUserEl.addEventListener('keyup', validateUserLimitLive);
     }
     const fLimitTotalEl = document.getElementById('f-limit-total');
     if (fLimitTotalEl) {
       fLimitTotalEl.addEventListener('input', validateTotalLimitLive);
       fLimitTotalEl.addEventListener('change', validateTotalLimitLive);
       fLimitTotalEl.addEventListener('blur', validateTotalLimitLive);
+      fLimitTotalEl.addEventListener('keyup', validateTotalLimitLive);
     }
 
     // Validate and submit the Add Coupon form
@@ -677,6 +683,12 @@
 
       if (valid) {
         document.getElementById('addCouponForm').submit();
+      } else {
+        const firstErr = document.querySelector('#addCouponForm .input-error');
+        if (firstErr) {
+          firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          firstErr.focus();
+        }
       }
     }
 

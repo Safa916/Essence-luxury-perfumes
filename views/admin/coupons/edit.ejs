@@ -157,9 +157,10 @@
             <div class="form-group">
               <label>Usage Limit Per User *</label>
               <input type="number" id="e-limit-user" name="usage_limit_per_user"
-                min="1" step="1"
+                step="1"
                 value="<%= coupon.usage_limit_per_user || 1 %>"
                 placeholder="1"
+                oninput="validateEditUserLimitLive()"
                 >
               <p class="form-hint">How many times each customer can redeem this coupon.</p>
               <span class="field-error" id="e-err-limit-user">Usage limit per user must be at least 1.</span>
@@ -167,9 +168,10 @@
             <div class="form-group">
               <label>Total Usage Limit <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
               <input type="number" id="e-limit-total" name="total_usage_limit"
-                min="1" step="1"
+                step="1"
                 value="<%= coupon.total_usage_limit || '' %>"
                 placeholder="Leave blank for unlimited"
+                oninput="validateEditTotalLimitLive()"
                 >
               <p class="form-hint">Total redemptions across all customers.</p>
               <span class="field-error" id="e-err-limit-total">Total usage limit must be at least 1.</span>
@@ -229,6 +231,104 @@
       const err   = document.getElementById(errId);
       if (input) input.classList.add('input-error');
       if (err)   { if (msg) err.textContent = msg; err.style.display = 'block'; }
+    }
+
+    // Live validation for Usage Limit Per User
+    function validateEditUserLimitLive() {
+      const input = document.getElementById('e-limit-user');
+      if (!input) return true;
+      const raw = input.value.trim();
+
+      if (input.validity && input.validity.badInput) {
+        showErr('e-limit-user', 'e-err-limit-user', 'Usage limit per user cannot be negative. Must be at least 1.');
+        return false;
+      }
+
+      if (raw === '') {
+        showErr('e-limit-user', 'e-err-limit-user', 'Usage limit per user is required and must be at least 1.');
+        return false;
+      }
+
+      const num = Number(raw);
+      if (isNaN(num)) {
+        showErr('e-limit-user', 'e-err-limit-user', 'Enter a valid number.');
+        return false;
+      }
+      if (num < 0) {
+        showErr('e-limit-user', 'e-err-limit-user', 'Usage limit per user cannot be negative. Must be at least 1.');
+        return false;
+      }
+      if (num === 0) {
+        showErr('e-limit-user', 'e-err-limit-user', 'Usage limit per user must be at least 1.');
+        return false;
+      }
+      if (!Number.isInteger(num)) {
+        showErr('e-limit-user', 'e-err-limit-user', 'Usage limit per user must be a whole integer.');
+        return false;
+      }
+
+      clearErr('e-err-limit-user');
+      return true;
+    }
+
+    // Live validation for Total Usage Limit
+    function validateEditTotalLimitLive() {
+      const input = document.getElementById('e-limit-total');
+      if (!input) return true;
+      const raw = input.value.trim();
+
+      if (raw === '') {
+        if (input.validity && input.validity.badInput) {
+          showErr('e-limit-total', 'e-err-limit-total', 'Total usage limit cannot be negative. Must be at least 1.');
+          return false;
+        }
+        clearErr('e-err-limit-total');
+        return true;
+      }
+
+      const num = Number(raw);
+      if (isNaN(num)) {
+        showErr('e-limit-total', 'e-err-limit-total', 'Enter a valid number.');
+        return false;
+      }
+      if (num < 0) {
+        showErr('e-limit-total', 'e-err-limit-total', 'Total usage limit cannot be negative. Must be at least 1.');
+        return false;
+      }
+      if (num === 0) {
+        showErr('e-limit-total', 'e-err-limit-total', 'Total usage limit must be at least 1 if specified.');
+        return false;
+      }
+      if (!Number.isInteger(num)) {
+        showErr('e-limit-total', 'e-err-limit-total', 'Total usage limit must be a whole integer.');
+        return false;
+      }
+
+      const userInput = document.getElementById('e-limit-user');
+      const userNum = userInput ? Number(userInput.value.trim()) : 0;
+      if (!isNaN(userNum) && userNum > 0 && num < userNum) {
+        showErr('e-limit-total', 'e-err-limit-total', 'Total limit cannot be smaller than per-user limit.');
+        return false;
+      }
+
+      clearErr('e-err-limit-total');
+      return true;
+    }
+
+    // Attach live listeners
+    const eLimitUserEl = document.getElementById('e-limit-user');
+    if (eLimitUserEl) {
+      eLimitUserEl.addEventListener('input', validateEditUserLimitLive);
+      eLimitUserEl.addEventListener('change', validateEditUserLimitLive);
+      eLimitUserEl.addEventListener('blur', validateEditUserLimitLive);
+      eLimitUserEl.addEventListener('keyup', validateEditUserLimitLive);
+    }
+    const eLimitTotalEl = document.getElementById('e-limit-total');
+    if (eLimitTotalEl) {
+      eLimitTotalEl.addEventListener('input', validateEditTotalLimitLive);
+      eLimitTotalEl.addEventListener('change', validateEditTotalLimitLive);
+      eLimitTotalEl.addEventListener('blur', validateEditTotalLimitLive);
+      eLimitTotalEl.addEventListener('keyup', validateEditTotalLimitLive);
     }
 
     function submitEditForm() {
@@ -311,6 +411,12 @@
 
       if (valid) {
         document.getElementById('editForm').submit();
+      } else {
+        const firstErr = document.querySelector('#editForm .input-error');
+        if (firstErr) {
+          firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          firstErr.focus();
+        }
       }
     }
   </script>
