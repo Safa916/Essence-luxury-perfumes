@@ -331,19 +331,25 @@ export const renderOrderDetail = async (req, res) => {
 
 // ─── POST /admin/orders/:id/status ───────────────────────────────────────────
 export const updateOrderStatus = async (req, res) => {
+  const isAjax = req.xhr || req.headers.accept?.includes('application/json') || req.is('json');
   try {
     const { status, cancel_reason, internal_notes } = req.body;
     const allowed = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
 
     if (!allowed.includes(status)) {
+      if (isAjax) return res.status(400).json({ success: false, message: 'Invalid status transition.' });
       return res.redirect(`/admin/orders/${req.params.id}?flash=invalid_status`);
     }
 
     const order = await Order.findById(req.params.id);
-    if (!order) return res.redirect('/admin/orders');
+    if (!order) {
+      if (isAjax) return res.status(404).json({ success: false, message: 'Order not found.' });
+      return res.redirect('/admin/orders');
+    }
 
     const terminal = ['cancelled', 'returned', 'delivered'];
     if (terminal.includes(order.order_status)) {
+      if (isAjax) return res.status(400).json({ success: false, message: 'Order is already in a terminal status.' });
       return res.redirect(`/admin/orders/${req.params.id}?flash=invalid_status`);
     }
 
@@ -422,28 +428,46 @@ export const updateOrderStatus = async (req, res) => {
       await order.save();
     }
 
+    if (isAjax) {
+      return res.json({
+        success: true,
+        message: 'Order status updated successfully.',
+        orderStatus: order.order_status,
+        orderStatusLabel: order.order_status.replace(/_/g, ' ').toUpperCase(),
+      });
+    }
+
     res.redirect(`/admin/orders/${req.params.id}?flash=status_updated`);
   } catch (err) {
     console.error('admin updateOrderStatus error:', err);
+    if (isAjax) return res.status(500).json({ success: false, message: 'Internal server error updating order status.' });
     res.redirect(`/admin/orders/${req.params.id}?flash=error`);
   }
 };
 
 // ─── POST /admin/orders/:id/items/:itemId/status ─────────────────────────────
 export const updateItemStatus = async (req, res) => {
+  const isAjax = req.xhr || req.headers.accept?.includes('application/json') || req.is('json');
   try {
     const { status, cancel_reason, internal_notes } = req.body;
     const allowed = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
 
     if (!allowed.includes(status)) {
+      if (isAjax) return res.status(400).json({ success: false, message: 'Invalid status transition.' });
       return res.redirect(`/admin/orders/${req.params.id}?flash=invalid_status`);
     }
 
     const order = await Order.findById(req.params.id);
-    if (!order) return res.redirect('/admin/orders');
+    if (!order) {
+      if (isAjax) return res.status(404).json({ success: false, message: 'Order not found.' });
+      return res.redirect('/admin/orders');
+    }
 
     const item = order.items.id(req.params.itemId);
-    if (!item) return res.redirect(`/admin/orders/${req.params.id}?flash=error`);
+    if (!item) {
+      if (isAjax) return res.status(404).json({ success: false, message: 'Order item not found.' });
+      return res.redirect(`/admin/orders/${req.params.id}?flash=error`);
+    }
 
     if (status === 'cancelled') {
       const reason = (cancel_reason || internal_notes || 'Cancelled by Admin').trim();
@@ -509,10 +533,33 @@ export const updateItemStatus = async (req, res) => {
 
     await order.save();
 
+    if (isAjax) {
+      const ITEM_NEXT = {
+        placed: ['processing', 'cancelled'],
+        processing: ['shipped', 'cancelled'],
+        shipped: ['out_for_delivery'],
+        out_for_delivery: ['delivered'],
+        delivered: [],
+        cancelled: [],
+        returned: [],
+      };
+      const newNext = ITEM_NEXT[item.item_status] || [];
+      return res.json({
+        success: true,
+        message: 'Item status updated successfully.',
+        itemStatus: item.item_status,
+        itemStatusLabel: item.item_status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        orderStatus: order.order_status,
+        orderStatusLabel: order.order_status.replace(/_/g, ' ').toUpperCase(),
+        nextStatuses: newNext,
+      });
+    }
+
     const referer = req.get('Referrer') || `/admin/orders/${req.params.id}`;
     res.redirect(`${referer}${referer.includes('?') ? '&' : '?'}flash=item_status_updated`);
   } catch (err) {
     console.error('admin updateItemStatus error:', err);
+    if (isAjax) return res.status(500).json({ success: false, message: 'Internal server error updating item status.' });
     res.redirect(`/admin/orders/${req.params.id}?flash=error`);
   }
 };

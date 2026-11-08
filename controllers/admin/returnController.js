@@ -65,6 +65,7 @@ export const listReturns = async (req, res) => {
 
 // ─── POST /admin/returns/:id/approve ─────────────────────────────────────────
 export const approveReturn = async (req, res) => {
+  const isAjax = req.xhr || req.headers.accept?.includes('application/json') || req.is('json');
   try {
     // Atomically find and mark as processing to prevent race conditions & double refunds
     const ret = await Return.findOneAndUpdate(
@@ -76,11 +77,13 @@ export const approveReturn = async (req, res) => {
       .populate('user_id');
 
     if (!ret) {
+      if (isAjax) return res.status(400).json({ success: false, message: 'Return request not found or has already been processed.' });
       return res.redirect('/admin/returns?flash=invalid');
     }
 
     const order = ret.order_id;
     if (!order) {
+      if (isAjax) return res.status(400).json({ success: false, message: 'Associated order not found.' });
       return res.redirect('/admin/returns?flash=invalid');
     }
 
@@ -143,15 +146,26 @@ export const approveReturn = async (req, res) => {
       await order.save();
     }
 
+    if (isAjax) {
+      return res.json({
+        success: true,
+        message: 'Return request approved successfully. Wallet refunded.',
+        status: 'refunded',
+        statusLabel: 'APPROVED',
+      });
+    }
+
     res.redirect('/admin/returns?flash=approved');
   } catch (err) {
     console.error('admin approveReturn error:', err);
+    if (isAjax) return res.status(500).json({ success: false, message: 'An error occurred while approving the return request.' });
     res.redirect('/admin/returns?flash=error');
   }
 };
 
 // ─── POST /admin/returns/:id/reject ──────────────────────────────────────────
 export const rejectReturn = async (req, res) => {
+  const isAjax = req.xhr || req.headers.accept?.includes('application/json') || req.is('json');
   try {
     const rejectReason = (req.body.reject_reason || '').trim();
     const ret = await Return.findOneAndUpdate(
@@ -160,12 +174,23 @@ export const rejectReturn = async (req, res) => {
       { returnDocument: 'after' }
     );
     if (!ret) {
+      if (isAjax) return res.status(400).json({ success: false, message: 'Return request not found or has already been processed.' });
       return res.redirect('/admin/returns?flash=invalid');
+    }
+
+    if (isAjax) {
+      return res.json({
+        success: true,
+        message: 'Return request rejected.',
+        status: 'rejected',
+        statusLabel: 'REJECTED',
+      });
     }
 
     res.redirect('/admin/returns?flash=rejected');
   } catch (err) {
     console.error('admin rejectReturn error:', err);
+    if (isAjax) return res.status(500).json({ success: false, message: 'An error occurred while rejecting the return request.' });
     res.redirect('/admin/returns?flash=error');
   }
 };

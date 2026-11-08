@@ -11,6 +11,10 @@ export const getUsersPage = async (req, res) => {
     const limit = Math.max(parseInt(req.query.limit, 10) || 8, 1);
     const joined = (req.query.joined || '').trim();
 
+    ///////////code test
+    const sort =req.query.sort
+     ///////////////////
+
     // ---- Build the "joined date" filter ----
     const joinedFilter = {};
     const now = new Date();
@@ -25,15 +29,27 @@ export const getUsersPage = async (req, res) => {
     } else if (joined === 'thisyear') {
       joinedFilter.created_at = { $gte: new Date(now.getFullYear(), 0, 1) };
     }
-
     const baseQuery = User.find(joinedFilter).select('-password_hash');
 
-    const features = new APIFeatures(baseQuery, { search, page, limit })
+
+
+    
+////////////////////////////////code test
+     const sortOptions={
+      name_asc:{full_name:1},
+      name_dsc:{full_name :-1},
+  }
+
+
+
+const features = new APIFeatures(baseQuery, { search, page, limit })
       .search(['full_name', 'email'])
-      .sort({ created_at: -1 })
+      .sort( sortOptions[sort])
       .paginate();
 
-    const users = await features.query;
+    const users = await features.query.collation({ locale: 'en', strength: 2 });
+
+    ////////////////////////////////////////////////////////////
 
     // Count needs the SAME filters (search + joined) to match what's shown
     const countFeatures = new APIFeatures(User.find(joinedFilter), { search }).search(['full_name', 'email']);
@@ -61,6 +77,7 @@ export const getUsersPage = async (req, res) => {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Something went wrong loading users');
   }
 };
+
 
 
 

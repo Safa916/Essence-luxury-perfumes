@@ -380,27 +380,174 @@
       checkStatusSelect();
     }
 
-    // Handle single item status change
-    function handleItemStatusChange(select) {
-      if (select.value === 'cancelled') {
+    // Global sleek toast for admin
+    function adminToast(message, type = 'success') {
+      let toastContainer = document.getElementById('adminToastContainer');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'adminToastContainer';
+        toastContainer.style.cssText = 'position:fixed;top:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+        document.body.appendChild(toastContainer);
+      }
+
+      const toast = document.createElement('div');
+      const bg = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#1f2937');
+      const icon = type === 'success' ? '✓' : (type === 'error' ? '✕' : 'ℹ');
+
+      toast.style.cssText = `
+        display:flex;align-items:center;gap:10px;
+        background:#ffffff;color:#111827;
+        border-left:4px solid ${bg};
+        padding:12px 18px;border-radius:6px;
+        box-shadow:0 10px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1);
+        font-size:0.85rem;font-weight:600;font-family:'Space Grotesk',sans-serif;
+        transform:translateX(120%);opacity:0;
+        transition:transform 0.3s cubic-bezier(0.16,1,0.3,1),opacity 0.25s ease;
+        pointer-events:auto;max-width:380px;
+      `;
+      toast.innerHTML = `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${bg}20;color:${bg};font-weight:700;font-size:0.75rem;">${icon}</span><span>${message}</span>`;
+
+      toastContainer.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.style.transform = 'translateX(0)';
+        toast.style.opacity = '1';
+      });
+
+      setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[m]);
+    }
+
+    // Handle single item status change via AJAX
+    async function handleItemStatusChange(select) {
+      const newStatus = select.value;
+      if (!newStatus) return;
+
+      let cancelReason = '';
+      if (newStatus === 'cancelled') {
         const reason = prompt('Please enter a cancellation reason for this item:');
         if (reason === null) {
           select.value = '';
           return;
         }
-        const form = select.closest('form');
-        let input = form.querySelector('input[name="cancel_reason"]');
-        if (!input) {
-          input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = 'cancel_reason';
-          form.appendChild(input);
-        }
-        input.value = reason.trim() || 'Cancelled by Admin';
-        form.submit();
-      } else if (select.value) {
-        select.closest('form').submit();
+        cancelReason = reason.trim() || 'Cancelled by Admin';
       }
+
+      const form = select.closest('form');
+      const itemRow = select.closest('.aod-item-status-col');
+      const badge = itemRow ? itemRow.querySelector('.aod-item-badge') : null;
+
+      select.disabled = true;
+
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            status: newStatus,
+            cancel_reason: cancelReason,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Failed to update item status');
+        }
+
+        // 1. Update the item's status badge
+        if (badge) {
+          badge.className = `aod-item-badge aod-item-badge--${data.itemStatus}`;
+          badge.textContent = data.itemStatusLabel;
+        }
+
+        // 2. If terminal or no next statuses, remove the select form; otherwise update options
+        if (['cancelled', 'delivered'].includes(data.itemStatus) || !data.nextStatuses || data.nextStatuses.length === 0) {
+          form.remove();
+          if (data.itemStatus === 'cancelled' && cancelReason && itemRow) {
+            const r = document.createElement('p');
+            r.className = 'aod-item-reason';
+            r.title = cancelReason;
+            r.innerHTML = `Reason: <em>${escapeHtml(cancelReason)}</em>`;
+            itemRow.appendChild(r);
+          }
+        } else {
+          let opts = '<option value="" disabled selected>Move to…</option>';
+          data.nextStatuses.forEach(ns => {
+            const label = ns.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            opts += `<option value="${ns}">${label}</option>`;
+          });
+          select.innerHTML = opts;
+          select.disabled = false;
+        }
+
+        adminToast(data.message || 'Item status updated successfully.', 'success');
+
+      } catch (err) {
+        console.error(err);
+        adminToast(err.message || 'Failed to update item status.', 'error');
+        select.disabled = false;
+        select.value = '';
+      }
+    }
+
+    // Handle "Update All Items" modal form via AJAX
+    const statusForm = document.getElementById('statusForm');
+    if (statusForm) {
+      statusForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = statusForm.querySelector('.aod-modal-submit');
+        if (submitBtn) submitBtn.disabled = true;
+
+        const formData = new FormData(statusForm);
+        const payload = {
+          status: formData.get('status'),
+          cancel_reason: formData.get('cancel_reason') || '',
+          tracking_number: formData.get('tracking_number') || '',
+          internal_notes: formData.get('internal_notes') || '',
+        };
+
+        try {
+          const res = await fetch(statusForm.action, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Failed to update order status');
+          }
+
+          if (typeof modal !== 'undefined' && modal && typeof modal.close === 'function') {
+            modal.close();
+          }
+          adminToast(data.message || 'Order status updated successfully.', 'success');
+
+          // Smoothly reload order details without query params
+          setTimeout(() => {
+            window.location.reload();
+          }, 800);
+
+        } catch (err) {
+          console.error(err);
+          adminToast(err.message || 'Failed to update order status.', 'error');
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
     }
 
     if (window.location.hash) {
@@ -415,7 +562,7 @@
       setTimeout(() => {
         flash.classList.add('aod-flash--dismiss');
         setTimeout(() => flash.remove(), 400);
-      }, 2000);
+      }, 1500);
     }
   </script>
 
