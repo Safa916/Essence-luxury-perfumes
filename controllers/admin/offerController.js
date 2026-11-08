@@ -201,15 +201,17 @@ export const createOffer = async (req, res) => {
       return res.redirect('/admin/offers?error=invalid_dates');
     }
 
-    const isActive = status === 'active' || status === 'true' || status === true || status === '1';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    if (isActive && endDateObj) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (endDateObj < today) {
-        return res.redirect('/admin/offers?error=end_date_past');
-      }
+    if (startDateObj && startDateObj < today) {
+      return res.redirect('/admin/offers?error=start_date_past');
     }
+    if (endDateObj && endDateObj < today) {
+      return res.redirect('/admin/offers?error=end_date_past');
+    }
+
+    const isActive = status === 'active' || status === 'true' || status === true || status === '1';
 
     const code = (internal_code || '').trim().toUpperCase() || `OFF-${Date.now().toString(36).toUpperCase()}`;
 
@@ -363,15 +365,19 @@ export const updateOffer = async (req, res) => {
       return res.redirect(`/admin/offers/${req.params.id}/edit?error=invalid_dates`);
     }
 
-    const isActive = status === 'active' || status === 'true' || status === true || status === '1';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    if (isActive && endDateObj) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (endDateObj < today) {
-        return res.redirect(`/admin/offers/${req.params.id}/edit?error=end_date_past`);
-      }
+    const prevStartStr = offer.start_date ? new Date(offer.start_date).toISOString().split('T')[0] : '';
+    const newStartStr = start_date || '';
+    if (newStartStr && newStartStr !== prevStartStr && startDateObj && startDateObj < today) {
+      return res.redirect(`/admin/offers/${req.params.id}/edit?error=start_date_past`);
     }
+    if (endDateObj && endDateObj < today) {
+      return res.redirect(`/admin/offers/${req.params.id}/edit?error=end_date_past`);
+    }
+
+    const isActive = status === 'active' || status === 'true' || status === true || status === '1';
 
     const code = (internal_code || '').trim().toUpperCase();
     if (code && code !== offer.internal_code) {
