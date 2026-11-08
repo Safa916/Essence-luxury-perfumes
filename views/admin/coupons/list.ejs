@@ -186,7 +186,7 @@
       <% } else if (query && query.error === 'invalid_max_cap') { %>
         <div class="flash flash-error">⚠ Maximum discount cap must be greater than 0 for percentage discounts.</div>
       <% } else if (query && query.error === 'invalid_limit') { %>
-        <div class="flash flash-error">⚠ Usage limit per user must be a positive integer (at least 1).</div>
+        <div class="flash flash-error">⚠ Usage limit per user cannot be negative. Must be at least 1.</div>
       <% } else if (query && query.error === 'invalid_total_limit') { %>
         <div class="flash flash-error">⚠ Total usage limit must be a positive integer (at least 1).</div>
       <% } else if (query && query.error === 'invalid_date') { %>
@@ -332,7 +332,7 @@
     <div class="modal">
       <button type="button" class="modal-close" onclick="closeAddModal()">✕</button>
       <h2 class="modal-title">Add New Coupon</h2>
-      <form id="addCouponForm" method="POST" action="/admin/coupons" novalidate>
+      <form id="addCouponForm" method="POST" action="/admin/coupons" onsubmit="event.preventDefault(); submitAddCoupon();" novalidate>
 
         <div class="form-row">
           <div class="form-group">
@@ -410,7 +410,6 @@
             <input
               type="number" id="f-limit-user" name="usage_limit_per_user"
               min="1" step="1" value="1" placeholder="1"
-              oninput="clearErr('err-limit-user')"
             >
             <p class="form-hint">How many times each customer can redeem this code (default: 1).</p>
             <span class="field-error" id="err-limit-user">Usage limit per user must be at least 1.</span>
@@ -420,7 +419,6 @@
             <input
               type="number" id="f-limit-total" name="total_usage_limit"
               min="1" step="1" placeholder="Leave blank for unlimited"
-              oninput="clearErr('err-limit-total')"
             >
             <p class="form-hint">Total overall redemptions across all users.</p>
             <span class="field-error" id="err-limit-total">Total usage limit must be at least 1.</span>
@@ -482,6 +480,89 @@
       if (input) input.classList.add('input-error');
       if (err)   { if (msg) err.textContent = msg; err.style.display = 'block'; }
       return false;
+    }
+
+    // Live validation for Usage Limit Per User
+    function validateUserLimitLive() {
+      const input = document.getElementById('f-limit-user');
+      if (!input) return true;
+      const raw = input.value.trim();
+
+      if (raw === '') {
+        if (input.validity && (input.validity.badInput || input.validity.rangeUnderflow)) {
+          return showErr('f-limit-user', 'err-limit-user', 'Usage limit per user cannot be negative. Must be at least 1.');
+        }
+        return showErr('f-limit-user', 'err-limit-user', 'Usage limit per user is required and must be at least 1.');
+      }
+
+      const num = Number(raw);
+      if (isNaN(num)) {
+        return showErr('f-limit-user', 'err-limit-user', 'Enter a valid number.');
+      }
+      if (num < 0) {
+        return showErr('f-limit-user', 'err-limit-user', 'Usage limit per user cannot be negative. Must be at least 1.');
+      }
+      if (num === 0) {
+        return showErr('f-limit-user', 'err-limit-user', 'Usage limit per user must be at least 1.');
+      }
+      if (!Number.isInteger(num)) {
+        return showErr('f-limit-user', 'err-limit-user', 'Usage limit per user must be a whole integer.');
+      }
+
+      clearErr('err-limit-user');
+      return true;
+    }
+
+    // Live validation for Total Usage Limit
+    function validateTotalLimitLive() {
+      const input = document.getElementById('f-limit-total');
+      if (!input) return true;
+      const raw = input.value.trim();
+
+      if (raw === '') {
+        if (input.validity && (input.validity.badInput || input.validity.rangeUnderflow)) {
+          return showErr('f-limit-total', 'err-limit-total', 'Total usage limit cannot be negative. Must be at least 1.');
+        }
+        clearErr('err-limit-total');
+        return true;
+      }
+
+      const num = Number(raw);
+      if (isNaN(num)) {
+        return showErr('f-limit-total', 'err-limit-total', 'Enter a valid number.');
+      }
+      if (num < 0) {
+        return showErr('f-limit-total', 'err-limit-total', 'Total usage limit cannot be negative. Must be at least 1.');
+      }
+      if (num === 0) {
+        return showErr('f-limit-total', 'err-limit-total', 'Total usage limit must be at least 1 if specified.');
+      }
+      if (!Number.isInteger(num)) {
+        return showErr('f-limit-total', 'err-limit-total', 'Total usage limit must be a whole integer.');
+      }
+
+      const userInput = document.getElementById('f-limit-user');
+      const userNum = userInput ? Number(userInput.value.trim()) : 0;
+      if (!isNaN(userNum) && userNum > 0 && num < userNum) {
+        return showErr('f-limit-total', 'err-limit-total', 'Total limit cannot be smaller than per-user limit.');
+      }
+
+      clearErr('err-limit-total');
+      return true;
+    }
+
+    // Attach live listeners
+    const fLimitUserEl = document.getElementById('f-limit-user');
+    if (fLimitUserEl) {
+      fLimitUserEl.addEventListener('input', validateUserLimitLive);
+      fLimitUserEl.addEventListener('change', validateUserLimitLive);
+      fLimitUserEl.addEventListener('blur', validateUserLimitLive);
+    }
+    const fLimitTotalEl = document.getElementById('f-limit-total');
+    if (fLimitTotalEl) {
+      fLimitTotalEl.addEventListener('input', validateTotalLimitLive);
+      fLimitTotalEl.addEventListener('change', validateTotalLimitLive);
+      fLimitTotalEl.addEventListener('blur', validateTotalLimitLive);
     }
 
     // Validate and submit the Add Coupon form
@@ -585,30 +666,13 @@
       }
 
       // 7. Usage Limit Per User
-      const userLimitInput = document.getElementById('f-limit-user');
-      const userLimitVal = parseInt(userLimitInput.value, 10);
-      if (!userLimitInput.value || isNaN(userLimitVal) || userLimitVal < 1) {
-        showErr('f-limit-user', 'err-limit-user', 'Usage limit per user is required and must be at least 1.');
+      if (!validateUserLimitLive()) {
         valid = false;
-      } else {
-        clearErr('err-limit-user');
       }
 
       // 8. Total Usage Limit (optional)
-      const totalLimitInput = document.getElementById('f-limit-total');
-      if (totalLimitInput.value) {
-        const totalLimitVal = parseInt(totalLimitInput.value, 10);
-        if (isNaN(totalLimitVal) || totalLimitVal < 1) {
-          showErr('f-limit-total', 'err-limit-total', 'Total usage limit must be at least 1 if specified.');
-          valid = false;
-        } else if (userLimitVal > totalLimitVal) {
-          showErr('f-limit-total', 'err-limit-total', 'Total limit cannot be smaller than per-user limit.');
-          valid = false;
-        } else {
-          clearErr('err-limit-total');
-        }
-      } else {
-        clearErr('err-limit-total');
+      if (!validateTotalLimitLive()) {
+        valid = false;
       }
 
       if (valid) {
@@ -633,6 +697,11 @@
 
     <% if (locals.query && locals.query.open === 'add') { %>
       openAddModal();
+      <% if (locals.query.error === 'invalid_limit') { %>
+        showErr('f-limit-user', 'err-limit-user', 'Usage limit per user cannot be negative. Must be at least 1.');
+      <% } else if (locals.query.error === 'invalid_total_limit') { %>
+        showErr('f-limit-total', 'err-limit-total', 'Total usage limit cannot be negative. Must be at least 1.');
+      <% } %>
     <% } %>
 
     // Auto-dismiss flash messages and clean query URL

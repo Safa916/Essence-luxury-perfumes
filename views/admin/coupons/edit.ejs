@@ -160,7 +160,7 @@
                 min="1" step="1"
                 value="<%= coupon.usage_limit_per_user || 1 %>"
                 placeholder="1"
-                oninput="clearErr('e-err-limit-user')">
+                >
               <p class="form-hint">How many times each customer can redeem this coupon.</p>
               <span class="field-error" id="e-err-limit-user">Usage limit per user must be at least 1.</span>
             </div>
@@ -170,7 +170,7 @@
                 min="1" step="1"
                 value="<%= coupon.total_usage_limit || '' %>"
                 placeholder="Leave blank for unlimited"
-                oninput="clearErr('e-err-limit-total')">
+                >
               <p class="form-hint">Total redemptions across all customers.</p>
               <span class="field-error" id="e-err-limit-total">Total usage limit must be at least 1.</span>
             </div>
@@ -300,25 +300,14 @@
       }
 
       // 6. Usage Limit Per User
-      const userLimitInput = document.getElementById('e-limit-user');
-      const userLimitVal = parseInt(userLimitInput.value, 10);
-      if (!userLimitInput.value || isNaN(userLimitVal) || userLimitVal < 1) {
-        showErr('e-limit-user', 'e-err-limit-user', 'Usage limit per user is required and must be at least 1.');
+      if (!validateEditUserLimitLive()) {
         valid = false;
-      } else { clearErr('e-err-limit-user'); }
+      }
 
       // 7. Total Usage Limit (optional)
-      const totalLimitInput = document.getElementById('e-limit-total');
-      if (totalLimitInput.value) {
-        const totalLimitVal = parseInt(totalLimitInput.value, 10);
-        if (isNaN(totalLimitVal) || totalLimitVal < 1) {
-          showErr('e-limit-total', 'e-err-limit-total', 'Total usage limit must be at least 1.');
-          valid = false;
-        } else if (userLimitVal > totalLimitVal) {
-          showErr('e-limit-total', 'e-err-limit-total', 'Total limit cannot be smaller than per-user limit.');
-          valid = false;
-        } else { clearErr('e-err-limit-total'); }
-      } else { clearErr('e-err-limit-total'); }
+      if (!validateEditTotalLimitLive()) {
+        valid = false;
+      }
 
       if (valid) {
         document.getElementById('editForm').submit();
