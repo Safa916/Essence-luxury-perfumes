@@ -82,6 +82,54 @@ export const getSalesReport = async (req, res) => {
 
     const { match, filter, status, startDate, endDate, customFrom, customTo } = buildSalesFilter(req.query);
 
+    // Revenue categorization expressions
+    const isCodExpr = {
+      $regexMatch: {
+        input: { $ifNull: ['$payment_method', ''] },
+        regex: /cod|cash/i,
+      },
+    };
+
+    const isPrepaidPaidExpr = {
+      $and: [
+        { $not: isCodExpr },
+        { $regexMatch: { input: { $ifNull: ['$payment_status', ''] }, regex: /^paid$/i } },
+        {
+          $in: [
+            { $toLower: { $ifNull: ['$order_status', ''] } },
+            ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'],
+          ],
+        },
+      ],
+    };
+
+    const isCodDeliveredExpr = {
+      $and: [
+        isCodExpr,
+        { $regexMatch: { input: { $ifNull: ['$order_status', ''] }, regex: /^delivered$/i } },
+      ],
+    };
+
+    const isNetRevenueExpr = {
+      $or: [isPrepaidPaidExpr, isCodDeliveredExpr],
+    };
+
+    const isPendingCodExpr = {
+      $and: [
+        isCodExpr,
+        {
+          $in: [
+            { $toLower: { $ifNull: ['$order_status', ''] } },
+            ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery'],
+          ],
+        },
+      ],
+    };
+
+    const netAmountExpr = {
+      $subtract: ['$total_amount', { $ifNull: ['$refunded_amount', 0] }],
+    };
+
     const [result] = await Order.aggregate([
       { $match: match },
       {
@@ -90,18 +138,37 @@ export const getSalesReport = async (req, res) => {
             {
               $group: {
                 _id: null,
-                overallSalesCount: { $sum: 1 },
-                totalOrderAmount: {
+                overallSalesCount: {
                   $sum: {
-                    $subtract: ['$total_amount', { $ifNull: ['$refunded_amount', 0] }],
+                    $cond: [isNetRevenueExpr, 1, 0],
                   },
                 },
-                totalDiscount: { $sum: '$discount_amount' },
+                totalOrderAmount: {
+                  $sum: {
+                    $cond: [isNetRevenueExpr, netAmountExpr, 0],
+                  },
+                },
+                pendingCodAmount: {
+                  $sum: {
+                    $cond: [isPendingCodExpr, netAmountExpr, 0],
+                  },
+                },
+                pendingCodCount: {
+                  $sum: {
+                    $cond: [isPendingCodExpr, 1, 0],
+                  },
+                },
+                totalDiscount: {
+                  $sum: {
+                    $cond: [isNetRevenueExpr, '$discount_amount', 0],
+                  },
+                },
                 totalCouponDeductions: {
                   $sum: {
                     $cond: [
                       {
                         $and: [
+                          isNetRevenueExpr,
                           { $ne: ['$coupon_code', null] },
                           { $ne: ['$coupon_code', ''] },
                         ],
@@ -164,6 +231,8 @@ export const getSalesReport = async (req, res) => {
     const summary = {
       overallSalesCount: summaryRaw.overallSalesCount || 0,
       totalOrderAmount: toNum(summaryRaw.totalOrderAmount),
+      pendingCodAmount: toNum(summaryRaw.pendingCodAmount),
+      pendingCodCount: summaryRaw.pendingCodCount || 0,
       totalDiscount: toNum(summaryRaw.totalDiscount),
       totalCouponDeductions: toNum(summaryRaw.totalCouponDeductions),
     };
@@ -175,6 +244,16 @@ export const getSalesReport = async (req, res) => {
       const customerEmail = (o.customer && o.customer.email) ||
         (o.shipping_address && o.shipping_address.phone_number) ||
         '—';
+
+      const method = (o.payment_method || '').toLowerCase();
+      const isCod = method.includes('cod') || method.includes('cash');
+      const orderSt = (o.order_status || '').toLowerCase();
+      const paySt = (o.payment_status || '').toLowerCase();
+
+      const isPrepaidPaid = !isCod && paySt === 'paid' && ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'].includes(orderSt);
+      const isCodDelivered = isCod && orderSt === 'delivered';
+      const isPendingCod = isCod && ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery'].includes(orderSt);
+      const isNetRevenue = isPrepaidPaid || isCodDelivered;
 
       return {
         _id: o._id,
@@ -188,6 +267,8 @@ export const getSalesReport = async (req, res) => {
         order_status: o.order_status,
         payment_status: o.payment_status,
         payment_method: o.payment_method || '—',
+        isNetRevenue,
+        isPendingCod,
       };
     });
 
@@ -238,27 +319,46 @@ export const downloadPdf = async (req, res) => {
       },
     ]);
 
-    const overallSalesCount = ordersRaw.length;
+    let overallSalesCount = 0;
     let totalOrderAmount = 0;
+    let pendingCodAmount = 0;
     let totalDiscount = 0;
     let totalCouponDeductions = 0;
 
     const rows = ordersRaw.map((o) => {
       const amt = toNum(o.total_amount) - toNum(o.refunded_amount);
       const disc = toNum(o.discount_amount);
-      totalOrderAmount += amt;
-      totalDiscount += disc;
-      if (o.coupon_code) totalCouponDeductions += disc;
+
+      const method = (o.payment_method || '').toLowerCase();
+      const isCod = method.includes('cod') || method.includes('cash');
+      const orderSt = (o.order_status || '').toLowerCase();
+      const paySt = (o.payment_status || '').toLowerCase();
+
+      const isPrepaidPaid = !isCod && paySt === 'paid' && ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'].includes(orderSt);
+      const isCodDelivered = isCod && orderSt === 'delivered';
+      const isPendingCod = isCod && ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery'].includes(orderSt);
+      const isNetRevenue = isPrepaidPaid || isCodDelivered;
+
+      if (isNetRevenue) {
+        overallSalesCount++;
+        totalOrderAmount += amt;
+        totalDiscount += disc;
+        if (o.coupon_code) totalCouponDeductions += disc;
+      } else if (isPendingCod) {
+        pendingCodAmount += amt;
+      }
 
       const customerName = (o.customer && o.customer.full_name) ||
         (o.shipping_address && o.shipping_address.full_name) ||
         'Customer';
 
+      const revBadge = isPendingCod ? ' (Pending COD)' : (isNetRevenue ? ' (Revenue)' : '');
+
       return {
         date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN') : '—',
         orderNumber: o.order_number,
         customer: customerName,
-        amount: amt.toFixed(2),
+        amount: amt.toFixed(2) + revBadge,
         discount: disc.toFixed(2),
         coupon: o.coupon_code || '—',
       };
@@ -304,17 +404,19 @@ export const downloadPdf = async (req, res) => {
     // Summary Box
     doc.rect(40, 95, 515, 65).fillColor('#f9fafb').fill().strokeColor('#e5e7eb').stroke();
 
-    doc.fillColor('#6b7280').fontSize(8).font('Helvetica-Bold');
-    doc.text('TOTAL ORDERS', 55, 105);
-    doc.text('TOTAL REVENUE', 185, 105);
-    doc.text('TOTAL DISCOUNT', 315, 105);
-    doc.text('COUPON DEDUCTIONS', 430, 105);
+    doc.fillColor('#6b7280').fontSize(7.5).font('Helvetica-Bold');
+    doc.text('SALES COUNT', 50, 105);
+    doc.text('NET REVENUE', 150, 105);
+    doc.text('PENDING COD', 255, 105);
+    doc.text('TOTAL DISCOUNT', 355, 105);
+    doc.text('COUPON DED.', 455, 105);
 
-    doc.fillColor('#111').fontSize(13).font('Helvetica-Bold');
-    doc.text(`${overallSalesCount}`, 55, 122);
-    doc.text(`Rs. ${totalOrderAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 185, 122);
-    doc.text(`Rs. ${totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 315, 122);
-    doc.text(`Rs. ${totalCouponDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 430, 122);
+    doc.fillColor('#111').fontSize(11).font('Helvetica-Bold');
+    doc.text(`${overallSalesCount}`, 50, 122);
+    doc.text(`Rs. ${totalOrderAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 150, 122);
+    doc.text(`Rs. ${pendingCodAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 255, 122);
+    doc.text(`Rs. ${totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 355, 122);
+    doc.text(`Rs. ${totalCouponDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 455, 122);
 
     // Table Header
     let y = 180;
@@ -396,17 +498,34 @@ export const downloadExcel = async (req, res) => {
       },
     ]);
 
-    let overallSalesCount = ordersRaw.length;
+    let overallSalesCount = 0;
     let totalOrderAmount = 0;
+    let pendingCodAmount = 0;
     let totalDiscount = 0;
     let totalCouponDeductions = 0;
 
     ordersRaw.forEach((o) => {
       const amt = toNum(o.total_amount) - toNum(o.refunded_amount);
       const disc = toNum(o.discount_amount);
-      totalOrderAmount += amt;
-      totalDiscount += disc;
-      if (o.coupon_code) totalCouponDeductions += disc;
+
+      const method = (o.payment_method || '').toLowerCase();
+      const isCod = method.includes('cod') || method.includes('cash');
+      const orderSt = (o.order_status || '').toLowerCase();
+      const paySt = (o.payment_status || '').toLowerCase();
+
+      const isPrepaidPaid = !isCod && paySt === 'paid' && ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'].includes(orderSt);
+      const isCodDelivered = isCod && orderSt === 'delivered';
+      const isPendingCod = isCod && ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery'].includes(orderSt);
+      const isNetRevenue = isPrepaidPaid || isCodDelivered;
+
+      if (isNetRevenue) {
+        overallSalesCount++;
+        totalOrderAmount += amt;
+        totalDiscount += disc;
+        if (o.coupon_code) totalCouponDeductions += disc;
+      } else if (isPendingCod) {
+        pendingCodAmount += amt;
+      }
     });
 
     let filterLabel = filter.toUpperCase();
@@ -455,6 +574,7 @@ export const downloadExcel = async (req, res) => {
     const summaryData = [
       ['Overall Sales Count', overallSalesCount],
       ['Net Revenue (INR)', totalOrderAmount],
+      ['Pending COD (INR)', pendingCodAmount],
       ['Total Discount (INR)', totalDiscount],
       ['Total Coupon Deductions (INR)', totalCouponDeductions],
     ];
@@ -483,7 +603,8 @@ export const downloadExcel = async (req, res) => {
       { header: 'Customer Email', key: 'customerEmail', width: 28 },
       { header: 'Payment Method', key: 'paymentMethod', width: 18 },
       { header: 'Order Status', key: 'orderStatus', width: 16 },
-      { header: 'Net Revenue (INR)', key: 'amount', width: 18 },
+      { header: 'Classification', key: 'classification', width: 16 },
+      { header: 'Order Amount (INR)', key: 'amount', width: 18 },
       { header: 'Discount (INR)', key: 'discount', width: 16 },
       { header: 'Coupon Code', key: 'couponCode', width: 16 },
     ];

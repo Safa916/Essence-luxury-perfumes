@@ -189,6 +189,7 @@
       background: #111;
     }
     .summary-card.revenue::before { background: #16a34a; }
+    .summary-card.pending-cod::before { background: #f59e0b; }
     .summary-card.discount::before { background: #ea580c; }
     .summary-card.coupon::before { background: #4f46e5; }
     .sc-label {
@@ -415,13 +416,19 @@
         <div class="summary-card">
           <div class="sc-label">Overall Sales Count</div>
           <div class="sc-value"><%= summary.overallSalesCount %></div>
-          <div class="sc-sub">Successful orders placed</div>
+          <div class="sc-sub">Realized sales orders</div>
         </div>
 
         <div class="summary-card revenue">
           <div class="sc-label">Net Revenue</div>
           <div class="sc-value">₹<%= summary.totalOrderAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
-          <div class="sc-sub">Revenue after refunds</div>
+          <div class="sc-sub">Prepaid (Paid) + COD (Delivered)</div>
+        </div>
+
+        <div class="summary-card pending-cod">
+          <div class="sc-label">Pending COD</div>
+          <div class="sc-value">₹<%= (summary.pendingCodAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+          <div class="sc-sub"><%= summary.pendingCodCount || 0 %> orders awaiting delivery</div>
         </div>
 
         <div class="summary-card discount">

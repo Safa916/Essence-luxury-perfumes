@@ -67,6 +67,41 @@ export const getDashboard = async (req, res) => {
       payment_status: { $ne: 'failed' },
     };
 
+    const isCodExpr = {
+      $regexMatch: {
+        input: { $ifNull: ['$payment_method', ''] },
+        regex: /cod|cash/i,
+      },
+    };
+
+    const isPrepaidPaidExpr = {
+      $and: [
+        { $not: isCodExpr },
+        { $regexMatch: { input: { $ifNull: ['$payment_status', ''] }, regex: /^paid$/i } },
+        {
+          $in: [
+            { $toLower: { $ifNull: ['$order_status', ''] } },
+            ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'],
+          ],
+        },
+      ],
+    };
+
+    const isCodDeliveredExpr = {
+      $and: [
+        isCodExpr,
+        { $regexMatch: { input: { $ifNull: ['$order_status', ''] }, regex: /^delivered$/i } },
+      ],
+    };
+
+    const isNetRevenueExpr = {
+      $or: [isPrepaidPaidExpr, isCodDeliveredExpr],
+    };
+
+    const netAmountExpr = {
+      $subtract: ['$total_amount', { $ifNull: ['$refunded_amount', 0] }],
+    };
+
     // 1. KPI Aggregation
     const [kpiAgg, activeUsers] = await Promise.all([
       Order.aggregate([
@@ -74,8 +109,16 @@ export const getDashboard = async (req, res) => {
         {
           $group: {
             _id: null,
-            totalRevenue: { $sum: '$total_amount' },
-            totalOrders: { $sum: 1 },
+            totalRevenue: {
+              $sum: {
+                $cond: [isNetRevenueExpr, netAmountExpr, 0],
+              },
+            },
+            totalOrders: {
+              $sum: {
+                $cond: [isNetRevenueExpr, 1, 0],
+              },
+            },
           },
         },
       ]),
