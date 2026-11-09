@@ -352,15 +352,18 @@ export const downloadPdf = async (req, res) => {
         (o.shipping_address && o.shipping_address.full_name) ||
         'Customer';
 
-      const revBadge = isPendingCod ? ' (Pending COD)' : (isNetRevenue ? ' (Revenue)' : '');
+      const typeText = isPendingCod ? 'Pending COD' : (isNetRevenue ? 'Revenue' : 'Excluded');
+      const typeColor = isPendingCod ? '#b45309' : (isNetRevenue ? '#15803d' : '#6b7280');
 
       return {
         date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN') : '—',
         orderNumber: o.order_number,
         customer: customerName,
-        amount: amt.toFixed(2) + revBadge,
-        discount: disc.toFixed(2),
+        amount: amt,
+        discount: disc,
         coupon: o.coupon_code || '—',
+        typeText,
+        typeColor,
       };
     });
 
@@ -421,49 +424,56 @@ export const downloadPdf = async (req, res) => {
     // Table Header
     let y = 180;
     doc.rect(40, y, 515, 22).fillColor('#111').fill();
-    doc.fillColor('#fff').fontSize(8).font('Helvetica-Bold');
-    doc.text('DATE', 48, y + 6);
-    doc.text('ORDER ID', 110, y + 6);
-    doc.text('CUSTOMER', 215, y + 6);
-    doc.text('AMOUNT', 340, y + 6, { width: 60, align: 'right' });
-    doc.text('DISCOUNT', 415, y + 6, { width: 55, align: 'right' });
-    doc.text('COUPON', 485, y + 6, { width: 60, align: 'center' });
+    doc.fillColor('#fff').fontSize(7.5).font('Helvetica-Bold');
+    doc.text('DATE', 45, y + 6);
+    doc.text('ORDER ID', 100, y + 6);
+    doc.text('CUSTOMER', 195, y + 6);
+    doc.text('TYPE', 295, y + 6, { width: 65, align: 'center' });
+    doc.text('DISCOUNT', 365, y + 6, { width: 55, align: 'right' });
+    doc.text('COUPON', 425, y + 6, { width: 50, align: 'center' });
+    doc.text('AMOUNT', 480, y + 6, { width: 70, align: 'right' });
 
-    y += 24;
+    y += 25;
     doc.font('Helvetica').fontSize(8).fillColor('#111');
 
     if (rows.length === 0) {
-      doc.text('No successful orders found for the selected filter.', 48, y + 10);
+      doc.text('No matching orders found for the selected filter.', 45, y + 10);
     } else {
       rows.forEach((r, idx) => {
         if (y > 750) {
           doc.addPage({ margin: 40, size: 'A4' });
           y = 50;
           doc.rect(40, y, 515, 22).fillColor('#111').fill();
-          doc.fillColor('#fff').fontSize(8).font('Helvetica-Bold');
-          doc.text('DATE', 48, y + 6);
-          doc.text('ORDER ID', 110, y + 6);
-          doc.text('CUSTOMER', 215, y + 6);
-          doc.text('AMOUNT', 340, y + 6, { width: 60, align: 'right' });
-          doc.text('DISCOUNT', 415, y + 6, { width: 55, align: 'right' });
-          doc.text('COUPON', 485, y + 6, { width: 60, align: 'center' });
-          y += 24;
+          doc.fillColor('#fff').fontSize(7.5).font('Helvetica-Bold');
+          doc.text('DATE', 45, y + 6);
+          doc.text('ORDER ID', 100, y + 6);
+          doc.text('CUSTOMER', 195, y + 6);
+          doc.text('TYPE', 295, y + 6, { width: 65, align: 'center' });
+          doc.text('DISCOUNT', 365, y + 6, { width: 55, align: 'right' });
+          doc.text('COUPON', 425, y + 6, { width: 50, align: 'center' });
+          doc.text('AMOUNT', 480, y + 6, { width: 70, align: 'right' });
+          y += 25;
           doc.font('Helvetica').fontSize(8).fillColor('#111');
         }
 
         if (idx % 2 === 1) {
-          doc.rect(40, y - 2, 515, 18).fillColor('#f9fafb').fill();
+          doc.rect(40, y - 3, 515, 20).fillColor('#f9fafb').fill();
         }
 
         doc.fillColor('#111');
-        doc.text(r.date, 48, y + 2);
-        doc.text(r.orderNumber, 110, y + 2);
-        doc.text(r.customer.substring(0, 20), 215, y + 2);
-        doc.text(`Rs. ${r.amount}`, 340, y + 2, { width: 60, align: 'right' });
-        doc.text(`Rs. ${r.discount}`, 415, y + 2, { width: 55, align: 'right' });
-        doc.text(r.coupon, 485, y + 2, { width: 60, align: 'center' });
+        doc.text(r.date, 45, y + 3);
+        doc.text(r.orderNumber, 100, y + 3);
+        doc.text(r.customer.substring(0, 18), 195, y + 3);
 
-        y += 18;
+        doc.fillColor(r.typeColor).font('Helvetica-Bold').fontSize(7.5);
+        doc.text(r.typeText, 295, y + 3, { width: 65, align: 'center' });
+
+        doc.fillColor('#111').font('Helvetica').fontSize(8);
+        doc.text(r.discount > 0 ? `Rs. ${r.discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—', 365, y + 3, { width: 55, align: 'right' });
+        doc.text(r.coupon, 425, y + 3, { width: 50, align: 'center' });
+        doc.text(`Rs. ${r.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 480, y + 3, { width: 70, align: 'right' });
+
+        y += 20;
       });
     }
 
