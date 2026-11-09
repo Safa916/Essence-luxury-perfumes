@@ -1,6 +1,6 @@
 /**
  * Configurable Maximum Cash on Delivery limit.
- * Controlled via MAX_COD_AMOUNT in .env (defaults to 1000 if not specified).
+ * Controlled via MAX_COD_AMOUNT in .env (defaults to 10000 if not specified).
  * If set to 'unlimited' or 0, returns null (no limit).
  */
 export function getMaxCodLimit() {
@@ -16,7 +16,7 @@ export function getMaxCodLimit() {
     }
     if (parsed === 0) return null;
   }
-  return 1000;
+  return 10000;
 }
 
 export default {
