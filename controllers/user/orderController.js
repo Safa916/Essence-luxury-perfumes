@@ -704,20 +704,29 @@ export const downloadInvoice = async (req, res) => {
        .strokeColor('#E0DDD8').lineWidth(1).stroke();
 
     // ── ITEMS TABLE HEADER ────────────────────────────────────────────────────
-    // Columns: Description | Qty | Rate (Incl. GST) | Amount (Incl. GST)
+    // Columns: Item | Qty | Rate (excl. GST) | Taxable value | GST (18%) | Total
     const COL = {
-      desc  : L,
-      qty   : L + 290,
-      rate  : L + 330,
-      total : L + 400,
-      totalW: (L + PAGE_W) - (L + 400),
+      desc    : L,            // 50,  width: 155
+      descW   : 150,
+      qty     : L + 160,      // 210, width: 25 (center)
+      qtyW    : 25,
+      rate    : L + 190,      // 240, width: 75 (right)
+      rateW   : 75,
+      taxable : L + 270,      // 320, width: 75 (right)
+      taxableW: 75,
+      gst     : L + 350,      // 400, width: 65 (right)
+      gstW    : 65,
+      total   : L + 420,      // 470, width: 75 (right, ends at L + PAGE_W = 545)
+      totalW  : (L + PAGE_W) - (L + 420),
     };
 
-    doc.font('Helvetica').fontSize(7).fillColor('#6B675E');
-    doc.text('ITEM DETAILS',           COL.desc,  TABLE_Y + 10, { characterSpacing: 1.2 });
-    doc.text('QTY',                    COL.qty,   TABLE_Y + 10, { width: 35, align: 'center', characterSpacing: 1 });
-    doc.text('RATE (INCL. GST)',        COL.rate,  TABLE_Y + 10, { width: 65, align: 'right', characterSpacing: 1 });
-    doc.text('AMOUNT (INCL. GST)',      COL.total, TABLE_Y + 10, { width: COL.totalW, align: 'right', characterSpacing: 1 });
+    doc.font('Helvetica').fontSize(6.8).fillColor('#6B675E');
+    doc.text('ITEM',                 COL.desc,    TABLE_Y + 10, { width: COL.descW,    align: 'left',   characterSpacing: 0.8 });
+    doc.text('QTY',                  COL.qty,     TABLE_Y + 10, { width: COL.qtyW,     align: 'center', characterSpacing: 0.8 });
+    doc.text('RATE (EXCL. GST)',     COL.rate,    TABLE_Y + 10, { width: COL.rateW,    align: 'right',  characterSpacing: 0.5 });
+    doc.text('TAXABLE VALUE',        COL.taxable, TABLE_Y + 10, { width: COL.taxableW, align: 'right',  characterSpacing: 0.5 });
+    doc.text('GST (18%)',            COL.gst,     TABLE_Y + 10, { width: COL.gstW,     align: 'right',  characterSpacing: 0.5 });
+    doc.text('TOTAL',                COL.total,   TABLE_Y + 10, { width: COL.totalW,   align: 'right',  characterSpacing: 0.8 });
 
     doc.moveTo(L, TABLE_Y + 25).lineTo(L + PAGE_W, TABLE_Y + 25)
        .strokeColor('#E0DDD8').stroke();
@@ -743,31 +752,46 @@ export const downloadInvoice = async (req, res) => {
     let rowY = TABLE_Y + 35;
 
     allOrderItems.forEach((item) => {
-      const name     = item.product_name || 'Product';
-      const size     = item.size || '';
-      const qty      = item.quantity || 1;
-      const price    = toNum(item.price_at_purchase);   // per-unit incl. GST
-      const lineAmt  = price * qty;                     // line total incl. GST
-      const gstRate  = item.gst_rate !== undefined ? item.gst_rate : 18;
-      const itemSt   = (item.item_status || 'placed').toLowerCase();
-      const isExcluded = EXCLUDED_STATUSES.includes(itemSt);
+      const name        = item.product_name || 'Product';
+      const size        = item.size || '';
+      const qty         = item.quantity || 1;
+      const priceIncl   = toNum(item.price_at_purchase);   // per-unit incl. GST
+      const lineAmt     = priceIncl * qty;                 // line total incl. GST
+      const gstRate     = item.gst_rate !== undefined ? item.gst_rate : 18;
+      const itemSt      = (item.item_status || 'placed').toLowerCase();
+      const isExcluded  = EXCLUDED_STATUSES.includes(itemSt);
       const statusLabel = itemSt === 'returned' ? 'RETURNED'
                         : itemSt === 'cancel_requested' ? 'CANCEL REQ.'
                         : 'CANCELLED';
+
+      // Rate excluding GST (per unit)
+      const rateExcl = (item.taxable_amount && toNum(item.taxable_amount) > 0)
+        ? toNum(item.taxable_amount)
+        : (priceIncl > 0 ? (priceIncl / (1 + gstRate / 100)) : 0);
+
+      // Taxable value for line (qty * rateExcl)
+      const lineTaxable = rateExcl * qty;
+
+      // GST amount for line
+      const lineGst = (item.gst_amount && toNum(item.gst_amount) > 0)
+        ? (toNum(item.gst_amount) * qty)
+        : Math.max(0, lineAmt - lineTaxable);
+
+      // Total for line (incl. GST)
+      const lineTotal = lineAmt;
 
       const textColor = isExcluded ? '#A6A296' : '#1C1A16';
       const subColor  = isExcluded ? '#C4C0B8' : '#6B675E';
       const valColor  = isExcluded ? '#A6A296' : '#3d3b36';
 
-      // Description cell: "Name | Size: X | GST: Y%"
-      doc.font('Helvetica-Bold').fontSize(9).fillColor(textColor)
-         .text(name, COL.desc, rowY, { width: COL.qty - COL.desc - 10 });
+      // Description cell: Name and size
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor(textColor)
+         .text(name, COL.desc, rowY, { width: COL.descW });
 
-      const descSubParts = [];
-      if (size) descSubParts.push(`Size: ${size}`);
-      descSubParts.push(`GST: ${gstRate}%`);
-      doc.font('Helvetica').fontSize(7.5).fillColor(subColor)
-         .text(descSubParts.join('  ·  '), COL.desc, doc.y + 2, { width: COL.qty - COL.desc - 10 });
+      if (size) {
+        doc.font('Helvetica').fontSize(7.5).fillColor(subColor)
+           .text('Size: ' + size, COL.desc, doc.y + 2, { width: COL.descW });
+      }
 
       if (isExcluded) {
         doc.font('Helvetica').fontSize(7).fillColor('#B0400A')
@@ -776,17 +800,25 @@ export const downloadInvoice = async (req, res) => {
 
       const descBottomY = doc.y;
 
-      // Qty
-      doc.font('Helvetica').fontSize(9).fillColor(textColor)
-         .text(String(qty).padStart(2, '0'), COL.qty, rowY, { width: 35, align: 'center' });
+      // 1. Qty
+      doc.font('Helvetica').fontSize(8.5).fillColor(textColor)
+         .text(String(qty).padStart(2, '0'), COL.qty, rowY, { width: COL.qtyW, align: 'center' });
 
-      // Rate (Incl. GST) — per unit
-      doc.font('Helvetica').fontSize(9).fillColor(valColor)
-         .text(inr(price), COL.rate, rowY, { width: 65, align: 'right' });
+      // 2. Rate (excl. GST)
+      doc.font('Helvetica').fontSize(8.5).fillColor(valColor)
+         .text(inr(rateExcl), COL.rate, rowY, { width: COL.rateW, align: 'right' });
 
-      // Amount (Incl. GST) — line total
-      doc.font('Helvetica-Bold').fontSize(9).fillColor(isExcluded ? '#A6A296' : '#1C1A16')
-         .text(inr(lineAmt), COL.total, rowY, { width: COL.totalW, align: 'right' });
+      // 3. Taxable value
+      doc.font('Helvetica').fontSize(8.5).fillColor(valColor)
+         .text(inr(lineTaxable), COL.taxable, rowY, { width: COL.taxableW, align: 'right' });
+
+      // 4. GST (18%)
+      doc.font('Helvetica').fontSize(8.5).fillColor(valColor)
+         .text(inr(lineGst), COL.gst, rowY, { width: COL.gstW, align: 'right' });
+
+      // 5. Total
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor(isExcluded ? '#A6A296' : '#1C1A16')
+         .text(inr(lineTotal), COL.total, rowY, { width: COL.totalW, align: 'right' });
 
       rowY = Math.max(descBottomY, rowY + 20) + 12;
 
