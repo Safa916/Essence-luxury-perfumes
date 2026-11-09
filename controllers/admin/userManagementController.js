@@ -11,9 +11,6 @@ export const getUsersPage = async (req, res) => {
     const limit = Math.max(parseInt(req.query.limit, 10) || 8, 1);
     const joined = (req.query.joined || '').trim();
 
-    ///////////code test
-    const sort =req.query.sort
-     ///////////////////
 
     // ---- Build the "joined date" filter ----
     const joinedFilter = {};
@@ -33,23 +30,18 @@ export const getUsersPage = async (req, res) => {
 
 
 
-    
-////////////////////////////////code test
-     const sortOptions={
-      name_asc:{full_name:1},
-      name_dsc:{full_name :-1},
-  }
 
 
 
-const features = new APIFeatures(baseQuery, { search, page, limit })
+
+    const features = new APIFeatures(baseQuery, { search, page, limit })
       .search(['full_name', 'email'])
-      .sort( sortOptions[sort])
+      .sort({ created_at: -1 })
       .paginate();
 
-    const users = await features.query.collation({ locale: 'en', strength: 2 });
+    const users = await features.query
 
-    ////////////////////////////////////////////////////////////
+    //collation({ locale: 'en', strength: 2 });
 
     // Count needs the SAME filters (search + joined) to match what's shown
     const countFeatures = new APIFeatures(User.find(joinedFilter), { search }).search(['full_name', 'email']);
