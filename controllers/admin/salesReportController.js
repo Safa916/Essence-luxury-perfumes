@@ -359,6 +359,7 @@ export const downloadPdf = async (req, res) => {
         date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN') : '—',
         orderNumber: o.order_number,
         customer: customerName,
+        paymentMethod: o.payment_method || '—',
         amount: amt,
         discount: disc,
         coupon: o.coupon_code || '—',
@@ -425,13 +426,14 @@ export const downloadPdf = async (req, res) => {
     let y = 180;
     doc.rect(40, y, 515, 22).fillColor('#111').fill();
     doc.fillColor('#fff').fontSize(7.5).font('Helvetica-Bold');
-    doc.text('DATE', 45, y + 6);
-    doc.text('ORDER ID', 100, y + 6);
-    doc.text('CUSTOMER', 195, y + 6);
-    doc.text('TYPE', 295, y + 6, { width: 65, align: 'center' });
-    doc.text('DISCOUNT', 365, y + 6, { width: 55, align: 'right' });
-    doc.text('COUPON', 425, y + 6, { width: 50, align: 'center' });
-    doc.text('AMOUNT', 480, y + 6, { width: 70, align: 'right' });
+    doc.text('DATE', 44, y + 6);
+    doc.text('ORDER ID', 92, y + 6);
+    doc.text('CUSTOMER', 172, y + 6);
+    doc.text('PAYMENT', 246, y + 6, { width: 64, align: 'center' });
+    doc.text('TYPE', 312, y + 6, { width: 58, align: 'center' });
+    doc.text('DISCOUNT', 372, y + 6, { width: 52, align: 'right' });
+    doc.text('COUPON', 426, y + 6, { width: 48, align: 'center' });
+    doc.text('AMOUNT', 476, y + 6, { width: 74, align: 'right' });
 
     y += 25;
     doc.font('Helvetica').fontSize(8).fillColor('#111');
@@ -445,13 +447,14 @@ export const downloadPdf = async (req, res) => {
           y = 50;
           doc.rect(40, y, 515, 22).fillColor('#111').fill();
           doc.fillColor('#fff').fontSize(7.5).font('Helvetica-Bold');
-          doc.text('DATE', 45, y + 6);
-          doc.text('ORDER ID', 100, y + 6);
-          doc.text('CUSTOMER', 195, y + 6);
-          doc.text('TYPE', 295, y + 6, { width: 65, align: 'center' });
-          doc.text('DISCOUNT', 365, y + 6, { width: 55, align: 'right' });
-          doc.text('COUPON', 425, y + 6, { width: 50, align: 'center' });
-          doc.text('AMOUNT', 480, y + 6, { width: 70, align: 'right' });
+          doc.text('DATE', 44, y + 6);
+          doc.text('ORDER ID', 92, y + 6);
+          doc.text('CUSTOMER', 172, y + 6);
+          doc.text('PAYMENT', 246, y + 6, { width: 64, align: 'center' });
+          doc.text('TYPE', 312, y + 6, { width: 58, align: 'center' });
+          doc.text('DISCOUNT', 372, y + 6, { width: 52, align: 'right' });
+          doc.text('COUPON', 426, y + 6, { width: 48, align: 'center' });
+          doc.text('AMOUNT', 476, y + 6, { width: 74, align: 'right' });
           y += 25;
           doc.font('Helvetica').fontSize(8).fillColor('#111');
         }
@@ -460,18 +463,20 @@ export const downloadPdf = async (req, res) => {
           doc.rect(40, y - 3, 515, 20).fillColor('#f9fafb').fill();
         }
 
-        doc.fillColor('#111');
-        doc.text(r.date, 45, y + 3);
-        doc.text(r.orderNumber, 100, y + 3);
-        doc.text(r.customer.substring(0, 18), 195, y + 3);
+        doc.fillColor('#111').font('Helvetica').fontSize(7.5);
+        doc.text(r.date, 44, y + 4);
+        doc.text(r.orderNumber, 92, y + 4);
+        doc.text(r.customer.substring(0, 14), 172, y + 4);
 
-        doc.fillColor(r.typeColor).font('Helvetica-Bold').fontSize(7.5);
-        doc.text(r.typeText, 295, y + 3, { width: 65, align: 'center' });
+        doc.text(r.paymentMethod, 246, y + 4, { width: 64, align: 'center' });
 
-        doc.fillColor('#111').font('Helvetica').fontSize(8);
-        doc.text(r.discount > 0 ? `Rs. ${r.discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—', 365, y + 3, { width: 55, align: 'right' });
-        doc.text(r.coupon, 425, y + 3, { width: 50, align: 'center' });
-        doc.text(`Rs. ${r.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 480, y + 3, { width: 70, align: 'right' });
+        doc.fillColor(r.typeColor).font('Helvetica-Bold').fontSize(7);
+        doc.text(r.typeText, 312, y + 4, { width: 58, align: 'center' });
+
+        doc.fillColor('#111').font('Helvetica').fontSize(7.5);
+        doc.text(r.discount > 0 ? `Rs. ${r.discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—', 372, y + 4, { width: 52, align: 'right' });
+        doc.text(r.coupon, 426, y + 4, { width: 48, align: 'center' });
+        doc.text(`Rs. ${r.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 476, y + 4, { width: 74, align: 'right' });
 
         y += 20;
       });
@@ -559,14 +564,14 @@ export const downloadExcel = async (req, res) => {
     });
 
     // 1. Title & Meta
-    sheet.mergeCells('A1:I1');
+    sheet.mergeCells('A1:J1');
     const titleCell = sheet.getCell('A1');
     titleCell.value = 'ESSENCE LUXURY PERFUMES — SALES REPORT';
     titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF111111' } };
     titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
     sheet.getRow(1).height = 30;
 
-    sheet.mergeCells('A2:I2');
+    sheet.mergeCells('A2:J2');
     const metaCell = sheet.getCell('A2');
     metaCell.value = `Filter: ${filterLabel}  |  Status: ${statusLabel}  |  Generated on: ${new Date().toLocaleString('en-IN')}`;
     metaCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF555555' } };
@@ -625,7 +630,9 @@ export const downloadExcel = async (req, res) => {
       cell.value = h.header;
       cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111111' } };
-      cell.alignment = { vertical: 'middle', horizontal: colIdx >= 6 && colIdx <= 7 ? 'right' : 'left' };
+      const isRight = colIdx === 7 || colIdx === 8;
+      const isCenter = colIdx === 4 || colIdx === 5 || colIdx === 6 || colIdx === 9;
+      cell.alignment = { vertical: 'middle', horizontal: isRight ? 'right' : (isCenter ? 'center' : 'left') };
       sheet.getColumn(colIdx + 1).width = h.width;
     });
 
@@ -646,6 +653,16 @@ export const downloadExcel = async (req, res) => {
       const isEven = index % 2 === 1;
       const rowBg = isEven ? 'FFF9FAFB' : 'FFFFFFFF';
 
+      const method = (o.payment_method || '').toLowerCase();
+      const isCod = method.includes('cod') || method.includes('cash');
+      const orderSt = (o.order_status || '').toLowerCase();
+      const paySt = (o.payment_status || '').toLowerCase();
+
+      const isPrepaidPaid = !isCod && paySt === 'paid' && ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'].includes(orderSt);
+      const isCodDelivered = isCod && orderSt === 'delivered';
+      const isPendingCod = isCod && ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery'].includes(orderSt);
+      const classification = (isPrepaidPaid || isCodDelivered) ? 'Net Revenue' : (isPendingCod ? 'Pending COD' : 'Excluded');
+
       row.values = [
         o.placed_at ? new Date(o.placed_at).toISOString().slice(0, 10) : '—',
         o.order_number || '—',
@@ -653,6 +670,7 @@ export const downloadExcel = async (req, res) => {
         customerEmail,
         o.payment_method || '—',
         (o.order_status || '—').toUpperCase(),
+        classification,
         toNum(o.total_amount) - toNum(o.refunded_amount),
         toNum(o.discount_amount),
         o.coupon_code || '—',
@@ -664,10 +682,10 @@ export const downloadExcel = async (req, res) => {
         cell.border = {
           bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
         };
-        if (colNumber === 7 || colNumber === 8) {
+        if (colNumber === 8 || colNumber === 9) {
           cell.numFmt = '₹#,##0.00';
           cell.alignment = { horizontal: 'right' };
-        } else if (colNumber === 9 || colNumber === 6) {
+        } else if (colNumber === 5 || colNumber === 6 || colNumber === 7 || colNumber === 10) {
           cell.alignment = { horizontal: 'center' };
         }
       });
