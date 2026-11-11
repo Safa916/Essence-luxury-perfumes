@@ -231,11 +231,16 @@
                     </tbody>
                 </table>
 
-                <% // figure out which page numbers to show, with ellipses for large totals const delta=1; const
-                    pagesToShow=[]; for (let p=1; p <=totalPages; p++) { if (p===1 || p===totalPages || (p>= page -
-                    delta && p <= page + delta)) { pagesToShow.push(p); } } const qs=(p)=>
-                        `/admin/users?search=${encodeURIComponent(search)}&page=${p}`;
-                        %>
+                <%
+                    const delta = 1;
+                    const pagesToShow = [];
+                    for (let p = 1; p <= totalPages; p++) {
+                        if (p === 1 || p === totalPages || (p >= page - delta && p <= page + delta)) {
+                            pagesToShow.push(p);
+                        }
+                    }
+                    const qs = (p) => `/admin/users?search=${encodeURIComponent(search || '')}&joined=${encodeURIComponent(joined || '')}&page=${p}`;
+                %>
                         <div class="table-footer">
                             <span class="table-count">
                                 Showing <%= users.length===0 ? 0 : (page - 1) * limit + 1 %>

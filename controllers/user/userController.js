@@ -405,7 +405,11 @@ export const googleAuth = async (req, res) => {
 
 let user = await User.findOne({ email: normalizedEmail });
 
-if (!user) {
+    if (user && !user.is_active) {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({ message: 'Your account has been suspended. Please contact support.' });
+    }
+
+    if (!user) {
   user = await User.create({
     full_name: name,
     email: normalizedEmail,

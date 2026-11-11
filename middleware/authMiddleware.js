@@ -85,8 +85,18 @@ export const requireAuth = async (req, res, next) => {
   res.locals.cartCount = 0; // Default
   res.locals.user = null;
 
-  if (!token) {
+  const isAjax = req.xhr || req.headers.accept?.includes('application/json') || req.is('json');
+
+  const sendUnauthorized = (clearCookie = false, message = 'Please log in to continue.') => {
+    if (clearCookie) res.clearCookie('token', { httpOnly: true });
+    if (isAjax) {
+      return res.status(401).json({ success: false, message, redirect: '/auth/login' });
+    }
     return res.redirect('/auth/login');
+  };
+
+  if (!token) {
+    return sendUnauthorized(false);
   }
 
   try {
@@ -94,7 +104,7 @@ export const requireAuth = async (req, res, next) => {
     const user = await User.findById(decoded.id).select('-password_hash');
 
     if (!user || !user.is_active) {
-      return res.redirect('/auth/login');
+      return sendUnauthorized(true, 'Your account is deactivated or blocked.');
     }
 
     req.user = user;
@@ -107,7 +117,7 @@ export const requireAuth = async (req, res, next) => {
     }
     next();
   } catch (error) {
-    return res.redirect('/auth/login');
+    return sendUnauthorized(true, 'Session expired. Please log in again.');
   }
 };
 export default {

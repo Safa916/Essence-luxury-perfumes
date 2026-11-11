@@ -3,7 +3,6 @@ import express from 'express';
 import methodOverride from 'method-override';
 import path from 'path';
 import cookieParser from 'cookie-parser';
-import Order from './models/order.js';
 import connectDB from './db/connectDB.js';
 import userRoutes from './routes/user/userRoutes.js';
 import { checkUser } from './middleware/authMiddleware.js';
@@ -47,26 +46,6 @@ connectDB();
 const PORT = process.env.PORT || 3002;
 
 app.get('/', checkUser, renderHome);
-
-app.get('/test-orders-by-date', async (req, res) => {
-  try {
-    const { from, to } = req.query;
-
-    const start = new Date(from);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(to);
-    end.setHours(23, 59, 59, 999);
-
-    const orders = await Order.find({
-      created_at: { $gte: start, $lte: end }
-    });
-
-    res.send(orders);
-  } catch (err) {
-    res.send(err.message);
-  }
-});
 
 app.use('/auth', userRoutes);
 app.use('/address', addressRoutes);

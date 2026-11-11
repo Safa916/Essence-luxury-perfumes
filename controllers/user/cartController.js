@@ -320,6 +320,12 @@ export const updateQuantity = async (req, res) => {
     const item = await CartItem.findById(cart_item_id).populate('variant_id');
     if (!item) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Item not found.' });
 
+    // Authorization guard: Ensure cart item belongs to the logged-in user's cart
+    const userCart = await Cart.findOne({ user_id: req.user._id });
+    if (!userCart || !item.cart_id.equals(userCart._id)) {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({ success: false, message: 'You are not authorized to modify this item.' });
+    }
+
     const variant = item.variant_id;
     const maxQty = variant ? Math.min(MAX_QTY_PER_ITEM, variant.quantity) : MAX_QTY_PER_ITEM;
 
@@ -362,6 +368,12 @@ export const removeItem = async (req, res) => {
   try {
     const item = await CartItem.findById(req.params.cartItemId);
     if (!item) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Item not found.' });
+
+    // Authorization guard: Ensure cart item belongs to the logged-in user's cart
+    const userCart = await Cart.findOne({ user_id: req.user._id });
+    if (!userCart || !item.cart_id.equals(userCart._id)) {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({ success: false, message: 'You are not authorized to remove this item.' });
+    }
 
     const cartId = item.cart_id;
     await CartItem.findByIdAndDelete(item._id);

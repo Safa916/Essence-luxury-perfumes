@@ -4,28 +4,36 @@ import Admin from '../models/admin.js';
 // Protects admin-only routes (dashboard, user management, etc.)
 // Reads the JWT from the "adminToken" cookie set at login.
 export const requireAdminAuth = async (req, res, next) => {
+  const isAjax = req.xhr || req.headers.accept?.includes('application/json') || req.is('json');
+
+  const sendUnauthorized = (clearCookie = false) => {
+    if (clearCookie) res.clearCookie('adminToken');
+    if (isAjax) {
+      return res.status(401).json({ success: false, message: 'Admin authentication required.', redirect: '/admin/login' });
+    }
+    return res.redirect('/admin/login');
+  };
+
   try {
     const token = req.cookies.adminToken;
     if (!token) {
-      return res.redirect('/admin/login');
+      return sendUnauthorized(false);
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (decoded.role !== 'admin') {
-      return res.redirect('/admin/login');
+      return sendUnauthorized(true);
     }
 
     const admin = await Admin.findById(decoded.id).select('-password_hash');
     if (!admin || !admin.is_active) {
-      res.clearCookie('adminToken');
-      return res.redirect('/admin/login');
+      return sendUnauthorized(true);
     }
 
     req.admin = admin;
     next();
   } catch (err) {
-    res.clearCookie('adminToken');
-    return res.redirect('/admin/login');
+    return sendUnauthorized(true);
   }
 };
 
