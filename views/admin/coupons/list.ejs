@@ -617,7 +617,7 @@
       // 3. Discount Type & Value
       const discValInput = document.getElementById('f-disc-val');
       const dv = parseFloat(discValInput.value);
-      const discType = document.getElementById('addDiscType').value;
+      const discType = 'percentage'; // always percentage
 
       if (!discValInput.value || isNaN(dv) || dv <= 0) {
         showErr('f-disc-val', 'err-disc-val', 'Enter a valid discount value greater than 0.');
