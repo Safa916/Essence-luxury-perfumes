@@ -210,7 +210,7 @@
   <script>
     // Show/hide max cap group when type changes
     function onTypeChange() {
-      const type  = document.getElementById('editDiscType').value;
+      const type  = 'percentage';
       const group = document.getElementById('editMaxCapGroup');
       if (group) group.style.display = type === 'fixed' ? 'none' : '';
     }
@@ -353,7 +353,7 @@
       // 2. Discount value
       const discInput = document.getElementById('e-disc-val');
       const dv = parseFloat(discInput.value);
-      const discType = document.getElementById('editDiscType').value;
+      const discType = 'percentage'; // always percentage
 
       if (!discInput.value || isNaN(dv) || dv <= 0) {
         showErr('e-disc-val', 'e-err-disc-val', 'Enter a valid discount value greater than 0.');
