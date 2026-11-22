@@ -277,7 +277,7 @@
   flex-direction: column;
 }
 
-.product-card-link { display: block; }
+.product-card-link { display: flex; flex-direction: column; flex-grow: 1; margin-bottom: 0.85rem; }
 
 .product-image {
   position: relative;
@@ -368,25 +368,42 @@
 .product-stock-status.low { color: #c97c2a; }
 
 .add-to-bag-btn {
-  align-self: flex-start;
-  background: none;
-  border: none;
-  padding: 0;
+  width: 100%;
+  margin-top: auto;
+  padding: 0.75rem 1rem;
   font-size: 0.68rem;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink);
-  border-bottom: 1px solid var(--ink);
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--white);
   cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
 }
 
-.add-to-bag-btn:hover { color: var(--gold); border-color: var(--gold); }
+.add-to-bag-btn:hover:not(:disabled) {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.add-to-bag-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
 
 .add-to-bag-btn:disabled {
-  color: var(--ink-faint);
-  border-color: var(--ink-faint);
+  background: #f4f4f4;
+  color: #a0a0a0;
+  border-color: #e0e0e0;
   cursor: not-allowed;
+  opacity: 0.8;
 }
 
 /* ===== Empty state ===== */

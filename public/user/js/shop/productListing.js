@@ -211,22 +211,23 @@
     // ===== Add to bag =====
  
       document.querySelectorAll('.add-to-bag-btn').forEach((btn) => {
-  
-  if (btn.tagName === 'A') return;
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          if (btn.disabled) return;
+          if (!requireLoginOrRedirect()) return;
+          const variantId = btn.dataset.defaultVariantId;
+          if (!variantId) {
+            if (btn.dataset.slug) {
+              window.location.href = '/product/' + btn.dataset.slug;
+              return;
+            }
+            essToast('This product has no available size right now.', 'warning');
+            return;
+          }
 
-  btn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    if (btn.disabled) return;
-    if (!requireLoginOrRedirect()) return;
-        const variantId = btn.dataset.defaultVariantId;
-        if (!variantId) {
-          essToast('This product has no available size right now.', 'warning');
-          return;
-        }
-
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Adding...';
+          const originalText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Adding...';
 
         try {
           const res = await fetch('/cart/add', {
