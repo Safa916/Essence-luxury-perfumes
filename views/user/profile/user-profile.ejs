@@ -51,9 +51,11 @@
 
         <div class="identity-card">
           <div class="avatar">
-            <% if (user.avatar) { %>
-              <img src="<%= user.avatar %>" alt="<%= user.fullName %>">
-            <% } %>
+            <img
+              src="<%= user.avatar || '/user/images/default-avatar.svg' %>"
+              alt="<%= user.fullName %>"
+              onerror="this.src='/user/images/default-avatar.svg'"
+            >
           </div>
           <div class="identity-info">
             <h2><%= user.fullName %></h2>

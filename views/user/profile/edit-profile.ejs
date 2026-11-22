@@ -44,12 +44,12 @@
         <!-- Profile portrait -->
         <div class="portrait-section">
           <div class="portrait-preview">
-            <% if (user.avatar) { %>
-              <img src="<%= user.avatar %>" alt="<%= user.fullName %>" id="avatar-preview-img">
-            <% } else { %>
-              <svg id="avatar-preview-placeholder" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-              <img src="" alt="<%= user.fullName %>" id="avatar-preview-img" hidden>
-            <% } %>
+            <img
+              src="<%= user.avatar || '/user/images/default-avatar.svg' %>"
+              alt="<%= user.fullName %>"
+              id="avatar-preview-img"
+              onerror="this.src='/user/images/default-avatar.svg'"
+            >
           </div>
           <div class="portrait-text">
             <p class="portrait-label">Profile Portrait</p>
@@ -98,9 +98,9 @@
 
   <script>
     var uploadInput = document.getElementById('avatar-upload');
-    var previewImg = document.getElementById('avatar-preview-img');
-    var placeholder = document.getElementById('avatar-preview-placeholder');
-    var removeBtn = document.getElementById('avatar-remove');
+    var previewImg  = document.getElementById('avatar-preview-img');
+    var removeBtn   = document.getElementById('avatar-remove');
+    var DEFAULT_AVATAR = '/user/images/default-avatar.svg';
 
     if (uploadInput) {
       uploadInput.addEventListener('change', function () {
@@ -109,8 +109,6 @@
         var reader = new FileReader();
         reader.onload = function (e) {
           previewImg.src = e.target.result;
-          previewImg.hidden = false;
-          if (placeholder) placeholder.hidden = true;
         };
         reader.readAsDataURL(file);
       });
@@ -119,9 +117,7 @@
     if (removeBtn) {
       removeBtn.addEventListener('click', function () {
         uploadInput.value = '';
-        previewImg.src = '';
-        previewImg.hidden = true;
-        if (placeholder) placeholder.hidden = false;
+        previewImg.src = DEFAULT_AVATAR;
       });
     }
   </script>
