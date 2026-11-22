@@ -790,16 +790,10 @@ body {
 }
 
 @media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        height: auto;
-        position: static;
-        padding: 20px 0;
-    }
-    
+    /* Sidebar responsive handled centrally in sidebar.css */
     .main-content {
         margin-left: 0;
-        padding: 20px;
+        padding: 20px 16px;
     }
     
     .top-header {

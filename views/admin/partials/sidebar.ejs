@@ -1,7 +1,53 @@
-<aside class="sidebar">
+<!-- Mobile Topbar Header -->
+<header class="admin-mobile-topbar">
+    <button type="button" class="admin-menu-toggle" id="adminSidebarToggle" aria-label="Open Navigation Menu">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+    <div class="admin-mobile-brand">
+        <span class="admin-mobile-title">ESSENCE</span>
+        <span class="admin-mobile-badge">Admin</span>
+    </div>
+    <div class="admin-mobile-right">
+        <% 
+            const _curPage = typeof activePage !== 'undefined' ? (
+                activePage === 'dashboard' ? 'Dashboard' :
+                activePage === 'products' ? 'Products' :
+                activePage === 'categories' || activePage === 'category' ? 'Categories' :
+                activePage === 'orders' ? 'Orders' :
+                activePage === 'sales-report' ? 'Sales Report' :
+                activePage === 'offers' ? 'Offers' :
+                activePage === 'coupons' ? 'Coupons' :
+                activePage === 'referrals' ? 'Referrals' :
+                activePage === 'users' ? 'Users' :
+                activePage === 'returns' ? 'Returns' :
+                activePage === 'brand' ? 'Brands' : ''
+            ) : '';
+        %>
+        <% if (_curPage) { %>
+            <span class="admin-mobile-curpage"><%= _curPage %></span>
+        <% } %>
+    </div>
+</header>
+
+<!-- Backdrop overlay for mobile drawer -->
+<div class="admin-sidebar-overlay" id="adminSidebarOverlay"></div>
+
+<aside class="sidebar" id="adminSidebar">
     <div class="brand-section">
-        <h1 class="brand-name">ESSENCE</h1>
-        <div class="brand-role">System Admin</div>
+        <div class="brand-info">
+            <h1 class="brand-name">ESSENCE</h1>
+            <div class="brand-role">System Admin</div>
+        </div>
+        <button type="button" class="admin-sidebar-close" id="adminSidebarClose" aria-label="Close Navigation">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
     </div>
 
     <nav class="sidebar-menu">
@@ -14,8 +60,6 @@
             </svg>
             Dashboard
         </a>
-
-       
         <a href="/admin/products" class="menu-item <%= activePage === 'products' ? 'active' : '' %>">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 8 12 3 3 8l9 5 9-5Z"></path>
@@ -24,7 +68,7 @@
             </svg>
             Products
         </a>
-        <a href="/admin/categories" class="menu-item <%= activePage === 'categories' ? 'active' : '' %>">
+        <a href="/admin/categories" class="menu-item <%= (activePage === 'categories' || activePage === 'category') ? 'active' : '' %>">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="6" cy="6" r="3"></circle>
                 <circle cx="18" cy="6" r="3"></circle>
@@ -96,3 +140,40 @@
         </a>
     </nav>
 </aside>
+
+<script>
+(function() {
+    var toggleBtn = document.getElementById('adminSidebarToggle');
+    var closeBtn = document.getElementById('adminSidebarClose');
+    var overlay = document.getElementById('adminSidebarOverlay');
+    var sidebar = document.getElementById('adminSidebar');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('is-open');
+        if (overlay) overlay.classList.add('is-open');
+        document.body.classList.add('admin-sidebar-open');
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('is-open');
+        if (overlay) overlay.classList.remove('is-open');
+        document.body.classList.remove('admin-sidebar-open');
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeSidebar();
+    });
+
+    if (sidebar) {
+        sidebar.querySelectorAll('.menu-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                if (window.innerWidth <= 1024) closeSidebar();
+            });
+        });
+    }
+})();
+</script>

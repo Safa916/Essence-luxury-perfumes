@@ -629,14 +629,8 @@ a.btn-edit {
 
 /* ===== Responsive ===== */
 @media (max-width: 960px) {
-  .sidebar {
-    display: none;
-  }
-  .main {
-    padding: 20px;
-  }
-  .products-table {
-    display: block;
+  .table-card {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
